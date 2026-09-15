@@ -1,0 +1,28 @@
+name: boards
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container:
+      image: kicad/kicad:10.0
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install zip
+        run: apt-get update -qq && apt-get install -y -qq zip make >/dev/null
+      - name: List boards
+        run: make list
+      - name: ERC + DRC
+        run: make check
+      - name: Fabrication outputs
+        run: make fab
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('out/**') != ''
+        with:
+          name: fab-outputs
+          path: out/
+          if-no-files-found: ignore
