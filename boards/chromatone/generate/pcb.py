@@ -156,9 +156,9 @@ for i, (hx, hy) in enumerate([(3.5, 3.5), (42.5, 3.5), (3.5, 26.5), (42.5, 26.5)
 footprint('J1', 4.5, 10.5, 270, ref_pos=(11.5, 0))   # ref text below the connector (offset is in board coords: +x local after rot... see note)      # pads: 1 3V3 (4.5,10.5) 2 SCLK (4.5,13) 3 MOSI (4.5,15.5) 4 GND (4.5,18)
 footprint('J2', 41.5, 10.5, 270, ref_pos=(11.5, 0))     # pads: 1 5V (41.5,10.5) 2 CLK 13 3 DATA 15.5 4 GND 18
 footprint('U1', 23.0, 16.0, 0, ref_pos=(-4.0, 4.7))       # pads 1-4 x=20.525 y=14.095/15.365/16.635/17.905; 5-8 x=25.475 same y reversed
-footprint('C1', 17.0, 12.3, 0, ref_fab=True)       # 1 (16.225) +3V3, 2 (17.775) GND
+footprint('C1', 18.5, 13.32, 90, ref_fab=True)     # rot 90: 1 +3V3 (18.5,14.095) beside U1.1, 2 GND (18.5,12.545)
 footprint('C2', 17.0, 9.9, 0, ref_fab=True)
-footprint('C3', 29.0, 12.3, 180, ref_fab=True)     # 1 (29.775) +5V_LED, 2 (28.225) GND_LED
+footprint('C3', 27.5, 13.32, 90, ref_fab=True)     # rot 90: 1 +5V_LED (27.5,14.095) beside U1.8, 2 GND_LED (27.5,12.545)
 footprint('C4', 29.0, 9.9, 180, ref_fab=True)
 footprint('R1', 31.0, 15.365, 0, ref_fab=True)     # 1 (30.175) from U1.7, 2 (31.825) to J2 CLK
 footprint('R2', 31.0, 17.8, 0, ref_fab=True)
@@ -168,11 +168,13 @@ footprint('R4', 32.5, 23.5, 180, ref_fab=True)     # 1 (33.325) +5V_LED, 2 (31.6
 footprint('D2', 28.5, 23.5, 0, ref_fab=True)       # 1 K (27.7125) GND_LED, 2 A (29.2875)
 footprint('TP1', 11.5, 10.0, ref_fab=True, val_pos=(0, -2.0)); footprint('TP2', 10.0, 20.5, ref_fab=True, val_pos=(0, 2.0))
 footprint('TP3', 34.0, 11.0, ref_fab=True, val_pos=(0, -2.0)); footprint('TP4', 35.0, 21.5, ref_fab=True, val_pos=(0, 2.0))
+footprint('TP5', 14.5, 20.0, ref_fab=True, val_pos=(0, 2.0)); footprint('TP6', 31.5, 20.0, ref_fab=True, val_pos=(0, 2.0))
 
 # ---------------------------------------------------------------- routing, domain A
 seg('+3V3', PWR, (4.5, 10.5), (4.5, 8.0), (16.225, 8.0), (16.225, 14.095), (20.525, 14.095))
-seg('+3V3', PWR, (4.5, 10.5), (2.5, 12.5), (2.5, 21.5), (4.5, 23.5), (12.675, 23.5))
-seg('GND', SIG, (17.775, 9.9), (17.775, 12.3), (19.5, 12.3)); via('GND', 19.5, 12.3)
+seg('+3V3', PWR, (4.5, 10.5), (2.5, 12.5), (2.5, 19.5), (6.5, 23.5), (12.675, 23.5))
+seg('GND', SIG, (17.775, 9.9), (19.2, 9.9)); via('GND', 19.2, 9.9)          # C2 ground
+seg('GND', SIG, (18.5, 12.545), (18.5, 11.3)); via('GND', 18.5, 11.3)        # C1 ground
 seg('GND', SIG, (20.525, 17.905), (18.75, 17.905)); via('GND', 18.75, 17.905)
 seg('GND', SIG, (18.2875, 23.5), (19.8, 23.5)); via('GND', 19.8, 23.5)
 seg('Net-(J1-Pin_2)', SIG, (4.5, 13), (12.0, 13), (14.365, 15.365), (20.525, 15.365))
@@ -180,10 +182,12 @@ seg('Net-(J1-Pin_2)', SIG, (11.5, 13), (11.5, 10.0))
 seg('Net-(J1-Pin_3)', SIG, (4.5, 15.5), (6.0, 15.5), (7.135, 16.635), (20.525, 16.635))
 seg('Net-(J1-Pin_3)', SIG, (10.0, 16.635), (10.0, 20.5))
 seg('Net-(D1-A)', SIG, (14.325, 23.5), (16.7125, 23.5))
+seg('GND', SIG, (14.5, 20.0), (16.0, 20.0)); via('GND', 16.0, 20.0)         # TP5
 # ---------------------------------------------------------------- routing, domain B
 seg('+5V_LED', PWR, (41.5, 10.5), (41.5, 8.0), (29.775, 8.0), (29.775, 14.095), (25.475, 14.095))
-seg('+5V_LED', PWR, (41.5, 10.5), (43.5, 12.5), (43.5, 21.5), (41.5, 23.5), (33.325, 23.5))
-seg('GND_LED', SIG, (28.225, 9.9), (28.225, 12.3), (26.5, 12.3)); via('GND_LED', 26.5, 12.3)
+seg('+5V_LED', PWR, (41.5, 10.5), (43.5, 12.5), (43.5, 19.5), (39.5, 23.5), (33.325, 23.5))
+seg('GND_LED', SIG, (28.225, 9.9), (26.8, 9.9)); via('GND_LED', 26.8, 9.9)   # C4 ground
+seg('GND_LED', SIG, (27.5, 12.545), (27.5, 11.3)); via('GND_LED', 27.5, 11.3)  # C3 ground
 seg('GND_LED', SIG, (25.475, 17.905), (27.25, 17.905)); via('GND_LED', 27.25, 17.905)
 seg('GND_LED', SIG, (27.7125, 23.5), (26.2, 23.5)); via('GND_LED', 26.2, 23.5)
 seg('Net-(U1-OUTA)', SIG, (25.475, 15.365), (30.175, 15.365))
@@ -193,9 +197,21 @@ seg('Net-(U1-OUTB)', SIG, (25.475, 16.635), (28.5, 16.635), (29.665, 17.8), (30.
 seg('Net-(J2-Pin_3)', SIG, (31.825, 17.8), (38.5, 17.8), (40.8, 15.5), (41.5, 15.5))
 seg('Net-(J2-Pin_3)', SIG, (35.0, 17.8), (35.0, 21.5))
 seg('Net-(D2-A)', SIG, (29.2875, 23.5), (31.675, 23.5))
+seg('GND_LED', SIG, (31.5, 20.0), (30.0, 20.0)); via('GND_LED', 30.0, 20.0)  # TP6
 # ---------------------------------------------------------------- pours: split grounds, 3 mm barrier under U1
 zone('GND', 'GND_A', 0, 0, 21.5, H)
 zone('GND_LED', 'GND_B', 24.5, 0, W, H)
+def keepout(x, y, r=3.2, nseg=24):
+    pts = [P(x + r * math.cos(2 * math.pi * i / nseg), y + r * math.sin(2 * math.pi * i / nseg)) for i in range(nseg)]
+    items.append(['zone', ['net', '0'], ['net_name', Q('')], ['layers', Q('F.Cu'), Q('B.Cu')], ['uuid', u()],
+                  ['name', Q('mounting keepout')], ['hatch', 'edge', '0.5'],
+                  ['keepout', ['tracks', 'not_allowed'], ['vias', 'not_allowed'], ['pads', 'allowed'],
+                   ['copperpour', 'not_allowed'], ['footprints', 'allowed']],
+                  ['connect_pads', ['clearance', '0']], ['min_thickness', '0.25'], ['filled_areas_thickness', 'no'],
+                  ['fill', ['thermal_gap', '0.5'], ['thermal_bridge_width', '0.5']],
+                  ['polygon', ['pts'] + [['xy', n(X), n(Y)] for X, Y in pts]]])
+for (hx, hy) in [(3.5, 3.5), (42.5, 3.5), (3.5, 26.5), (42.5, 26.5)]:
+    keepout(hx, hy)
 # ---------------------------------------------------------------- outline, silk
 for (x1, y1, x2, y2) in [(0, 0, W, 0), (W, 0, W, H), (W, H, 0, H), (0, H, 0, 0)]:
     gr_line(x1, y1, x2, y2, 'Edge.Cuts', 0.1)

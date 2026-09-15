@@ -47,7 +47,7 @@ lib_symbols = {}
 items = []
 refs = {}
 
-def place(lib, name, ref, x, y, rot=0, value=None, footprint='', fields=None, mirror=None, in_bom=True, on_board=True, prop_pos=None, hide_value=False):
+def place(lib, name, ref, x, y, rot=0, value=None, footprint='', fields=None, mirror=None, in_bom=True, on_board=True, prop_pos=None, hide_value=False, description=None):
     key = f'{lib}:{name}'
     if key not in lib_symbols:
         lib_symbols[key] = lib_symbol(lib, name)
@@ -71,7 +71,7 @@ def place(lib, name, ref, x, y, rot=0, value=None, footprint='', fields=None, mi
              prop('Reference', ref, hide=key.startswith('power:'), dx=2.54, dy=-1.27),
              prop('Value', val, hide=hide_value, dx=2.54, dy=1.27),
              prop('Footprint', fp, hide=True), prop('Datasheet', lib_ds, hide=True),
-             prop('Description', lib_desc, hide=True)]
+             prop('Description', description if description is not None else lib_desc, hide=True)]
     for k, v in (fields or {}).items():
         node.append(prop(k, v, hide=True))
     offs = pin_offsets(sym)
@@ -101,7 +101,7 @@ def box(x1, y1, x2, y2):
 R_FP = 'Resistor_SMD:R_0603_1608Metric'; C_FP = 'Capacitor_SMD:C_0603_1608Metric'
 LED_FP = 'LED_SMD:LED_0603_1608Metric'; TP_FP = 'TestPoint:TestPoint_Pad_D1.5mm'
 JST_FP = 'Connector_JST:JST_XH_B4B-XH-A_1x04_P2.50mm_Vertical'; HOLE_FP = 'MountingHole:MountingHole_2.7mm_M2.5'
-JST = {'MPN': 'B4B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C144394'}
+JST = {'MPN': 'B4B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C144395'}
 
 def pwr(name, x, y, value=None, ref=None):
     global _pwr_n
@@ -159,17 +159,20 @@ wire(U1['6'], R2['1']); wire(R2['2'], (g(146), Y_DATA), J2['3']); junction(g(146
 TP4 = place('Connector', 'TestPoint', 'TP4', g(146), Y_DATA, rot=180, value='DATA', footprint=TP_FP, in_bom=False, prop_pos={'Reference': (-2.0, 6.7), 'Value': (-2.0, 4.8)})
 
 # ---- decoupling + indicator clusters ------------------------------------------
-def cluster(x0, vcc, vname, gnd, gname, cref, rref, dref, led_color):
+def cluster(x0, vcc, vname, gnd, gname, cref, rref, dref, led_color, gnd_tp):
     rail_top, rail_bot = g(90), g(100)
     for i, (ref, val, desc) in enumerate([(cref[0], '100n', '100 nF X7R 50 V'), (cref[1], '10u', '10 uF X5R 10 V')]):
         x = g(x0 + i * 8)
-        c = place('Device', 'C', ref, x, g(95), value=val, footprint=C_FP, prop_pos={'Reference': (1.5, -1.27), 'Value': (1.5, 1.27)})
+        c = place('Device', 'C', ref, x, g(95), value=val, footprint=C_FP, description=desc, prop_pos={'Reference': (1.5, -1.27), 'Value': (1.5, 1.27)})
         assert c['1'] == (x, g(92)) and c['2'] == (x, g(98)), c
         wire(c['1'], (x, rail_top)); wire(c['2'], (x, rail_bot))
         pwr(vcc, x, rail_top, value=vname); pwr(gnd, x, rail_bot, value=gname)
     # PWR_FLAGs on both rails, hanging off the first cap's nodes
     wire((g(x0), rail_top), (g(x0 - 6), rail_top)); junction(g(x0), rail_top); flag(g(x0 - 6), rail_top)
     wire((g(x0), rail_bot), (g(x0 - 6), rail_bot)); junction(g(x0), rail_bot); flag(g(x0 - 6), rail_bot, rot=180)
+    junction(g(x0 - 3), rail_bot)
+    place('Connector', 'TestPoint', gnd_tp[0], g(x0 - 3), rail_bot, rot=180, value=gnd_tp[1], footprint=TP_FP, in_bom=False,
+          prop_pos={'Reference': (-2.0, 6.7), 'Value': (-2.0, 4.8)})
     # indicator LED: rail -> 1k -> LED -> gnd
     x = g(x0 + 18)
     r = place('Device', 'R', rref, x, g(93), value='1k', footprint=R_FP, prop_pos={'Reference': (1.5, -1.27), 'Value': (1.5, 1.27)})
@@ -179,8 +182,8 @@ def cluster(x0, vcc, vname, gnd, gname, cref, rref, dref, led_color):
     wire((x, g(88)), r['1']); pwr(vcc, x, g(88), value=vname)
     wire(r['2'], d['2']); wire(d['1'], (x, g(106))); pwr(gnd, x, g(106), value=gname)
 
-cluster(97, '+3V3', None, 'GND', None, ('C1', 'C2'), 'R3', 'D1', 'GREEN')
-cluster(136, '+5V', '+5V_LED', 'GNDPWR', 'GND_LED', ('C3', 'C4'), 'R4', 'D2', 'BLUE')
+cluster(97, '+3V3', None, 'GND', None, ('C1', 'C2'), 'R3', 'D1', 'GREEN', ('TP5', 'GND_A'))
+cluster(136, '+5V', '+5V_LED', 'GNDPWR', 'GND_LED', ('C3', 'C4'), 'R4', 'D2', 'BLUE', ('TP6', 'GND_B'))
 
 # ---- mounting holes ----------------------------------------------------------
 for i in range(4):
