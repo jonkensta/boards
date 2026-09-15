@@ -101,10 +101,50 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 - `python3 -m unittest discover -s boardtools/tests -t .` is what `make test` runs; tests use
   handwritten CSV/s-expr fixtures, so jobset export regressions are only caught by smoke.
 
+## Generating KiCad files from Python (learned on boards/chromatone)
+
+`boards/chromatone/generate/` is the worked example: `schematic.py` and `pcb.py` write native
+`.kicad_sch`/`.kicad_pcb` with `boardtools.sexpr` (parse + `dumps`, `Quoted` marks atoms that
+must be re-quoted). Facts that cost time to discover:
+
+- **Schematic connection points must sit on the 1.27 mm grid** or ERC reports every pin/wire
+  end as `endpoint_off_grid`. Work in integer grid units and multiply.
+- Symbol pin positions: library coords are y-up; screen is y-down. Offset = (px, -py), then
+  rotate for `(at x y rot)` with (sx, sy) -> (sy, -sx) per 90 deg; `(mirror y)` negates x first.
+  `Device:R` at rot 90 puts pin 1 on the left; `Device:LED` at rot 90 puts A on top, K below.
+- A pin landing mid-wire needs the wire split plus an explicit `(junction ...)`. Power symbols'
+  pins are `power_in`, so every rail fed only by a connector needs a `power:PWR_FLAG`.
+- Power symbol net name = its Value; `power:+5V` with Value `+5V_LED` makes a separate net.
+- Property text rotates with the symbol; set the property angle to `rot % 180` to keep it level.
+- `lib_symbols` entries are the library symbol renamed to `Lib:Name` (sub-units keep bare names);
+  none of the symbols used had `extends`, so no flattening was needed.
+- `kicad-cli sch export netlist --format kicadsexpr` gives nets, per-component `tstamps`
+  (= symbol UUID, used as the footprint `path "/<uuid>"` for schematic parity), datasheet,
+  description and custom fields.
+- PCB footprints embed the `.kicad_mod` renamed `Lib:Name` with `(at x y rot)` added; pad and
+  `fp_text` angles must have the footprint rotation added (KiCad stores them absolute), graphics
+  do not. Footprint rotation (px, py) -> (px cos r + py sin r, -px sin r + py cos r). Property
+  positions are relative offsets in unrotated board coords. Footprints lacking a `Datasheet`
+  or `Description` property need them added or parity DRC complains.
+- Footprint `attr exclude_from_bom` (test points, holes) must match the symbol's `in_bom no`.
+- Silk rules in the template project: text >= 0.8 mm / 0.12 mm stroke, 0.15 mm silk clearance,
+  silk over pads is an error. Put passive references on F.Fab (hidden) and place the few silk
+  labels deliberately; test points read best with their Value on silk instead of the reference.
+- Rule-area keepouts: `(zone (net 0) ... (keepout (tracks not_allowed) (vias not_allowed)
+  (pads allowed) (copperpour not_allowed) (footprints allowed)) (polygon ...))`. With `pads
+  not_allowed` an NPTH mounting hole inside its own keepout is a violation.
+- `kicad-cli pcb drc --refill-zones --save-board` stores the zone fills; without it the committed
+  board looks unfilled in the GUI and in renders.
+- `kicad-cli pcb render --side top|bottom --zoom 1.6 --width W --height H --background opaque`
+  is the quickest visual check; `sch export pdf` + `pdftoppm -r 300 -png -x -y -W -H` for crops.
+- SPI-to-LED specifics recorded in `boards/chromatone/README.md` (SK9822 has no VIH spec, only
+  VDD+0.3 V abs max; ISO7720 is 2/0, fail-safe high, PWD up to 5.9 ns; start at 8 MHz).
+
 ## Review history
 
-Two Codex critique loops so far (five rounds on the original scaffold, three on the jobset
-restructure). Findings that shaped the current design: fab must purge, then check, then export
+Three Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+restructure, three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
+loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export
 (ordered under `-j`); zone refill; strict severity flags; whitespace/quote-proof layer parsing;
 every copper layer in the fab zip (the In1..In4 cap bit an 8-layer board); warnings reports
 with schematic parity; Manufacturer in BOM grouping; CSV header validation independent of row
