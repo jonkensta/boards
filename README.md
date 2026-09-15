@@ -39,7 +39,7 @@ make fab                    # all boards
 | Excellon drill (PTH/NPTH split) + Gerber X2 maps | `out/<name>/drill/` |
 | Gerbers + drill zipped for fab upload (no drill maps) | `out/<name>/<name>-gerbers.zip` |
 | Pick-and-place CSV (mm, drill origin, DNP excluded) | `out/<name>/<name>-all-pos.csv` |
-| BOM CSV grouped by Value/Footprint/MPN/Manufacturer/LCSC | `out/<name>/<name>-bom.csv` |
+| BOM CSV grouped by Value/Description/Footprint/MPN/Manufacturer/LCSC | `out/<name>/<name>-bom.csv` |
 | Schematic PDF | `out/<name>/<name>-schematic.pdf` |
 | STEP model | `out/<name>/<name>.step` |
 | JLCPCB CPL + BOM (`make jlcpcb`) | `out/<name>/jlcpcb/` |
@@ -77,7 +77,8 @@ python3 -m boardtools jlcpcb bom <kicad-bom.csv> <jlc-bom.csv>   # warns on line
 ## Conventions
 
 - Put `MPN`, `Manufacturer`, and (for JLCPCB assembly) `LCSC` fields on symbols; the BOM export
-  and JLCPCB conversion use them.
+  and JLCPCB conversion use them. Put ratings (dielectric, voltage, tolerance) in `Description`;
+  it is exported and appended to the JLCPCB Comment.
 - Custom parts go in `lib/`; stock KiCad library parts are referenced as usual.
 - The template sets the drill/place origin at the outline's bottom-left corner; move it if you
   move the outline. Gerbers, drill, and position files use it.

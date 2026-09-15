@@ -13,6 +13,15 @@ OPEN, CLOSE = object(), object()
 Node = list  # a parsed element: [head_atom, *children], children are str | Node
 
 
+class Quoted(str):
+    """An atom that was written as a quoted string; `dumps` re-quotes it.
+
+    Bare atoms (numbers, keywords) stay plain `str`. Round-tripping a file keeps
+    each atom in its original form, and generated content can force quoting by
+    wrapping a value in `Quoted(...)`.
+    """
+
+
 def tokenize(text: str):
     """Yield OPEN, CLOSE, or atom tokens (strings yielded unquoted)."""
     i, n = 0, len(text)
@@ -31,7 +40,7 @@ def tokenize(text: str):
                     j += 1
                 buf.append(text[j])
                 j += 1
-            yield "".join(buf)
+            yield Quoted("".join(buf))
             i = j + 1
         else:
             j = i
@@ -71,3 +80,29 @@ def children(node: Node, head: str):
 
 def child(node: Node, head: str) -> Node | None:
     return next(children(node, head), None)
+
+
+def _atom(tok: str) -> str:
+    if isinstance(tok, Quoted) or tok == "" or any(c.isspace() or c in '()"' for c in tok):
+        return '"' + tok.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    return tok
+
+
+def dumps(node: Node, indent: int = 0, _inline: bool = False) -> str:
+    """Serialize a node in KiCad's style: one element per line, tab-indented.
+
+    Elements whose children are all atoms are written on one line, which matches
+    how KiCad writes short elements such as `(at 10 20 90)` or `(uuid "...")`.
+    """
+    if not isinstance(node, list):
+        return _atom(node)
+    if all(not isinstance(c, list) for c in node):
+        return "(" + " ".join(_atom(c) for c in node) + ")"
+    pad = "\t" * (indent + 1)
+    head = [_atom(c) for c in node[1:] if not isinstance(c, list)]
+    # KiCad writes leading atoms on the head line, then nested elements.
+    lines = ["(" + " ".join([_atom(node[0])] + head)]
+    for c in node[1:]:
+        if isinstance(c, list):
+            lines.append(pad + dumps(c, indent + 1))
+    return "\n".join(lines) + "\n" + "\t" * indent + ")"

@@ -35,6 +35,24 @@ class SexprTests(unittest.TestCase):
             sexpr.parse("(kicad_pcb))")
 
 
+class DumpsTests(unittest.TestCase):
+    def test_roundtrip_preserves_quoting_and_escapes(self):
+        text = '(kicad_pcb (version 20260206) (gr_text "a \\"q\\" (x)" (at 1 2 0) (layer "F.SilkS")) (layers (0 "F.Cu" signal)))'
+        root = sexpr.parse(text)
+        out = sexpr.dumps(root)
+        self.assertEqual(sexpr.parse(out), root)
+        self.assertIn('(version 20260206)', out)          # bare atom stays bare
+        self.assertIn('"F.Cu"', out)                      # quoted atom stays quoted
+        self.assertIn('"a \\"q\\" (x)"', out)           # escapes re-emitted
+        self.assertIsInstance(sexpr.parse(out)[2][1], sexpr.Quoted)
+
+    def test_generated_quoting(self):
+        node = ["property", sexpr.Quoted("Value"), sexpr.Quoted("47"), ["at", "0", "0", "0"]]
+        self.assertEqual(sexpr.dumps(node), '(property "Value" "47"\n\t(at 0 0 0)\n)')
+        self.assertEqual(sexpr.dumps(["uuid", sexpr.Quoted("x")]), '(uuid "x")')
+        self.assertEqual(sexpr.dumps(["name", ""]), '(name "")')
+
+
 class PcbTests(unittest.TestCase):
     def test_copper_layers_and_title(self):
         root = sexpr.parse(BOARD)
@@ -76,13 +94,15 @@ class JlcpcbTests(unittest.TestCase):
             ])
 
     def test_bom(self):
-        src = self.path("bom.csv", '"Refs","Value","Footprint","MPN","Manufacturer","LCSC","Qty"\n'
-                                   '"R1,R2","10k","R_0603","RC0603FR-0710KL","Yageo","C98220","2"\n'
-                                   '"C1","100n","C_0603","","","","1"\n')
+        src = self.path("bom.csv", '"Refs","Value","Description","Footprint","MPN","Manufacturer","LCSC","Qty"\n'
+                                   '"R1,R2","10k","","R_0603","RC0603FR-0710KL","Yageo","C98220","2"\n'
+                                   '"C1","100n","100 nF X7R 50 V","C_0603","","","","1"\n')
         dst = self.path("jlc-bom.csv")
         self.assertEqual(jlcpcb.convert_bom(src, dst), ["C1"])
         with open(dst) as f:
-            self.assertEqual(f.read().splitlines()[1], '10k,"R1,R2",R_0603,C98220')
+            lines = f.read().splitlines()
+        self.assertEqual(lines[1], '10k,"R1,R2",R_0603,C98220')
+        self.assertEqual(lines[2], '100n (100 nF X7R 50 V),C1,C_0603,')
         with self.assertRaises(ValueError):
             jlcpcb.convert_bom(src, dst, require_lcsc=True)
 

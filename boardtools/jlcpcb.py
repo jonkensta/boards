@@ -6,7 +6,9 @@ JLCPCB CPL:
     Designator,Mid X,Mid Y,Rotation,Layer         (Layer is Top/Bottom)
 
 KiCad BOM CSV as produced by jobsets/fab.kicad_jobset:
-    Refs,Value,Footprint,MPN,Manufacturer,LCSC,Qty  (Refs is comma-separated)
+    Refs,Value,Description,Footprint,MPN,Manufacturer,LCSC,Qty  (Refs is comma-separated;
+    Description is optional and, when present, is appended to the JLCPCB Comment so
+    ratings such as "10 uF X5R 10 V" reach the assembler)
 Both are validated by header, so a correctly headed empty export converts to an
 empty file while a zero-byte or foreign CSV is rejected.
 JLCPCB BOM:
@@ -66,7 +68,9 @@ def convert_bom(src: str, dst: str, *, require_lcsc: bool = False) -> list[str]:
         lcsc = r["LCSC"].strip()
         if not lcsc:
             no_lcsc.append(r["Refs"])
-        out.append([r["Value"], r["Refs"], r["Footprint"], lcsc])
+        desc = (r.get("Description") or "").strip()
+        comment = f'{r["Value"]} ({desc})' if desc and desc != r["Value"] else r["Value"]
+        out.append([comment, r["Refs"], r["Footprint"], lcsc])
     if require_lcsc and no_lcsc:
         raise ValueError("BOM lines without an LCSC part number: " + "; ".join(no_lcsc))
     _write(dst, BOM_HEADER, out)
