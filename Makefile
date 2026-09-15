@@ -1,66 +1,68 @@
 # KiCad board tooling. Every board lives in boards/<name>/<name>.kicad_{pro,sch,pcb}.
+# Exports are defined once in jobsets/fab.kicad_jobset (runs from the KiCad GUI too).
 #
 #   make new NAME=foo        scaffold boards/foo from templates/board
-#   make check [BOARD=foo]   ERC + DRC (all boards, or one)
-#   make fab   [BOARD=foo]   check, then gerbers/drill/pos/BOM/PDF/STEP -> out/<name>/
-#   make export [BOARD=foo]  the fab exports without the checks
-#   make smoke               scaffold a throwaway board in a temp dir and run check + fab on it
+#   make check  [BOARD=foo]  ERC + DRC (all boards, or one); STRICT=1 also fails on warnings
+#   make fab    [BOARD=foo]  check, then run the fab jobset -> out/<name>/ (+ <name>-gerbers.zip)
+#   make export [BOARD=foo]  the jobset without the Makefile checks
+#   make jlcpcb [BOARD=foo]  fab, then JLCPCB-format BOM/CPL -> out/<name>/jlcpcb/
+#   make test                boardtools unit tests
+#   make smoke               scaffold throwaway boards in a temp dir and run the whole pipeline
 #   make list                boards found under boards/
 #   make clean               remove out/
-#
-# STRICT=1 also fails on warnings (default: fail on errors only).
 
 KICAD_CLI ?= kicad-cli
-OUT       ?= out
+PYTHON    ?= python3
 STRICT    ?= 0
+# Output root is fixed to out/ because the jobset's destinations hardcode
+# ${KIPRJMOD}/../../out/${PROJECTNAME}; change both together if you ever move it.
+override OUT := out
+JOBSET    ?= jobsets/fab.kicad_jobset
 
 ALL_BOARDS := $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard boards/*/*.kicad_pro)))))
 BOARDS     := $(if $(BOARD),$(BOARD),$(ALL_BOARDS))
 
 SEVERITY := --severity-error $(if $(filter 1,$(STRICT)),--severity-warning)
 
-.PHONY: help list new check erc drc fab export gerbers drill pos bom pdf step smoke clean
+.PHONY: help list new check erc drc fab export jlcpcb test smoke clean
 # Per-board targets (erc-foo, fab-foo, ...) are pattern rules and must NOT be .PHONY:
 # make skips implicit-rule search for phony targets.
 
 help:
-	@sed -n '2,12p' $(MAKEFILE_LIST) | sed 's/^# \{0,1\}//'
+	@sed -n '2,13p' $(MAKEFILE_LIST) | sed 's/^# \{0,1\}//'
 
 list:
 	@printf '%s\n' $(ALL_BOARDS)
 
 new:
 	@test -n "$(NAME)" || { echo 'usage: make new NAME=<board>' >&2; exit 2; }
-	@python3 scripts/new-board.py "$(NAME)"
+	@$(PYTHON) scripts/new-board.py "$(NAME)"
+
+test:
+	$(PYTHON) -m unittest discover -s boardtools/tests -t .
 
 smoke:
 	@scripts/smoke.sh
 
-check:   $(addprefix check-,$(BOARDS))
-erc:     $(addprefix erc-,$(BOARDS))
-drc:     $(addprefix drc-,$(BOARDS))
-fab:     $(addprefix fab-,$(BOARDS))
-export:  $(addprefix export-,$(BOARDS))
-gerbers: $(addprefix gerbers-,$(BOARDS))
-drill:   $(addprefix drill-,$(BOARDS))
-pos:     $(addprefix pos-,$(BOARDS))
-bom:     $(addprefix bom-,$(BOARDS))
-pdf:     $(addprefix pdf-,$(BOARDS))
-step:    $(addprefix step-,$(BOARDS))
+check:  $(addprefix check-,$(BOARDS))
+erc:    $(addprefix erc-,$(BOARDS))
+drc:    $(addprefix drc-,$(BOARDS))
+fab:    $(addprefix fab-,$(BOARDS))
+export: $(addprefix export-,$(BOARDS))
+jlcpcb: $(addprefix jlcpcb-,$(BOARDS))
 
 check-%: erc-% drc-% ;
 
-# fab = check, then export. The recursive make keeps the order strict even under -j.
-fab-%: check-%
+# fab = purge stale outputs, check, export. Recursive makes keep the order strict even
+# under -j, and purging first means a failed check never leaves an old zip looking current.
+fab-%:
+	@rm -rf $(out)
+	@$(MAKE) --no-print-directory check-$*
 	@$(MAKE) --no-print-directory export-$*
 
-export-%: gerbers-% drill-% pos-% bom-% pdf-% step-%
-	@cd $(OUT)/$* && rm -f $*-gerbers.zip \
-	  && zip -q -j $*-gerbers.zip gerbers/* drill/*.drl \
-	  && echo "wrote $(OUT)/$*/$*-gerbers.zip"
-
 # --- per-board rules --------------------------------------------------------
-# $* is the board name; sources are boards/$*/$*.kicad_sch and .kicad_pcb.
+# $* is the board name; sources are boards/$*/$*.kicad_{pro,sch,pcb}.
+pro = boards/$*/$*.kicad_pro
 sch = boards/$*/$*.kicad_sch
 pcb = boards/$*/$*.kicad_pcb
 out = $(OUT)/$*
@@ -77,39 +79,20 @@ drc-%:
 	$(KICAD_CLI) pcb drc --severity-warning --schematic-parity --refill-zones -o $(out)/drc-warnings.rpt $(pcb) >/dev/null
 	$(KICAD_CLI) pcb drc $(SEVERITY) --exit-code-violations --schematic-parity --refill-zones -o $(out)/drc.rpt $(pcb)
 
-# Copper layers come from the board's layer table (2..N layer stackups); the
-# helper exits nonzero if it finds none, which aborts the recipe.
-gerbers-%:
-	@rm -rf $(out)/gerbers && mkdir -p $(out)/gerbers
-	copper=$$(python3 scripts/copper_layers.py $(pcb)) && \
-	$(KICAD_CLI) pcb export gerbers --no-x2 --subtract-soldermask --use-drill-file-origin --check-zones \
-	  -l "$$copper,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts" \
-	  -o $(out)/gerbers/ $(pcb)
+# The jobset writes to ${KIPRJMOD}/../../out/${PROJECTNAME}/ (see jobsets/fab.kicad_jobset),
+# i.e. $(OUT)/$*. Stale jobset files are removed first (keeping the Makefile's *.rpt
+# check reports) so the folder only holds what this run produced.
+export-%:
+	@mkdir -p $(out) && find $(out) -mindepth 1 -maxdepth 1 ! -name '*.rpt' -exec rm -rf {} +
+	@$(KICAD_CLI) jobset run --stop-on-error --file $(JOBSET) $(pro) >$(out)/jobset.log 2>&1 \
+	  || { cat $(out)/jobset.log; echo "jobset failed for $*" >&2; exit 1; }
+	@grep -E 'jobs? succeeded' $(out)/jobset.log | sed 's/\x1b\[[0-9;]*m//g; s/^/$*: /'
+	@test -s $(out)/$*-gerbers.zip || { echo "jobset produced no $(out)/$*-gerbers.zip" >&2; exit 1; }
 
-drill-%:
-	@rm -rf $(out)/drill && mkdir -p $(out)/drill
-	$(KICAD_CLI) pcb export drill --format excellon --drill-origin plot --excellon-separate-th \
-	  --generate-map --map-format gerberx2 -o $(out)/drill/ $(pcb)
-
-pos-%:
-	@mkdir -p $(out)
-	$(KICAD_CLI) pcb export pos --format csv --units mm --use-drill-file-origin --exclude-dnp \
-	  -o $(out)/$*-pos.csv $(pcb)
-
-bom-%:
-	@mkdir -p $(out)
-	$(KICAD_CLI) sch export bom --exclude-dnp --ref-range-delimiter '' \
-	  --fields 'Reference,Value,Footprint,MPN,Manufacturer,LCSC,$${QUANTITY}' \
-	  --labels 'Refs,Value,Footprint,MPN,Manufacturer,LCSC,Qty' \
-	  --group-by 'Value,Footprint,MPN,LCSC' -o $(out)/$*-bom.csv $(sch)
-
-pdf-%:
-	@mkdir -p $(out)
-	$(KICAD_CLI) sch export pdf --black-and-white -o $(out)/$*-schematic.pdf $(sch)
-
-step-%:
-	@mkdir -p $(out)
-	$(KICAD_CLI) pcb export step --force --no-dnp --subst-models -o $(out)/$*.step $(pcb)
+jlcpcb-%: fab-%
+	@mkdir -p $(out)/jlcpcb
+	$(PYTHON) -m boardtools jlcpcb pos $(out)/$*-all-pos.csv $(out)/jlcpcb/$*-cpl.csv
+	$(PYTHON) -m boardtools jlcpcb bom $(out)/$*-bom.csv $(out)/jlcpcb/$*-bom.csv
 
 clean:
 	rm -rf $(OUT)

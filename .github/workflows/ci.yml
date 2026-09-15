@@ -13,7 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install make and zip
-        run: apt-get update -qq && apt-get install -y -qq make zip unzip >/dev/null
+        run: apt-get update -qq && apt-get install -y -qq make unzip >/dev/null
+      - name: boardtools unit tests
+        run: make test
       - name: Smoke-test scaffolder and export pipeline
         run: make smoke
       - name: List boards
@@ -26,8 +28,8 @@ jobs:
         with:
           name: check-reports
           path: out/**/*.rpt
-      - name: Fabrication outputs
-        run: make export
+      - name: Fabrication outputs (jobset + JLCPCB conversion)
+        run: make jlcpcb
       - name: Upload fabrication outputs
         if: hashFiles('out/**') != ''
         uses: actions/upload-artifact@v4
