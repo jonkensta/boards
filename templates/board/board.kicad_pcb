@@ -50,6 +50,8 @@
 		)
 		(capping no)
 		(filling no)
+		(aux_axis_origin 50 100)
+		(grid_origin 50 50)
 		(pcbplotparams
 			(layerselection 0x00000000_00000000_55555555_5755f5ff)
 			(plot_on_all_layers_selection 0x00000000_00000000_00000000_00000000)
@@ -95,7 +97,7 @@
 			(type default)
 		)
 		(layer "Edge.Cuts")
-		(uuid "fee59d7c-0c14-4bcb-bf30-ae1dbdacca78")
+		(uuid "b049a145-4273-4994-b65b-49ffdfd49c71")
 	)
 	(gr_line
 		(start 50 100)
@@ -105,7 +107,7 @@
 			(type default)
 		)
 		(layer "Edge.Cuts")
-		(uuid "3f28a2b1-5a64-426a-b690-395efc3df349")
+		(uuid "ee5d1c05-edbc-469b-a00f-892347b56a82")
 	)
 	(gr_line
 		(start 100 50)
@@ -115,7 +117,7 @@
 			(type default)
 		)
 		(layer "Edge.Cuts")
-		(uuid "339c488a-02c5-4da5-977b-351e0cd0251d")
+		(uuid "ab196f9e-26e2-4a28-8c5b-021789544c8e")
 	)
 	(gr_line
 		(start 100 100)
@@ -125,7 +127,7 @@
 			(type default)
 		)
 		(layer "Edge.Cuts")
-		(uuid "be5029a6-9be7-46ec-9aff-e41071b6559d")
+		(uuid "b808dbf6-ef91-492e-a1cd-c845bc1cfdb7")
 	)
 	(embedded_fonts no)
 )

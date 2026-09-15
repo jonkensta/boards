@@ -12,17 +12,25 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v4
-      - name: Install zip
-        run: apt-get update -qq && apt-get install -y -qq zip make >/dev/null
+      - name: Install make and zip
+        run: apt-get update -qq && apt-get install -y -qq make zip unzip >/dev/null
+      - name: Smoke-test scaffolder and export pipeline
+        run: make smoke
       - name: List boards
         run: make list
-      - name: ERC + DRC
-        run: make check
+      - name: ERC + DRC (all boards; keep going so every report is produced)
+        run: make -k check
+      - name: Upload ERC/DRC reports
+        if: always() && hashFiles('out/**/*.rpt') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: out/**/*.rpt
       - name: Fabrication outputs
-        run: make fab
-      - uses: actions/upload-artifact@v4
+        run: make export
+      - name: Upload fabrication outputs
         if: hashFiles('out/**') != ''
+        uses: actions/upload-artifact@v4
         with:
           name: fab-outputs
           path: out/
-          if-no-files-found: ignore
