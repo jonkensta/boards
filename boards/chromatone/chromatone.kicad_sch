@@ -1,0 +1,17 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "25fa9059-b474-40ad-8d4e-edcbfb8482a5")
+	(paper "A4")
+	(title_block
+		(title "chromatone")
+		(rev "A")
+	)
+	(lib_symbols)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
