@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate boards/chromatone/chromatone.kicad_sch from the KiCad stock libraries."""
 import os, re, sys, uuid
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+_d = os.path.dirname(os.path.abspath(__file__))
+while not os.path.isdir(os.path.join(_d, 'boardtools')):
+    _d = os.path.dirname(_d)
+sys.path.insert(0, _d)   # repo root, whatever depth this board sits at
 from boardtools import sexpr
 Q = sexpr.Quoted
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'chromatone.kicad_sch')
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'isolator.kicad_sch')
 LIBDIR = '/usr/share/kicad/symbols'
 existing = sexpr.parse(open(OUT).read())
 ROOT_UUID = sexpr.child(existing, 'uuid')[1]
@@ -80,7 +83,7 @@ def place(lib, name, ref, x, y, rot=0, value=None, footprint='', fields=None, mi
         node.append(['pin', Q(num), ['uuid', u()]])
         ex, ey = xform(dx, dy, rot, mirror)
         pins[num] = (round(x + ex, 2), round(y + ey, 2))
-    node.append(['instances', ['project', Q('chromatone'), ['path', Q('/' + ROOT_UUID), ['reference', Q(ref)], ['unit', '1']]]])
+    node.append(['instances', ['project', Q('isolator'), ['path', Q('/' + ROOT_UUID), ['reference', Q(ref)], ['unit', '1']]]])
     items.append(node)
     return pins
 

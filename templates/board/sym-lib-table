@@ -1,4 +1,4 @@
 (sym_lib_table
   (version 7)
-  (lib (name "boards")(type "KiCad")(uri "${KIPRJMOD}/../../lib/symbols/boards.kicad_sym")(options "")(descr "Shared symbols for this repo"))
+  (lib (name "boards")(type "KiCad")(uri "${KIPRJMOD}/{{LIBREL}}/symbols/boards.kicad_sym")(options "")(descr "Shared symbols for this repo"))
 )

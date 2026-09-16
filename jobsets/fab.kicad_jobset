@@ -278,7 +278,7 @@
   },
   "outputs": [
     {
-      "description": "Reports, gerbers, drill, pos, BOM, schematic PDF, STEP -> out/<board>/",
+      "description": "Reports, gerbers, drill, pos, BOM, schematic PDF, STEP -> <project dir>/out/",
       "id": "6b1e2a10-0000-4000-8000-00000000000a",
       "only": [
         "6b1e2a10-0000-4000-8000-000000000001",
@@ -291,7 +291,7 @@
         "6b1e2a10-0000-4000-8000-000000000008"
       ],
       "settings": {
-        "output_path": "${KIPRJMOD}/../../out/${PROJECTNAME}/"
+        "output_path": "${KIPRJMOD}/out/"
       },
       "type": "folder"
     },
@@ -306,7 +306,7 @@
       ],
       "settings": {
         "format": "zip",
-        "output_path": "${KIPRJMOD}/../../out/${PROJECTNAME}/${PROJECTNAME}-gerbers.zip"
+        "output_path": "${KIPRJMOD}/out/${PROJECTNAME}-gerbers.zip"
       },
       "type": "archive"
     }

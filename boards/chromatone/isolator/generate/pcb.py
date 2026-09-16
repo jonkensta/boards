@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate boards/chromatone/chromatone.kicad_pcb: placement, routing, pours, outline."""
 import math, os, sys, uuid
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+_d = os.path.dirname(os.path.abspath(__file__))
+while not os.path.isdir(os.path.join(_d, 'boardtools')):
+    _d = os.path.dirname(_d)
+sys.path.insert(0, _d)   # repo root, whatever depth this board sits at
 from boardtools import sexpr
 Q = sexpr.Quoted
 S = os.path.dirname(os.path.abspath(__file__))
-PCB = os.path.join(S, '..', 'chromatone.kicad_pcb')
+PCB = os.path.join(S, '..', 'isolator.kicad_pcb')
 FPDIR = '/usr/share/kicad/footprints'
 OX, OY = 50.0, 50.0          # board origin in KiCad sheet space
 W, H = 46.0, 30.0
@@ -15,7 +18,7 @@ def n(v): return f"{v:.4f}".rstrip('0').rstrip('.') if isinstance(v, float) else
 def P(x, y): return (OX + x, OY + y)
 
 # ---------------------------------------------------------------- netlist from the schematic
-net = sexpr.parse(open(os.path.join(S, 'chromatone.net')).read())
+net = sexpr.parse(open(os.path.join(S, 'isolator.net')).read())
 nets = {}   # name -> code
 node_net = {}  # (ref, pin) -> name
 for nn in sexpr.children(sexpr.child(net, 'nets'), 'net'):
@@ -120,7 +123,7 @@ def footprint(ref, x, y, rot=0, ref_pos=None, ref_fab=False, val_pos=None):
             seen_layer = True
         cleaned.append(el)
     cleaned.append(['path', Q('/' + comp_uuid[ref])])
-    cleaned.append(['sheetname', Q('/')]); cleaned.append(['sheetfile', Q('chromatone.kicad_sch')])
+    cleaned.append(['sheetname', Q('/')]); cleaned.append(['sheetfile', Q('isolator.kicad_sch')])
     items.append(cleaned)
 
 def seg(net_name, width, *pts, layer='F.Cu'):

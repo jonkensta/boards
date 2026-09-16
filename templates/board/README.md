@@ -12,6 +12,6 @@ _Describe the board here: what it does, key parts, and revision notes._
 From the repo root:
 
 ```sh
-make check BOARD={{NAME}}   # ERC + DRC
+make check BOARD=<id>   # ERC + DRC (id = this directory relative to boards/)
 make fab   BOARD={{NAME}}   # gerbers, drill, position, BOM, schematic PDF, STEP → out/{{NAME}}/
 ```

@@ -7,13 +7,14 @@ No KiCad Python bindings are used anywhere (see "Design" below).
 ## Layout
 
 ```
-boards/<name>/          one KiCad project per board (<name>.kicad_pro/.kicad_sch/.kicad_pcb)
+boards/<id>/            one KiCad project per board, any depth; files named after the leaf dir
+                        (boards/blinky/blinky.kicad_pro, boards/chromatone/isolator/isolator.kicad_pro)
 lib/                    shared symbols, footprints, 3D models (nickname `boards` in every project)
 templates/board/        project template used by `make new`
 jobsets/fab.kicad_jobset  the one definition of every fabrication export (GUI and CLI)
 boardtools/             parse-only Python helpers (s-expr parser, board facts, JLCPCB conversion)
 scripts/                scaffolder and smoke test
-out/<name>/             generated outputs (git-ignored)
+boards/<id>/out/        generated outputs (git-ignored)
 .github/workflows/      CI: unit tests, smoke test, ERC/DRC, fab exports in kicad/kicad:10.0
 ```
 
@@ -21,28 +22,29 @@ out/<name>/             generated outputs (git-ignored)
 
 ```sh
 make new NAME=blinky        # scaffold boards/blinky (fresh UUIDs, 50×50 mm outline, lib tables wired to lib/)
+make new NAME=proj/rev2     # nested ids work too: boards/proj/rev2/rev2.kicad_pro
 kicad boards/blinky/blinky.kicad_pro
 
 make check  BOARD=blinky    # ERC + DRC (schematic parity, zones refilled); fails on errors (STRICT=1: also warnings)
-make fab    BOARD=blinky    # check, then run jobsets/fab.kicad_jobset -> out/blinky/
-make jlcpcb BOARD=blinky    # fab, then JLCPCB-format BOM + CPL -> out/blinky/jlcpcb/
+make fab    BOARD=blinky    # check, then run jobsets/fab.kicad_jobset -> boards/blinky/out/
+make jlcpcb BOARD=blinky    # fab, then JLCPCB-format BOM + CPL -> boards/blinky/out/jlcpcb/
 make check                  # all boards
 make fab                    # all boards
 ```
 
-`make fab` produces, per board:
+`make fab` produces, per board (paths below are inside `boards/<id>/out/`):
 
 | Output | Path |
 | --- | --- |
-| ERC/DRC reports (gating violations, plus a separate warnings report) | `out/<name>/{erc,drc}.rpt`, `{erc,drc}-warnings.rpt` |
-| Gerbers (all copper layers up to In30, paste, silk, mask, edge) + `.gbrjob` | `out/<name>/` |
-| Excellon drill (PTH/NPTH split) + Gerber X2 maps | `out/<name>/drill/` |
-| Gerbers + drill zipped for fab upload (no drill maps) | `out/<name>/<name>-gerbers.zip` |
-| Pick-and-place CSV (mm, drill origin, DNP excluded) | `out/<name>/<name>-all-pos.csv` |
-| BOM CSV grouped by Value/Description/Footprint/MPN/Manufacturer/LCSC | `out/<name>/<name>-bom.csv` |
-| Schematic PDF | `out/<name>/<name>-schematic.pdf` |
-| STEP model | `out/<name>/<name>.step` |
-| JLCPCB CPL + BOM (`make jlcpcb`) | `out/<name>/jlcpcb/` |
+| ERC/DRC reports (gating violations, plus a separate warnings report) | `{erc,drc}.rpt`, `{erc,drc}-warnings.rpt` |
+| Gerbers (all copper layers up to In30, paste, silk, mask, edge) + `.gbrjob` | `./` |
+| Excellon drill (PTH/NPTH split) + Gerber X2 maps | `drill/` |
+| Gerbers + drill zipped for fab upload (no drill maps) | `<leaf>-gerbers.zip` |
+| Pick-and-place CSV (mm, drill origin, DNP excluded) | `<leaf>-all-pos.csv` |
+| BOM CSV grouped by Value/Description/Footprint/MPN/Manufacturer/LCSC | `<leaf>-bom.csv` |
+| Schematic PDF | `<leaf>-schematic.pdf` |
+| STEP model | `<leaf>.step` |
+| JLCPCB CPL + BOM (`make jlcpcb`) | `jlcpcb/` |
 
 The same jobset runs from the KiCad project manager: Jobsets → open `jobsets/fab.kicad_jobset`
 → run. Change export settings there once and both GUI and CI follow.

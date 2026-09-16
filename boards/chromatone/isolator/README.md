@@ -1,7 +1,8 @@
-# chromatone
+# chromatone/isolator
 
 Isolated SPI daughterboard for the Chromatone bike LED pole
-(design vault: `~/Source/chromatone`, see `Hardware/Daughterboard.md`).
+(design vault: `~/Source/chromatone`, see `Hardware/Daughterboard.md`). Other Chromatone
+boards would live beside this one under `boards/chromatone/`.
 
 Carries SPI clock + data from a Raspberry Pi Zero 2 W (3.3 V, domain A) to an
 SK9822/APA102 strip (5 V, domain B) through a galvanic digital isolator. The two
@@ -50,14 +51,14 @@ output stage provides the level shift.
 
 ## Ordering
 
-`make jlcpcb BOARD=chromatone` writes JLCPCB CPL/BOM files. The passives carry no
+`make jlcpcb BOARD=chromatone/isolator` writes JLCPCB CPL/BOM files. The passives carry no
 LCSC numbers yet; pick basic parts in JLCPCB's BOM tool (0603 100 nF, 10 uF/10 V,
 47 R, 1 k, green and blue 0603 LEDs). Check LED and connector orientation in the
 placement preview before paying.
 
 ## Files
 
-- `chromatone.kicad_pro` / `.kicad_sch` / `.kicad_pcb` — KiCad project
+- `isolator.kicad_pro` / `.kicad_sch` / `.kicad_pcb` — KiCad project
 - `sym-lib-table` / `fp-lib-table` — project library tables pointing at the shared `lib/` in this repo
 
 ## Build
@@ -65,7 +66,7 @@ placement preview before paying.
 From the repo root:
 
 ```sh
-make check  BOARD=chromatone   # ERC + DRC
-make fab    BOARD=chromatone   # gerbers, drill, position, BOM, schematic PDF, STEP -> out/chromatone/
-make jlcpcb BOARD=chromatone   # JLCPCB CPL + BOM -> out/chromatone/jlcpcb/
+make check  BOARD=chromatone/isolator   # ERC + DRC
+make fab    BOARD=chromatone/isolator   # gerbers, drill, position, BOM, schematic PDF, STEP -> ./out/
+make jlcpcb BOARD=chromatone/isolator   # JLCPCB CPL + BOM -> ./out/jlcpcb/
 ```

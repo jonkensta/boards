@@ -13,8 +13,9 @@ shaped the tooling so it does not get re-derived or accidentally undone.
   headless use via `kicad-cli` plus plotting. Revisit once the CI image is KiCad 11.
 - **Exports are defined once in `jobsets/fab.kicad_jobset`.** Do not add parallel `kicad-cli
   pcb export ...` recipes to the Makefile; change the jobset instead so GUI and CLI stay in sync.
-- **Output root is `out/`** and is hardcoded in both the Makefile and the jobset destinations
-  (`${KIPRJMOD}/../../out/${PROJECTNAME}`); a Make-only override would desynchronise them.
+- **Outputs live in `boards/<id>/out/`**, hardcoded in both the Makefile and the jobset destinations
+  (`${KIPRJMOD}/out/`), which keeps them depth-independent; a Make-only override would
+  desynchronise them. `.gitignore` ignores any `out/` directory.
 - **`boardtools/` is parse-only** (s-expressions, JSON, CSV). Anything that modifies a design
   goes through `kicad-cli` or the jobset.
 - Run `make test && make smoke` before committing tooling changes. Smoke covers a 2-layer and a
@@ -22,11 +23,13 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 
 ## Working in this repo
 
-- Layout: `boards/<name>/` projects, `lib/` shared symbols/footprints/3D (nickname `boards`),
+- Layout: `boards/<id>/` projects (any depth; files named after the leaf directory, e.g.
+  `boards/chromatone/isolator/isolator.kicad_pro`; the id is the path relative to `boards/`), `lib/` shared symbols/footprints/3D (nickname `boards`),
   `templates/board/` scaffold source, `jobsets/` exports, `boardtools/` Python, `scripts/`
   scaffolder + smoke, `out/` generated (git-ignored). `boards/` is empty until the first design.
-- Entry points: `make new NAME=x`, `make check|fab|jlcpcb [BOARD=x]`, `make test`, `make smoke`.
-  `make help` prints the list. Per-board targets are `erc-x`, `drc-x`, `check-x`, `export-x`.
+- Entry points: `make new NAME=id`, `make check|fab|jlcpcb [BOARD=id]`, `make test`, `make smoke`.
+  `make help` prints the list. Per-board targets are `erc/<id>`, `drc/<id>`, `check/<id>`,
+  `export/<id>` (slash form so the pattern stem may itself contain slashes).
 - **Adding a jobset job:** copy an existing block in `jobsets/fab.kicad_jobset`, give it a fresh
   UUID `id`, and add that id to the `only` list of the destinations that should include it
   (the folder destination lists every job except the map-less drill job; the archive lists
@@ -34,7 +37,8 @@ shaped the tooling so it does not get re-derived or accidentally undone.
   Job ids are the fixed `6b1e2a10-0000-4000-8000-0000000000NN` series.
 - **Editing template files:** `templates/board/board.kicad_pro` is the KiCad-10-native project
   with the baseline design rules; `board.kicad_sch` and `board.kicad_pcb` use literal UUIDs that
-  `scripts/new-board.py` rewrites consistently (same template UUID -> same fresh UUID, so the
+  `scripts/new-board.py` rewrites consistently (it also fills `{{LIBREL}}` in the lib tables
+  with the right number of `..` for the board's depth) (same template UUID -> same fresh UUID, so the
   project's `sheets` entry keeps matching the schematic). Keep `{{NAME}}` placeholders only in
   text files. A jobset or DRC run creates `<name>.kicad_prl` next to the project; it is ignored.
 - **Smoke fixtures are edited textually** (`sed`, small Python) rather than via pcbnew, on
@@ -89,7 +93,7 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 - Docker image `kicad/kicad:10.0` (Debian) has `kicad-cli` and python3 but not `zip`; the
   jobset's archive destination produces the zip, so only `make`, `unzip` are installed in CI.
   Run the container as root (`options: --user root`) for apt.
-- Make gotcha: pattern-rule targets (`erc-%`) must not be listed in `.PHONY`, or make skips the
+- Make gotcha: pattern-rule targets (`erc/%`) must not be listed in `.PHONY`, or make skips the
   implicit-rule search and reports "Nothing to be done". `make VAR=x` beats `VAR := x` in the
   Makefile; use `override` for values that must stay fixed.
 - `kicad-cli sch export bom` and the `sch_export_bom` job accept `${QUANTITY}` as a field; in a
@@ -101,9 +105,9 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 - `python3 -m unittest discover -s boardtools/tests -t .` is what `make test` runs; tests use
   handwritten CSV/s-expr fixtures, so jobset export regressions are only caught by smoke.
 
-## Generating KiCad files from Python (learned on boards/chromatone)
+## Generating KiCad files from Python (learned on boards/chromatone/isolator)
 
-`boards/chromatone/generate/` is the worked example: `schematic.py` and `pcb.py` write native
+`boards/chromatone/isolator/generate/` is the worked example: `schematic.py` and `pcb.py` write native
 `.kicad_sch`/`.kicad_pcb` with `boardtools.sexpr` (parse + `dumps`, `Quoted` marks atoms that
 must be re-quoted). Facts that cost time to discover:
 
@@ -137,7 +141,7 @@ must be re-quoted). Facts that cost time to discover:
   board looks unfilled in the GUI and in renders.
 - `kicad-cli pcb render --side top|bottom --zoom 1.6 --width W --height H --background opaque`
   is the quickest visual check; `sch export pdf` + `pdftoppm -r 300 -png -x -y -W -H` for crops.
-- SPI-to-LED specifics recorded in `boards/chromatone/README.md` (SK9822 has no VIH spec, only
+- SPI-to-LED specifics recorded in `boards/chromatone/isolator/README.md` (SK9822 has no VIH spec, only
   VDD+0.3 V abs max; ISO7720 is 2/0, fail-safe high, PWD up to 5.9 ns; start at 8 MHz).
 
 ## Review history

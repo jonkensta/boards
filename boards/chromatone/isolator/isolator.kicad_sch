@@ -2148,7 +2148,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "af3d1e56-e8c3-48c9-9b82-7964ddf106ee")
+		(uuid "1cbb33da-78a4-494c-8d1c-e6bf181e733d")
 		(property "Reference" "U1"
 			(at 93.98 41.3 0)
 			(effects
@@ -2220,31 +2220,31 @@
 			)
 		)
 		(pin "1"
-			(uuid "6d2c106d-38fe-48b4-8fc9-5ad15dce3ce2")
+			(uuid "26310f57-aa2f-48b6-b358-d7fa75aab9b3")
 		)
 		(pin "2"
-			(uuid "b9af4e43-5344-402e-ba2a-fa786d2e6543")
+			(uuid "a5ad1c90-aa5b-4e8e-a2de-4ebf93aa1530")
 		)
 		(pin "3"
-			(uuid "fc12fed9-737a-4d8d-82c6-420a73c4d49e")
+			(uuid "aad18cfe-bc6e-4b18-be40-90ef4561fa38")
 		)
 		(pin "4"
-			(uuid "484caec3-1440-4392-aad7-7cb38f6ca28b")
+			(uuid "341b2de9-5bd0-4d00-b130-f2e12ac0f270")
 		)
 		(pin "5"
-			(uuid "12adcd40-4523-494b-a69f-bcab5c01a7f2")
+			(uuid "6926b944-3bcb-4a02-b2b5-1c36adf743ef")
 		)
 		(pin "6"
-			(uuid "33c76b02-e705-4e72-b10e-917015ebffa3")
+			(uuid "2ecbdaa6-b49c-45d6-a33a-102a4fb64075")
 		)
 		(pin "7"
-			(uuid "fc3d49a7-383e-42b3-914f-6b65bb6c0339")
+			(uuid "225201d4-fd27-4b04-abd6-c38e42232a09")
 		)
 		(pin "8"
-			(uuid "6b30a6ce-6d96-4e00-bf21-00e1ba8ea93e")
+			(uuid "b37cf9fe-493b-4b33-9bc4-6e5f7d830170")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "U1")
 					(unit 1)
@@ -2260,7 +2260,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "852669e8-c65b-4228-9adc-478bd3c884aa")
+		(uuid "8d0c3e98-f8b0-4826-a82f-2d2bd06137bd")
 		(property "Reference" "J1"
 			(at 54.61 38.06 0)
 			(effects
@@ -2332,19 +2332,19 @@
 			)
 		)
 		(pin "1"
-			(uuid "61d3f97b-90e7-4e84-aa23-c8e82d19daa4")
+			(uuid "57b444ea-9c0b-4a7d-8bb2-e0a252e5f9f1")
 		)
 		(pin "2"
-			(uuid "93bf7a82-09e5-40d0-8e99-a8caa2cf6ee3")
+			(uuid "cc455c3e-8837-4b1f-b264-8a93856661ef")
 		)
 		(pin "3"
-			(uuid "55ea7244-7f0a-4169-965f-b2b2067b2f89")
+			(uuid "6fcae44d-599e-4e80-bc7f-483ce2b845dc")
 		)
 		(pin "4"
-			(uuid "d2ebd10a-519a-47e2-861f-7d810d87d687")
+			(uuid "57355c94-1410-4baa-a5cb-89aae3b6620a")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "J1")
 					(unit 1)
@@ -2361,7 +2361,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "beddb240-90dc-45e4-a6c8-a18605b2ca4c")
+		(uuid "99bdbadd-0906-4c53-ab29-90f6f87fbc31")
 		(property "Reference" "J2"
 			(at 142.05 38.06 0)
 			(effects
@@ -2433,19 +2433,19 @@
 			)
 		)
 		(pin "1"
-			(uuid "800498ff-482b-4ae0-bbfc-00217e3ce7dd")
+			(uuid "12720c89-c15d-4ce2-8cf8-77e3f0a9455a")
 		)
 		(pin "2"
-			(uuid "e76feec8-a490-4226-9d89-10bab0e0f235")
+			(uuid "57dedca0-d503-43a9-88c5-17f65963b1b7")
 		)
 		(pin "3"
-			(uuid "2075c361-7d0d-4ab9-b021-9ab6ea46d4d1")
+			(uuid "61e3fdc4-36af-45ef-ab54-af6035fb439d")
 		)
 		(pin "4"
-			(uuid "4f20c089-8b87-466b-8cb0-7cd70ca11567")
+			(uuid "904a7050-3a2f-4c5a-8ccf-4fbafba1c994")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "J2")
 					(unit 1)
@@ -2462,7 +2462,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e948c9f9-763b-4e36-b881-d4c46b927ff6")
+		(uuid "1fc8a900-1b3f-4f49-9fd1-924d022806cf")
 	)
 	(wire
 		(pts
@@ -2473,7 +2473,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e49479c7-6124-46ab-bc1c-f964938b429f")
+		(uuid "32ff1bc0-46bb-475f-9d97-a08ccd5ee9fc")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -2483,7 +2483,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "1782de63-2ec9-4d82-a0b4-cda50ddb4396")
+		(uuid "0b0b2084-73fa-488f-b4ad-db3e2af4cc63")
 		(property "Reference" "#PWR01"
 			(at 66.04 41.91 0)
 			(effects
@@ -2529,10 +2529,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "0d242937-c0b4-4107-b986-e98763fe6928")
+			(uuid "77d01c83-3622-4180-8770-18a1a7ffd69c")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR01")
 					(unit 1)
@@ -2549,7 +2549,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "425def72-c932-4ff3-8aa6-1c1205882a1e")
+		(uuid "3bed1028-3298-4852-b4c3-97bac77df7f9")
 	)
 	(wire
 		(pts
@@ -2560,7 +2560,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "cc27c0eb-8a03-4174-b333-79d4e677f090")
+		(uuid "4d2d19dd-0aa6-47a5-acae-cc5bb47feb48")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -2570,7 +2570,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "84b309b1-062e-47a9-acf5-fcca899f3af3")
+		(uuid "d718bb05-7f3b-470a-bcc9-44d495745774")
 		(property "Reference" "#PWR02"
 			(at 66.04 54.61 0)
 			(effects
@@ -2616,10 +2616,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "73b5972b-a314-436c-a415-604555615974")
+			(uuid "451d96c6-7148-4bde-8618-673c3f4d4d85")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR02")
 					(unit 1)
@@ -2636,7 +2636,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "094dbd0f-90bd-476c-bf3e-4449b00d6b66")
+		(uuid "6c1748c3-096b-48c0-9981-594f88fb6d02")
 	)
 	(wire
 		(pts
@@ -2647,7 +2647,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7f2ce02c-2f66-4be8-a796-72aee99fcff9")
+		(uuid "419970d2-8fcd-49ae-a8b0-14efc540447f")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -2657,7 +2657,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "3d85a68e-091a-42ce-a8c1-f8d582c4d8d3")
+		(uuid "29f7a5ee-63ef-409c-986e-1b1b61b6adc3")
 		(property "Reference" "#PWR03"
 			(at 91.44 41.91 0)
 			(effects
@@ -2703,10 +2703,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "71ad93ae-dac9-49d2-a522-37a8e6adf124")
+			(uuid "2e7e35fe-e06f-4eb4-8857-a6590ed7dde8")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR03")
 					(unit 1)
@@ -2723,7 +2723,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ccdd4f04-1ecc-49d9-99a5-ec25d1addd1a")
+		(uuid "adf4a1a6-3b27-4298-8129-f014e4586576")
 	)
 	(wire
 		(pts
@@ -2734,7 +2734,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0843001e-4662-4a84-92e0-5cc97170bc63")
+		(uuid "1d30805b-61a9-4997-9622-4a6d51e8d52f")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -2744,7 +2744,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "1e5439dd-b982-4201-a648-c1ac00b5be84")
+		(uuid "0e17d7ac-cebc-4f2b-96c1-72f43696d2f3")
 		(property "Reference" "#PWR04"
 			(at 91.44 54.61 0)
 			(effects
@@ -2790,10 +2790,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "5a108a4b-4abe-43b7-ad2b-4ce33c61cea9")
+			(uuid "917335b1-1864-412a-aaf7-8523d923268b")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR04")
 					(unit 1)
@@ -2810,7 +2810,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b3664e4f-c913-4bc6-aef6-b604c6e00b4e")
+		(uuid "c27e1071-7ef7-45df-8de9-2c81826b3d2a")
 	)
 	(wire
 		(pts
@@ -2821,13 +2821,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7e75955f-1edd-4923-8d0f-5044b461a3e0")
+		(uuid "21831e9d-007d-4d93-a7bf-c24435f7d6f6")
 	)
 	(junction
 		(at 73.66 48.26)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "4c059e8c-22a6-4954-87ed-650f919dde4e")
+		(uuid "101597d1-fabd-495c-92e8-6328b0051c1e")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -2837,7 +2837,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "ace66fa9-e94a-4505-9e09-350e5927eaac")
+		(uuid "07cd8944-ff0a-4540-b7b9-c1bd8fb2222f")
 		(property "Reference" "TP1"
 			(at 71.66 42.76 0)
 			(effects
@@ -2882,10 +2882,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "05d3d49e-5164-452e-b73b-b0cc59d3e6bd")
+			(uuid "a5c5bd5d-3060-4f2c-864a-bae18a9f2350")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "TP1")
 					(unit 1)
@@ -2902,7 +2902,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "22f512a9-a7c2-4985-9a25-923e3e2fb300")
+		(uuid "292fa63d-9e23-4fef-b904-991251fb6239")
 	)
 	(wire
 		(pts
@@ -2913,13 +2913,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "84cea00f-08f2-4087-88c4-0a50f7ef6e66")
+		(uuid "6d0914e9-9082-4909-9b5f-288dc170eb72")
 	)
 	(junction
 		(at 78.74 50.8)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "40f0ed55-9a10-4d7c-b0a7-dc6de179c618")
+		(uuid "78fb0b9a-6ef7-4b82-a149-c1c18551fc80")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -2929,7 +2929,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "c99b72da-112a-4b13-9d55-a2420a3541a1")
+		(uuid "8e28e599-6537-4fda-979c-cef3f704b369")
 		(property "Reference" "TP2"
 			(at 76.74 57.5 0)
 			(effects
@@ -2974,10 +2974,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "8b289f1b-3b90-462f-96e1-72a218f3df94")
+			(uuid "d19fa00a-a1be-4cc3-9d20-0108c46b1a66")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "TP2")
 					(unit 1)
@@ -2994,7 +2994,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "5f225c3b-d5e4-437f-b36e-c2eaf325ead5")
+		(uuid "bdbe9080-559e-4b38-ab8e-ddf73658eeb2")
 	)
 	(wire
 		(pts
@@ -3005,7 +3005,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a5bd294a-57c1-4926-84b5-6e53e078d185")
+		(uuid "0419804f-ee7c-4ae7-8463-e6d03606ca23")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -3015,7 +3015,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "d1f4a2d7-41e7-4429-8788-32a3de2439f6")
+		(uuid "f6e70260-eaab-44f3-aec8-4ef623332a63")
 		(property "Reference" "#PWR05"
 			(at 116.84 41.91 0)
 			(effects
@@ -3061,10 +3061,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "2cbf1cab-702f-4d55-9eb8-529f0019b57c")
+			(uuid "60f0ff13-1537-44f5-81c8-2626f7828bdd")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR05")
 					(unit 1)
@@ -3081,7 +3081,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "774d3511-0707-46fc-855f-949e81535bea")
+		(uuid "74b0b4d6-0083-4b61-b578-a4712ffab0c0")
 	)
 	(wire
 		(pts
@@ -3092,7 +3092,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ad034cf7-ff47-41e9-9ba2-e0a8fb0258b7")
+		(uuid "2dcc6250-a0c5-437a-8ebf-211dde81d0ff")
 	)
 	(symbol
 		(lib_id "power:GNDPWR")
@@ -3102,7 +3102,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "05ae6ac2-2932-44b6-a09b-aee356a9da44")
+		(uuid "eb600661-3cc3-4226-98c5-773f91106d17")
 		(property "Reference" "#PWR06"
 			(at 116.84 54.61 0)
 			(effects
@@ -3148,10 +3148,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "9e70cfdc-4a9d-43ab-9152-f47f553ee5b3")
+			(uuid "218f163e-ce26-459a-bd3d-8a5aa9669cb2")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR06")
 					(unit 1)
@@ -3168,7 +3168,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6e413327-6ae7-4fa2-a450-69840e108a75")
+		(uuid "53778e67-da1d-4ad7-94b2-d39accd303df")
 	)
 	(wire
 		(pts
@@ -3179,7 +3179,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "34a5a1a8-7d1b-458c-875e-1b4360be0337")
+		(uuid "0a56336d-91c9-494c-96d4-07c82c974a3a")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -3189,7 +3189,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "7c316db2-2474-42e9-9a95-626c44a25be9")
+		(uuid "9bce6f70-1107-427e-aa42-0532ec376f05")
 		(property "Reference" "#PWR07"
 			(at 140.97 41.91 0)
 			(effects
@@ -3235,10 +3235,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "1471c218-8e5b-407c-9c34-2c5228012719")
+			(uuid "45a20386-ea04-4c31-9264-90a52c030af2")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR07")
 					(unit 1)
@@ -3255,7 +3255,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a03e0e3c-67cb-4bb4-aaee-6cda30d2e867")
+		(uuid "8f5e8b51-40b7-4052-b81b-cc60241c2d64")
 	)
 	(wire
 		(pts
@@ -3266,7 +3266,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f691a60a-c6ae-44d1-ad16-a75047a5915b")
+		(uuid "4e458bed-a168-4a70-a9f5-9edf5b3d2b0b")
 	)
 	(symbol
 		(lib_id "power:GNDPWR")
@@ -3276,7 +3276,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "544fb04e-6bfe-4a3f-916c-2f62dadc35fe")
+		(uuid "398be076-b771-40a0-8cc9-0564e42ff39a")
 		(property "Reference" "#PWR08"
 			(at 140.97 54.61 0)
 			(effects
@@ -3322,10 +3322,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "ab4eae60-0413-4e4e-8c57-b2db686281a3")
+			(uuid "dcca6cb1-6641-406c-8240-cc4511914a4e")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR08")
 					(unit 1)
@@ -3341,7 +3341,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "439d42b7-b5f3-4f05-9b2d-0675b9d437d8")
+		(uuid "ce28c0d1-a77e-4648-b879-3e8feec65b26")
 		(property "Reference" "R1"
 			(at 118.92 45.96 90)
 			(effects
@@ -3386,13 +3386,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "a0dfe48f-d9db-40fc-b655-f3d2764ac23c")
+			(uuid "49552411-9333-4890-b835-be4fa8c09988")
 		)
 		(pin "2"
-			(uuid "404776d8-651a-47c6-8a93-3f4b17b32b4e")
+			(uuid "cd42ed17-669d-4af7-81d4-75577acfca55")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "R1")
 					(unit 1)
@@ -3408,7 +3408,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "fb0bc552-95c8-4a41-aa44-1120a3685eb8")
+		(uuid "cfc419d1-6b40-405e-8353-4f578d8562eb")
 		(property "Reference" "R2"
 			(at 118.92 53.1 90)
 			(effects
@@ -3453,13 +3453,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "e154ee09-27a1-4c72-91e8-12bce5ac1382")
+			(uuid "e0f5672f-05cd-436e-b101-c70408600b12")
 		)
 		(pin "2"
-			(uuid "9e95fb68-90be-482d-9be3-31d8f6905a33")
+			(uuid "00ce17ac-714f-4759-9c98-39e99c8830c8")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "R2")
 					(unit 1)
@@ -3476,7 +3476,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9e5b6432-130b-4d94-a0fd-ad3399e97310")
+		(uuid "85ebe9a1-f095-4eef-a741-860298373b55")
 	)
 	(wire
 		(pts
@@ -3487,7 +3487,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b13201f0-5e52-48c8-a2f3-3c6915cb5e3a")
+		(uuid "bd466eaf-3e54-45ea-bae5-f5dead76df16")
 	)
 	(wire
 		(pts
@@ -3498,13 +3498,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "af4e5a2a-d0aa-439e-95ef-7ace638489e6")
+		(uuid "7be97204-919d-491d-bebf-946bbccbe188")
 	)
 	(junction
 		(at 134.62 48.26)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "3de19f39-f270-417e-b6dd-0eb0cf64d1e8")
+		(uuid "e5f7a3cc-1260-464e-8479-3fbc0ef204f7")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -3514,7 +3514,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "98ff6a90-5653-4391-86f5-dbb6a4524e26")
+		(uuid "796e86ea-d7c1-46be-a49d-b6932c15deff")
 		(property "Reference" "TP3"
 			(at 132.62 42.76 0)
 			(effects
@@ -3559,10 +3559,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "3ae05e44-2454-4360-b365-98ce64e88ace")
+			(uuid "e5d5d3d1-ff64-4027-b078-35055c9d127e")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "TP3")
 					(unit 1)
@@ -3579,7 +3579,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "248335b2-8baf-4fac-840b-cb4667cf9b14")
+		(uuid "d525b30e-7857-484e-807e-dfc84fe71019")
 	)
 	(wire
 		(pts
@@ -3590,7 +3590,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "412dba1f-c666-4122-8fc2-1783c3e583fe")
+		(uuid "a6e2fa38-8b2b-4021-a784-e5c07303980d")
 	)
 	(wire
 		(pts
@@ -3601,13 +3601,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e7c32969-9896-48e2-bb97-da68d1ad1125")
+		(uuid "fa7894a5-ee2c-4a33-aefa-434629ac1f3f")
 	)
 	(junction
 		(at 134.62 50.8)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "8cdd49a3-9356-4cbe-9498-7859bd4c9b9c")
+		(uuid "31cb6770-b46c-4383-a1cc-9501afba1f04")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -3617,7 +3617,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "ee969592-156f-4f68-970d-148cefc5723e")
+		(uuid "e8c714e7-0f6c-4f43-bab0-624392ea8923")
 		(property "Reference" "TP4"
 			(at 132.62 57.5 0)
 			(effects
@@ -3662,10 +3662,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "a00fed7b-50c2-4ff4-9b63-aa9911efa89e")
+			(uuid "71e66e71-19c6-4655-9e3b-07e9160cb6e3")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "TP4")
 					(unit 1)
@@ -3681,7 +3681,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "92c210d9-c290-4cd6-90a8-48802211fefd")
+		(uuid "aaae7241-2ab9-4238-9f1b-98ead7656bc5")
 		(property "Reference" "C1"
 			(at 73.89 68.58 0)
 			(effects
@@ -3726,13 +3726,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "b0ff7ab0-38fc-42dc-ae73-3c7e21bb782e")
+			(uuid "dcdfd49e-40e4-4100-937a-50f255ef2be9")
 		)
 		(pin "2"
-			(uuid "34a129ae-4946-4b73-bd2e-92f805e65576")
+			(uuid "390b738e-c7af-4d61-879b-210ef6e07200")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "C1")
 					(unit 1)
@@ -3749,7 +3749,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0a854453-e4f9-4ced-87d2-6709812a2db1")
+		(uuid "cf24e3dc-8c96-4494-928a-b4a31854acbf")
 	)
 	(wire
 		(pts
@@ -3760,7 +3760,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "22ee1949-070d-457a-a04e-9ce905250c55")
+		(uuid "3488edfe-76f7-443c-9223-264b5e7884a1")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -3770,7 +3770,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "5c9d7db0-807a-443f-b22c-7deac40209fe")
+		(uuid "58bc1cfd-39dc-49ee-9535-44bb7a338199")
 		(property "Reference" "#PWR09"
 			(at 74.93 62.23 0)
 			(effects
@@ -3816,10 +3816,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "69d675c6-7b5f-4b8e-bdd6-fbd09fcad310")
+			(uuid "ba0f34e3-daa7-4401-9e27-78a0e01cca1f")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR09")
 					(unit 1)
@@ -3835,7 +3835,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "0661c79a-bab8-4129-97b5-d955313672d4")
+		(uuid "97247cfb-c68d-4d64-be77-655f80ce6e36")
 		(property "Reference" "#PWR10"
 			(at 74.93 74.93 0)
 			(effects
@@ -3881,10 +3881,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "bd3b1951-edd1-41ed-a802-f4ef8c5e8a2b")
+			(uuid "0c56f2d3-4d88-4b35-979c-69eee3eb3752")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR10")
 					(unit 1)
@@ -3900,7 +3900,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "f7a3baa9-ce95-48bf-9aa2-81656fd09939")
+		(uuid "d4502ae6-53be-4844-90af-d8a3b5e95546")
 		(property "Reference" "C2"
 			(at 84.05 68.58 0)
 			(effects
@@ -3945,13 +3945,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "f51600f4-6b03-4a41-a204-3b3c461d7980")
+			(uuid "57454f60-2154-4db2-afaf-c167e3b91877")
 		)
 		(pin "2"
-			(uuid "c842734b-212f-4f38-98e8-cc8ba09d5588")
+			(uuid "433da563-39f0-495b-bdd0-5a29ec31acaa")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "C2")
 					(unit 1)
@@ -3968,7 +3968,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c6643293-6c72-4aa4-a654-6a1a3ba76330")
+		(uuid "9c4009b3-92a2-440b-bf01-e93226f389b5")
 	)
 	(wire
 		(pts
@@ -3979,7 +3979,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "934203c9-8a43-486d-b946-5f2835bbaa18")
+		(uuid "91530a6b-c38b-40a3-87ba-8b6e3a095b80")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -3989,7 +3989,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "6681abaa-2ce4-45a0-ac67-588f03520c1c")
+		(uuid "4f35cc90-e199-44cc-8c9b-9c5df24a6e75")
 		(property "Reference" "#PWR11"
 			(at 85.09 62.23 0)
 			(effects
@@ -4035,10 +4035,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "474051ef-9b53-4d54-a396-96d73e1e5592")
+			(uuid "d23a7dce-429c-4342-b646-b987f8e48ac5")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR11")
 					(unit 1)
@@ -4054,7 +4054,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "5c621d94-6af5-46f7-940e-70adb12fa007")
+		(uuid "43c46eab-cf4d-4172-8d6a-94a1575cabc6")
 		(property "Reference" "#PWR12"
 			(at 85.09 74.93 0)
 			(effects
@@ -4100,10 +4100,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "519ff165-25cd-4111-8549-768fb2d0d9f8")
+			(uuid "ddafb910-0315-4bcc-b819-c163e091bdbf")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR12")
 					(unit 1)
@@ -4120,13 +4120,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d900714e-3983-4f2b-bac7-4dc9ca277e99")
+		(uuid "f92bd294-af7a-4ca8-af40-4cd7956a9211")
 	)
 	(junction
 		(at 72.39 63.5)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "159f7793-507c-4c80-bbf0-6033da57e30d")
+		(uuid "5cff5fbb-2e79-4e83-8868-5a906ada51f9")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -4136,7 +4136,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "39d5928d-b59a-4d5c-9302-0ee688011608")
+		(uuid "02725bca-c292-4cdc-95b9-3aa0b08e66f6")
 		(property "Reference" "#FLG01"
 			(at 67.31 62.23 0)
 			(effects
@@ -4183,10 +4183,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "b65a0a10-6b03-4ea8-a8df-3d9eb6468d33")
+			(uuid "1295c32c-6265-41ba-a3cb-8553aa0f2d42")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#FLG01")
 					(unit 1)
@@ -4203,13 +4203,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "60d1a1fd-90b1-409e-9132-b3f083975bff")
+		(uuid "f5f620cf-3dae-4a8e-b47a-aa6ec8a56793")
 	)
 	(junction
 		(at 72.39 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "098873eb-7ab0-496c-b7e9-d286364f3558")
+		(uuid "a60eedfa-e30e-42b6-a498-4c710fa08224")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -4219,7 +4219,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "e2f01cc2-da83-4e30-8a06-a22547e28dd7")
+		(uuid "5ccba41f-63d5-4a5e-b258-e44ad2fef004")
 		(property "Reference" "#FLG02"
 			(at 67.31 74.93 0)
 			(effects
@@ -4266,10 +4266,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "72c5b8d0-cf33-45f8-ae55-573eb6337626")
+			(uuid "a89bb334-e346-4c4f-b244-771522449d21")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#FLG02")
 					(unit 1)
@@ -4281,7 +4281,7 @@
 		(at 68.58 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "e695bbb0-2bc4-4de8-a181-9b3ffbe664c4")
+		(uuid "6ac3db7b-0e8a-4c47-8157-dd1d2afd35fe")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -4291,7 +4291,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "88bc7556-001a-4af2-87d5-f8d8f512d1a5")
+		(uuid "c211fcb5-98b8-4a26-b207-153563f9db92")
 		(property "Reference" "TP5"
 			(at 66.58 82.9 0)
 			(effects
@@ -4336,10 +4336,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "58859715-25ad-4afc-9ab4-842e1af9e831")
+			(uuid "62a80065-f4e9-4405-a7ea-37c5822758ea")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "TP5")
 					(unit 1)
@@ -4355,7 +4355,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "c070d003-8d3e-4228-9b5f-388a8d7d442c")
+		(uuid "e2aea761-084c-4f6a-88d3-b790e25ea82d")
 		(property "Reference" "R3"
 			(at 96.75 66.04 0)
 			(effects
@@ -4400,13 +4400,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "dcaf2743-37d9-4953-bcd4-5d3cc89e6090")
+			(uuid "a20482f1-2596-4aa6-9872-2629512472f6")
 		)
 		(pin "2"
-			(uuid "75a4a9e4-d610-4c1c-b452-c9e3d9577993")
+			(uuid "929003fc-a063-4c5f-b4eb-49562a1272d7")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "R3")
 					(unit 1)
@@ -4422,7 +4422,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "bb77e618-d8ad-450d-bbd4-826ac2145fd4")
+		(uuid "0c6ec772-2b09-4e46-9a84-7b8cb92865bd")
 		(property "Reference" "D1"
 			(at 96.75 76.2 90)
 			(effects
@@ -4467,13 +4467,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "35dc4119-5c1b-4886-af81-7421be9ad114")
+			(uuid "d0ac6842-c8fc-4b56-b03a-ef96f3c3c586")
 		)
 		(pin "2"
-			(uuid "b5f891fb-b8f9-42a7-b3f4-fab05142ff42")
+			(uuid "6728262f-5ed4-4f1a-a12e-986c6622c369")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "D1")
 					(unit 1)
@@ -4490,7 +4490,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "860b8796-6b72-4407-b37a-8cc4182ef7e1")
+		(uuid "35b0eeb6-07bc-404b-a84d-12054043eb2c")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -4500,7 +4500,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "5c5fae3b-056f-41c2-81e6-798c8c6bec56")
+		(uuid "23f4c06a-07f1-4a81-bc1f-1a3843c55977")
 		(property "Reference" "#PWR13"
 			(at 97.79 59.69 0)
 			(effects
@@ -4546,10 +4546,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "ac1a5024-f87c-429a-b2aa-82d89b89b080")
+			(uuid "cc103197-22c6-4d96-8ca0-83f7b8fcbd6b")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR13")
 					(unit 1)
@@ -4566,7 +4566,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d10e6759-32f4-4bee-90f5-bc1eda2cb881")
+		(uuid "a257ce69-b53b-4f67-aca8-6fd888cd97c5")
 	)
 	(wire
 		(pts
@@ -4577,7 +4577,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ff0b8ff6-6d11-4d06-9103-f2d2b4d0fa4a")
+		(uuid "d6ef2fb0-4c1e-4deb-9485-74e0b8d42789")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4587,7 +4587,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "788c1f6d-ebde-4de4-bb4b-8bede63ac6cc")
+		(uuid "dd266244-a27e-4658-a2fd-29ba323214e4")
 		(property "Reference" "#PWR14"
 			(at 97.79 82.55 0)
 			(effects
@@ -4633,10 +4633,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "c4aece93-6487-4a2b-87d1-d9fad4c09416")
+			(uuid "83f2b97e-de58-40a6-ae98-ca9a035d74e0")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR14")
 					(unit 1)
@@ -4652,7 +4652,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "1aa23daf-57ee-4541-bfa6-dd03f0864221")
+		(uuid "e3ced7d3-ac95-4971-a3ab-af302aac4284")
 		(property "Reference" "C3"
 			(at 123.42 68.58 0)
 			(effects
@@ -4697,13 +4697,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "b4254b56-a074-4323-a055-38d402f01884")
+			(uuid "154c058a-425d-4eec-acec-cc4cae966446")
 		)
 		(pin "2"
-			(uuid "62cce38a-0fe3-4364-8f94-a143c6d63b06")
+			(uuid "161e06ed-0929-4c9b-97f9-a2e365888877")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "C3")
 					(unit 1)
@@ -4720,7 +4720,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "873c7b58-04a1-4765-aa1b-4cf3c680024c")
+		(uuid "f8ff57f4-8f2d-4c1e-abd0-081e3c9e29d0")
 	)
 	(wire
 		(pts
@@ -4731,7 +4731,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a13b5ebd-e0e4-4880-a3b1-bdc6a3da58b7")
+		(uuid "b10e27f3-643b-490a-8bbd-78fc52158cda")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -4741,7 +4741,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "ed693382-a863-40a9-adf1-2437cce71174")
+		(uuid "0609efcd-2243-475c-a9ba-524334a9adf4")
 		(property "Reference" "#PWR15"
 			(at 124.46 62.23 0)
 			(effects
@@ -4787,10 +4787,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "a1152f37-43c1-4a30-a6d7-1e4fe236b171")
+			(uuid "79ee4b88-fc7a-474c-8128-983b4336e9d8")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR15")
 					(unit 1)
@@ -4806,7 +4806,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "cfcf1e9a-9a3f-487f-8545-988e38105935")
+		(uuid "c77a3a8a-d958-4c6a-bbe2-1c6a535fc817")
 		(property "Reference" "#PWR16"
 			(at 124.46 74.93 0)
 			(effects
@@ -4852,10 +4852,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "01296c5c-bfd0-4025-8767-de2fd6c1efb9")
+			(uuid "caca7b74-abc6-41d6-9120-7a83aeb3bc3f")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR16")
 					(unit 1)
@@ -4871,7 +4871,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "36412dd9-5b51-44a5-b704-83636dcb7487")
+		(uuid "40fd2ca7-7234-495d-bb87-026a5568741f")
 		(property "Reference" "C4"
 			(at 133.58 68.58 0)
 			(effects
@@ -4916,13 +4916,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "47795395-0678-4b36-b00d-1278e55990e7")
+			(uuid "4776ff54-dd0a-4901-9c82-8109b4a070e9")
 		)
 		(pin "2"
-			(uuid "9e7c501b-204b-41d7-8383-c86fb76f5e35")
+			(uuid "f05bc80a-6c14-4e28-ad21-ed39118dc875")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "C4")
 					(unit 1)
@@ -4939,7 +4939,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "37eae748-d160-4cd3-98a5-3bcffe2f8467")
+		(uuid "f5d25ecc-eac2-48e4-b250-6b5410040800")
 	)
 	(wire
 		(pts
@@ -4950,7 +4950,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0558b7c7-09e9-4af8-b5cc-835a6193564b")
+		(uuid "729545f0-d2d9-4a86-a64b-e59b5b4d4f26")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -4960,7 +4960,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "20f3d8a0-964a-49a4-a098-18163d1a0cb7")
+		(uuid "08a54eb2-bbb2-41a8-a422-fae3d56ad776")
 		(property "Reference" "#PWR17"
 			(at 134.62 62.23 0)
 			(effects
@@ -5006,10 +5006,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "46f156c7-4e6b-4d79-a004-46428fd7e713")
+			(uuid "8767624c-5593-464e-8648-06717aa1c3ac")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR17")
 					(unit 1)
@@ -5025,7 +5025,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "bb8fc2bd-e374-43ff-84c8-86c8f9c4a2e3")
+		(uuid "c71d4d06-5aed-4003-8afb-bfd3ceba61c4")
 		(property "Reference" "#PWR18"
 			(at 134.62 74.93 0)
 			(effects
@@ -5071,10 +5071,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "a563ea6c-1cc4-44e4-8ea4-3d865cc56ed3")
+			(uuid "7b10e277-ae76-4557-a9c3-9d1f4190a83b")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR18")
 					(unit 1)
@@ -5091,13 +5091,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "81290ab9-ca59-41fe-93f1-ebb7b0b7204f")
+		(uuid "90594b08-f686-4edb-9054-f29149d3f567")
 	)
 	(junction
 		(at 121.92 63.5)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "62005690-fc58-46b8-977b-b645e158f98b")
+		(uuid "18208eb3-00e4-483a-9213-8b697a956733")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -5107,7 +5107,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "148f0063-722e-44f3-9906-0c2e1dc40412")
+		(uuid "724d14a8-f4d8-4571-8f14-f468abcc2471")
 		(property "Reference" "#FLG03"
 			(at 116.84 62.23 0)
 			(effects
@@ -5154,10 +5154,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "6553d777-ce4c-46b4-8a5c-d8573ab0c0ed")
+			(uuid "c7fc6869-80fa-4cba-ad7e-753cc4917ccf")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#FLG03")
 					(unit 1)
@@ -5174,13 +5174,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6ee2ddee-85b9-4c97-9f1f-d996a9518c31")
+		(uuid "033bec86-29ae-4656-9b79-5fd8ed82d6b3")
 	)
 	(junction
 		(at 121.92 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "9c3ac528-a187-42ca-8d87-387e7622667a")
+		(uuid "fa140897-e505-47c1-8f0c-8643820e744a")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -5190,7 +5190,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "89e82dd8-89e4-477c-afb1-daa3ee894bba")
+		(uuid "3ffb3a9e-888f-42b7-881c-698dbff77874")
 		(property "Reference" "#FLG04"
 			(at 116.84 74.93 0)
 			(effects
@@ -5237,10 +5237,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "30396d2d-5bfa-4301-9e62-d6a275d9eb6a")
+			(uuid "cce8b5d8-324c-4043-a16e-a620a8a42767")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#FLG04")
 					(unit 1)
@@ -5252,7 +5252,7 @@
 		(at 118.11 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "217adb30-cfaf-4342-9a6d-38ddc23c0122")
+		(uuid "a03fe7f2-b7b4-4af0-97f5-d284be01f2b6")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -5262,7 +5262,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "48065361-c178-46ef-8ff0-db0971a58998")
+		(uuid "ec586ae3-39bc-4c62-b5e2-852147b10534")
 		(property "Reference" "TP6"
 			(at 116.11 82.9 0)
 			(effects
@@ -5307,10 +5307,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "7208c27a-ecfa-4b62-8ad5-6c48ae568a55")
+			(uuid "e93d90e9-1800-41a1-b722-93d9c4aa4b12")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "TP6")
 					(unit 1)
@@ -5326,7 +5326,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "bfb13abd-123f-4b8c-b50a-3828854f7ff7")
+		(uuid "02b63897-a288-4251-8075-633e68e0a122")
 		(property "Reference" "R4"
 			(at 146.28 66.04 0)
 			(effects
@@ -5371,13 +5371,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "72dbcc97-8705-436e-9db8-4ec451824f57")
+			(uuid "7e7ae3d0-e1f7-4b39-b0bd-9431d4593abe")
 		)
 		(pin "2"
-			(uuid "1d50d8e1-da79-423f-ad3a-83ec945562bf")
+			(uuid "9dcbf4c8-2290-4b1c-a26c-386c727da97b")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "R4")
 					(unit 1)
@@ -5393,7 +5393,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "592c2bcb-0430-4373-aed9-c325bd0edb44")
+		(uuid "8ec5370f-9122-4b02-a2cd-39535b2b802f")
 		(property "Reference" "D2"
 			(at 146.28 76.2 90)
 			(effects
@@ -5438,13 +5438,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "4ad2807b-9c4c-4d2a-8227-0eb5342550eb")
+			(uuid "63e60add-0c59-4b0a-b835-72418fbf779b")
 		)
 		(pin "2"
-			(uuid "4be35bcf-a3ae-49b4-a773-62c86d13ab1a")
+			(uuid "eb6dcf91-d454-4915-861a-599a1d98ed56")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "D2")
 					(unit 1)
@@ -5461,7 +5461,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d797c95b-b4e2-46e9-8e73-cdeff7954cec")
+		(uuid "3e3055a6-b2d1-401e-b936-039044d348c6")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -5471,7 +5471,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "4182b5c2-7bfe-4963-a3de-71191c7d3dee")
+		(uuid "29777d7f-67a2-4a3f-b311-df195a1b017e")
 		(property "Reference" "#PWR19"
 			(at 147.32 59.69 0)
 			(effects
@@ -5517,10 +5517,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "d025ef62-6da9-4de9-9195-de1444e4aa03")
+			(uuid "4fd5f0c6-3093-420d-bd90-2f52e2cad8fb")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR19")
 					(unit 1)
@@ -5537,7 +5537,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ef85b5e5-39c5-46e4-8350-3fe133eba155")
+		(uuid "3b276685-c549-4945-bb33-e866e84c9b2e")
 	)
 	(wire
 		(pts
@@ -5548,7 +5548,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "2cdbb80d-3c83-45e3-af47-f6785c22a4e2")
+		(uuid "7d9edb9b-e04f-4cde-9bf2-6fed0d53a19d")
 	)
 	(symbol
 		(lib_id "power:GNDPWR")
@@ -5558,7 +5558,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "031a5d04-f8aa-4d2c-b510-94201829458d")
+		(uuid "ce5934cc-935e-4dd5-8850-e606f7e72932")
 		(property "Reference" "#PWR20"
 			(at 147.32 82.55 0)
 			(effects
@@ -5604,10 +5604,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "399253e6-7e18-4ea2-89b8-2ceb453d6cfb")
+			(uuid "c3f201b2-e34a-403d-90b3-d917511add1d")
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "#PWR20")
 					(unit 1)
@@ -5623,7 +5623,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "7db8c22d-a68e-48ff-82b2-f2438a0aef61")
+		(uuid "5cddcc8f-7810-4de6-b20a-4b91b989d1e4")
 		(property "Reference" "H1"
 			(at 155.48 70.66 0)
 			(effects
@@ -5668,7 +5668,7 @@
 			)
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "H1")
 					(unit 1)
@@ -5684,7 +5684,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "a3fad892-4776-44c9-8fc8-407538b83daf")
+		(uuid "8f42aff0-061a-464e-bf79-0e2b9aac7712")
 		(property "Reference" "H2"
 			(at 165.64 70.66 0)
 			(effects
@@ -5729,7 +5729,7 @@
 			)
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "H2")
 					(unit 1)
@@ -5745,7 +5745,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "25b8ce7c-b879-4109-8a57-2f3cfd4ed567")
+		(uuid "7210f84b-a68f-47a9-bbbc-92d38f7ef896")
 		(property "Reference" "H3"
 			(at 175.8 70.66 0)
 			(effects
@@ -5790,7 +5790,7 @@
 			)
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "H3")
 					(unit 1)
@@ -5806,7 +5806,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "3a489273-0b76-4f71-b56b-e9afe80b632f")
+		(uuid "e896828f-4f11-4b28-808e-7d6e59cca0fe")
 		(property "Reference" "H4"
 			(at 185.96 70.66 0)
 			(effects
@@ -5851,7 +5851,7 @@
 			)
 		)
 		(instances
-			(project "chromatone"
+			(project "isolator"
 				(path "/25fa9059-b474-40ad-8d4e-edcbfb8482a5"
 					(reference "H4")
 					(unit 1)
@@ -5869,7 +5869,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "686dd6c0-8b2b-457f-966f-b8c0a63d5603")
+		(uuid "18f438a3-6151-44db-8ce9-f1a374464ffe")
 	)
 	(rectangle
 		(start 106.68 33.02)
@@ -5881,7 +5881,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "e1f08c3a-2747-45a3-9b1f-be20df22c9c3")
+		(uuid "7b58fa73-9496-43c2-a3de-c2709e404d4d")
 	)
 	(text "DOMAIN A: Pi side, 3.3 V, Pi battery"
 		(exclude_from_sim no)
@@ -5893,7 +5893,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "55a94f9f-abb5-4cf8-be59-cfb34518e1a4")
+		(uuid "f188f2ee-65f0-458d-b191-b8f85b1d1491")
 	)
 	(text "DOMAIN B: LED side, 5 V, LED battery"
 		(exclude_from_sim no)
@@ -5905,7 +5905,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "32bbe1b3-c8cb-403e-af1e-aa3bc4d8072e")
+		(uuid "7276a6a5-161f-4eb6-96be-bb6b546cfe5c")
 	)
 	(text "Isolation barrier: only SPI CLK and DATA cross, A -> B. GND and GND_LED never touch."
 		(exclude_from_sim no)
@@ -5916,7 +5916,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "bdee3e37-3571-419c-96f1-f23da3bcbc8e")
+		(uuid "2c783a84-100a-49ac-b7f6-649748c09aa1")
 	)
 	(text "J1 to Pi header: 1=3V3 (pin 1), 2=SCLK (GPIO11), 3=MOSI (GPIO10), 4=GND."
 		(exclude_from_sim no)
@@ -5927,7 +5927,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "40b331a2-287a-4efe-96f1-f9bdefd92fe2")
+		(uuid "b9d714ef-a746-450d-8b81-7b166f2dbcbe")
 	)
 	(text "J2 to pixel 0 of the strip: 1=5V, 2=CI, 3=DI, 4=GND. Tap 5V/GND at the strip end so VCC2 never exceeds the pixel rail."
 		(exclude_from_sim no)
@@ -5938,7 +5938,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c05a18ab-ad1a-487e-ac97-529c5d0ed62f")
+		(uuid "d3ff3d50-25b7-4a07-acb0-24c86af21329")
 	)
 	(text "R1/R2 tame ringing on the CLK/DATA leads; keep leads to pixel 0 short, twisted with GND_LED."
 		(exclude_from_sim no)
@@ -5949,7 +5949,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7de80f2f-bd1b-473a-a313-836bd75a5edb")
+		(uuid "a03c0a18-4f84-49b3-9769-cbf65b1e2378")
 	)
 	(sheet_instances
 		(path "/"
