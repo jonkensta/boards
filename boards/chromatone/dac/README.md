@@ -11,15 +11,16 @@ Raspberry Pi Zero 2 W I2S -> TI PCM5102A -> 2.1 Vrms ground-centred line out on 
 | Ref | Part | Why | LCSC |
 | --- | --- | --- | --- |
 | U1 | TI PCM5102A, TSSOP-20 | Stereo DAC with built-in PLL (no MCLK from the Pi needed), charge pump for a ground-centred output, so no coupling caps | C107671 |
-| U2 | Microne ME6211C33, SOT-23-5 | Low-noise 3.3 V LDO from the Pi's 5 V so the DAC's analog rail is not the Pi's noisy 3.3 V | C82942 (basic) |
+| U2 | Microne ME6211C33, SOT-23-5 | Low-noise 3.3 V LDO from the Pi's 5 V so the DAC's analog rail is not the Pi's noisy 3.3 V | C82942 (extended) |
 | J1 | JST-XH 6-pin | 5V, GND, LRCK, DIN, BCK, XSMT from the Pi header | C144397 |
 | J2 | PJ-320D 3.5 mm TRRS jack | Line out; ring 2 and sleeve grounded so a TRS plug works | C431535 |
-| C5, C6, C7 | 2.2 uF X5R | Charge pump flying cap, VNEG rail, internal 1.8 V LDO output | pick basic |
-| C1..C4, C10..C12 | 10 uF + 100 nF | LDO in/out, AVDD, CPVDD, DVDD decoupling | pick basic |
-| R1..R3 | 33 R | Series damping on BCK, LRCK, DIN | pick basic |
-| R4, R5 + C8, C9 | 470 R + 2.2 nF C0G | TI's recommended output filter | pick basic |
-| R6 | 10k | XSMT pull-up: un-muted by default | pick basic |
-| R7, D1 | 1k + green LED | 3.3 V present | pick basic |
+| C5, C6, C7 | 2.2 uF 16 V X5R | Charge pump flying cap, VNEG rail, internal 1.8 V LDO output | C23630 (basic) |
+| C1..C4 | 10 uF 25 V X5R | LDO in, LDO out, two on the 3.3 V rail | C96446 (basic) |
+| C10..C12 | 100 nF 50 V X7R | At AVDD, DVDD, CPVDD | C14663 (basic) |
+| R1..R3 | 33 R | Damping at the receiving end of BCK, LRCK, DIN | C23140 (basic) |
+| R4, R5 + C8, C9 | 470 R + 2.2 nF | TI's recommended output filter (C1604 is X7R; swap for a C0G if one is stocked) | C23179, C1604 (basic) |
+| R6 | 10k | XSMT pull-up: un-muted by default | C25804 (basic) |
+| R7, D1 | 1k + green 0603 LED | 3.3 V present | C21190 (basic), C72043 |
 | H1..H4 | M2.5 holes | with copper keepouts | |
 
 ## Pi wiring and configuration
@@ -41,15 +42,21 @@ MCLK). The device then appears as an ALSA card; no driver install.
 - SCK is grounded: the PCM5102A generates its clocks from BCK. FMT low (I2S), DEMP
   low, FLT low (normal latency).
 - **XSMT needs clean edges (< 20 ns), so there is deliberately no RC on it.** The
-  10k pull-up un-mutes at power-up; drive it from a GPIO for a pop-free mute.
-- Output is 2.1 Vrms into >= 1 kOhm. That is line level, louder than a phone; start
-  the speaker's volume low.
+  10k pull-up un-mutes at power-up. For pop-free mute drive it from a GPIO configured
+  push-pull (not open-drain: the 10k pull-up cannot make a 20 ns rising edge), and
+  assert mute at least 150 sample periods before cutting power, per the datasheet.
+- Output is 2.1 Vrms open-circuit through the 470 R filter resistor: about 2.0 Vrms
+  into a 10 k aux input, 1.4 Vrms into 1 k. That is line level, louder than a phone;
+  start the speaker's volume low.
 - Layout: 56 x 36 mm, 2 layers. Pi connector on the right edge, jack on the left
   edge, DAC centred, LDO on top. The two audio lines and XSMT run on the back
-  layer; everything else on the front over a solid ground pour. 100 nF caps sit
-  within 2 mm of AVDD, CPVDD and DVDD; the flying and VNEG caps are directly
-  beside their pins.
+  layer, hugging each other so they do not carve the ground pour; everything else on
+  the front over a solid ground pour. 100 nF caps are about 2 mm from AVDD and DVDD and
+  3 mm from CPVDD; the flying, VNEG and LDOO caps are beside their pins; C3/C4 are
+  bulk on the rail, not per-pin.
 - Test points: LRCK and BCK near J1, GND bottom left.
+- Keep the Pi cable short (about 20 cm). The 33 R resistors damp the receiving end;
+  for a longer harness add series resistors at the Pi end and check BCK at U1 with a scope.
 - LED current draw and the DAC itself are well under 100 mA from the Pi's 5 V.
 
 `generate/` holds the scripts that produced the schematic and board, built on
