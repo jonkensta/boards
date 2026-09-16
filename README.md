@@ -12,7 +12,8 @@ boards/<id>/            one KiCad project per board, any depth; files named afte
 lib/                    shared symbols, footprints, 3D models (nickname `boards` in every project)
 templates/board/        project template used by `make new`
 jobsets/fab.kicad_jobset  the one definition of every fabrication export (GUI and CLI)
-boardtools/             parse-only Python helpers (s-expr parser, board facts, JLCPCB conversion)
+boardtools/             Python helpers: s-expr parser, board facts, JLCPCB conversion, and the
+                        schematic/board generators (schgen, pcbgen) used by boards/*/generate/
 scripts/                scaffolder and smoke test
 boards/<id>/out/        generated outputs (git-ignored)
 .github/workflows/      CI: unit tests, smoke test, ERC/DRC, fab exports in kicad/kicad:10.0
@@ -61,6 +62,13 @@ python3 -m boardtools info   boards/blinky/blinky.kicad_pcb   # title block + la
 python3 -m boardtools jlcpcb pos <kicad-pos.csv> <cpl.csv>
 python3 -m boardtools jlcpcb bom <kicad-bom.csv> <jlc-bom.csv>   # warns on lines without LCSC
 ```
+
+## Generating boards from Python
+
+`boardtools.schgen` and `boardtools.pcbgen` write native `.kicad_sch` / `.kicad_pcb` files from
+short Python scripts using the stock symbol and footprint libraries; `boards/chromatone/*/generate/`
+show the pattern (place symbols, draw wires, export the netlist, place footprints, route, pour,
+DRC). No KiCad Python bindings are involved.
 
 ## Design
 

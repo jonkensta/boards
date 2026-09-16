@@ -2148,7 +2148,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "1cbb33da-78a4-494c-8d1c-e6bf181e733d")
+		(uuid "9071e1ca-c938-4dd6-80b5-3d30326a89a6")
 		(property "Reference" "U1"
 			(at 93.98 41.3 0)
 			(effects
@@ -2220,28 +2220,28 @@
 			)
 		)
 		(pin "1"
-			(uuid "26310f57-aa2f-48b6-b358-d7fa75aab9b3")
+			(uuid "9fce0cac-f985-4f7f-b9d0-a4c9c25592a7")
 		)
 		(pin "2"
-			(uuid "a5ad1c90-aa5b-4e8e-a2de-4ebf93aa1530")
+			(uuid "a6543c82-3329-4cab-b135-2c773be95770")
 		)
 		(pin "3"
-			(uuid "aad18cfe-bc6e-4b18-be40-90ef4561fa38")
+			(uuid "db16d4ff-32f3-451a-b61d-b1e413e13aa5")
 		)
 		(pin "4"
-			(uuid "341b2de9-5bd0-4d00-b130-f2e12ac0f270")
+			(uuid "f0a03fff-c81a-40c2-adc1-39e40075cc5b")
 		)
 		(pin "5"
-			(uuid "6926b944-3bcb-4a02-b2b5-1c36adf743ef")
+			(uuid "bae9aa59-03a8-43e8-afca-ce01f31bbb4c")
 		)
 		(pin "6"
-			(uuid "2ecbdaa6-b49c-45d6-a33a-102a4fb64075")
+			(uuid "f3482091-12b3-4d2c-8a40-27e467012aeb")
 		)
 		(pin "7"
-			(uuid "225201d4-fd27-4b04-abd6-c38e42232a09")
+			(uuid "d0082e8b-2bbb-44fa-9f8c-e2a1fdde6269")
 		)
 		(pin "8"
-			(uuid "b37cf9fe-493b-4b33-9bc4-6e5f7d830170")
+			(uuid "343c49e9-5fd9-43cc-bdd6-7937fc5754ad")
 		)
 		(instances
 			(project "isolator"
@@ -2260,7 +2260,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "8d0c3e98-f8b0-4826-a82f-2d2bd06137bd")
+		(uuid "77bd936c-dd00-4caf-a1bd-e6933826cc95")
 		(property "Reference" "J1"
 			(at 54.61 38.06 0)
 			(effects
@@ -2332,16 +2332,16 @@
 			)
 		)
 		(pin "1"
-			(uuid "57b444ea-9c0b-4a7d-8bb2-e0a252e5f9f1")
+			(uuid "471a2b77-7ea4-4155-9ad1-76ffa5314c74")
 		)
 		(pin "2"
-			(uuid "cc455c3e-8837-4b1f-b264-8a93856661ef")
+			(uuid "5b50a619-91f0-46b4-bd39-07c0c449837b")
 		)
 		(pin "3"
-			(uuid "6fcae44d-599e-4e80-bc7f-483ce2b845dc")
+			(uuid "ecc478b0-6552-406c-8918-c0c20e312e00")
 		)
 		(pin "4"
-			(uuid "57355c94-1410-4baa-a5cb-89aae3b6620a")
+			(uuid "bf50dec1-e248-4fdf-8413-8cbd093d46e3")
 		)
 		(instances
 			(project "isolator"
@@ -2361,7 +2361,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "99bdbadd-0906-4c53-ab29-90f6f87fbc31")
+		(uuid "f0c73e46-46eb-4765-92ec-07f86925e278")
 		(property "Reference" "J2"
 			(at 142.05 38.06 0)
 			(effects
@@ -2433,16 +2433,16 @@
 			)
 		)
 		(pin "1"
-			(uuid "12720c89-c15d-4ce2-8cf8-77e3f0a9455a")
+			(uuid "6c3d335d-961c-4e5a-80d0-562f1a7c88c0")
 		)
 		(pin "2"
-			(uuid "57dedca0-d503-43a9-88c5-17f65963b1b7")
+			(uuid "b63b1877-e59a-425d-933f-b232a9daf339")
 		)
 		(pin "3"
-			(uuid "61e3fdc4-36af-45ef-ab54-af6035fb439d")
+			(uuid "41e66c04-dec8-4439-88a9-5c706efc239d")
 		)
 		(pin "4"
-			(uuid "904a7050-3a2f-4c5a-8ccf-4fbafba1c994")
+			(uuid "6994640d-fd28-48d9-9cd9-1779293d5fe5")
 		)
 		(instances
 			(project "isolator"
@@ -2462,7 +2462,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1fc8a900-1b3f-4f49-9fd1-924d022806cf")
+		(uuid "224e0aae-2dad-4913-9f6c-d8b250fd6f1a")
 	)
 	(wire
 		(pts
@@ -2473,7 +2473,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "32ff1bc0-46bb-475f-9d97-a08ccd5ee9fc")
+		(uuid "55119560-20a9-4225-8764-3ae4f62123d2")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -2483,7 +2483,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "0b0b2084-73fa-488f-b4ad-db3e2af4cc63")
+		(uuid "e1960c9b-3515-4f64-b45e-ada9309c4e8c")
 		(property "Reference" "#PWR01"
 			(at 66.04 41.91 0)
 			(effects
@@ -2529,7 +2529,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "77d01c83-3622-4180-8770-18a1a7ffd69c")
+			(uuid "6ac6b3e3-1fed-4765-8292-28df48d81b4c")
 		)
 		(instances
 			(project "isolator"
@@ -2549,7 +2549,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3bed1028-3298-4852-b4c3-97bac77df7f9")
+		(uuid "a44aeded-7a99-4a12-a1e0-7b2d66e268a3")
 	)
 	(wire
 		(pts
@@ -2560,7 +2560,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4d2d19dd-0aa6-47a5-acae-cc5bb47feb48")
+		(uuid "aaa68890-be47-4521-9bc9-73eba15bd95d")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -2570,7 +2570,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "d718bb05-7f3b-470a-bcc9-44d495745774")
+		(uuid "d9e644e4-b112-42c8-b9e9-ae9adef5f165")
 		(property "Reference" "#PWR02"
 			(at 66.04 54.61 0)
 			(effects
@@ -2616,7 +2616,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "451d96c6-7148-4bde-8618-673c3f4d4d85")
+			(uuid "f2133fb7-9f77-4af5-8c75-a219679dafdd")
 		)
 		(instances
 			(project "isolator"
@@ -2636,7 +2636,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6c1748c3-096b-48c0-9981-594f88fb6d02")
+		(uuid "442cc625-7a0e-4ed2-a157-5797e7916c86")
 	)
 	(wire
 		(pts
@@ -2647,7 +2647,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "419970d2-8fcd-49ae-a8b0-14efc540447f")
+		(uuid "c5a00385-4ed1-4717-86a0-9b392bebbc6d")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -2657,7 +2657,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "29f7a5ee-63ef-409c-986e-1b1b61b6adc3")
+		(uuid "b6ccc2cf-9cff-46d8-b276-20ba95f83389")
 		(property "Reference" "#PWR03"
 			(at 91.44 41.91 0)
 			(effects
@@ -2703,7 +2703,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "2e7e35fe-e06f-4eb4-8857-a6590ed7dde8")
+			(uuid "b11bba38-1f90-4a30-9aee-29dcf18d0743")
 		)
 		(instances
 			(project "isolator"
@@ -2723,7 +2723,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "adf4a1a6-3b27-4298-8129-f014e4586576")
+		(uuid "a749c980-07fd-42c8-b615-25cb5d0bf41a")
 	)
 	(wire
 		(pts
@@ -2734,7 +2734,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1d30805b-61a9-4997-9622-4a6d51e8d52f")
+		(uuid "c37be57f-8be2-4112-ad73-437ba5f4d8c4")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -2744,7 +2744,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "0e17d7ac-cebc-4f2b-96c1-72f43696d2f3")
+		(uuid "a8e82f2c-df93-4a34-b4da-5946129bc445")
 		(property "Reference" "#PWR04"
 			(at 91.44 54.61 0)
 			(effects
@@ -2790,7 +2790,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "917335b1-1864-412a-aaf7-8523d923268b")
+			(uuid "f15dc747-dc5a-4a86-b962-c1761f37c230")
 		)
 		(instances
 			(project "isolator"
@@ -2810,7 +2810,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c27e1071-7ef7-45df-8de9-2c81826b3d2a")
+		(uuid "02b54eb4-d810-4ec0-a2ad-6926684b2e35")
 	)
 	(wire
 		(pts
@@ -2821,13 +2821,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "21831e9d-007d-4d93-a7bf-c24435f7d6f6")
+		(uuid "fc1d0ff2-d96f-4974-b572-e502fd2d2668")
 	)
 	(junction
 		(at 73.66 48.26)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "101597d1-fabd-495c-92e8-6328b0051c1e")
+		(uuid "3c5bf92e-7a49-4aea-9245-0215a4c24aa4")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -2837,7 +2837,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "07cd8944-ff0a-4540-b7b9-c1bd8fb2222f")
+		(uuid "5193f51b-48ca-4f3d-ac22-1021b7b40033")
 		(property "Reference" "TP1"
 			(at 71.66 42.76 0)
 			(effects
@@ -2882,7 +2882,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "a5c5bd5d-3060-4f2c-864a-bae18a9f2350")
+			(uuid "47a3e7be-aa96-4441-b8d3-f9b6c22c91a8")
 		)
 		(instances
 			(project "isolator"
@@ -2902,7 +2902,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "292fa63d-9e23-4fef-b904-991251fb6239")
+		(uuid "f6706237-ba09-4322-9c61-6ac748ec50cd")
 	)
 	(wire
 		(pts
@@ -2913,13 +2913,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6d0914e9-9082-4909-9b5f-288dc170eb72")
+		(uuid "c378bbf1-9315-4e8e-884c-621fbecc0e86")
 	)
 	(junction
 		(at 78.74 50.8)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "78fb0b9a-6ef7-4b82-a149-c1c18551fc80")
+		(uuid "7e7c82e6-14f3-48e6-94b6-f31538d6bcb4")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -2929,7 +2929,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "8e28e599-6537-4fda-979c-cef3f704b369")
+		(uuid "3e5f7310-7d82-49ad-8b27-8c49d07cb85b")
 		(property "Reference" "TP2"
 			(at 76.74 57.5 0)
 			(effects
@@ -2974,7 +2974,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "d19fa00a-a1be-4cc3-9d20-0108c46b1a66")
+			(uuid "c84e36f2-d22e-4ac3-a9bd-92a8a815c312")
 		)
 		(instances
 			(project "isolator"
@@ -2994,7 +2994,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "bdbe9080-559e-4b38-ab8e-ddf73658eeb2")
+		(uuid "7ab77fc6-3d6e-4529-8c83-912fc07a741e")
 	)
 	(wire
 		(pts
@@ -3005,7 +3005,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0419804f-ee7c-4ae7-8463-e6d03606ca23")
+		(uuid "9398f269-ab92-44b4-9559-f15e2dae4ec0")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -3015,7 +3015,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "f6e70260-eaab-44f3-aec8-4ef623332a63")
+		(uuid "3ceee0bb-aaa9-4278-b630-532c9de57f2c")
 		(property "Reference" "#PWR05"
 			(at 116.84 41.91 0)
 			(effects
@@ -3061,7 +3061,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "60f0ff13-1537-44f5-81c8-2626f7828bdd")
+			(uuid "8a2b10b0-3621-4a8f-b149-de91d99779ca")
 		)
 		(instances
 			(project "isolator"
@@ -3081,7 +3081,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "74b0b4d6-0083-4b61-b578-a4712ffab0c0")
+		(uuid "a9386199-6b26-4b00-844a-370cba17756e")
 	)
 	(wire
 		(pts
@@ -3092,7 +3092,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "2dcc6250-a0c5-437a-8ebf-211dde81d0ff")
+		(uuid "c4028b19-683c-4685-8f24-763330563b75")
 	)
 	(symbol
 		(lib_id "power:GNDPWR")
@@ -3102,7 +3102,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "eb600661-3cc3-4226-98c5-773f91106d17")
+		(uuid "28446a6f-4a86-4bc2-8b36-f29de8b3474f")
 		(property "Reference" "#PWR06"
 			(at 116.84 54.61 0)
 			(effects
@@ -3148,7 +3148,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "218f163e-ce26-459a-bd3d-8a5aa9669cb2")
+			(uuid "c33f35ad-5625-4ed5-ad97-83a6987477d2")
 		)
 		(instances
 			(project "isolator"
@@ -3168,7 +3168,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "53778e67-da1d-4ad7-94b2-d39accd303df")
+		(uuid "eb231ed8-d70e-47eb-be10-4804a0491325")
 	)
 	(wire
 		(pts
@@ -3179,7 +3179,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0a56336d-91c9-494c-96d4-07c82c974a3a")
+		(uuid "9306f96e-b7a4-45f5-a645-6e1a50b1d1c6")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -3189,7 +3189,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "9bce6f70-1107-427e-aa42-0532ec376f05")
+		(uuid "be77fd89-e314-4dc3-a1ab-ce4a3d0afe5f")
 		(property "Reference" "#PWR07"
 			(at 140.97 41.91 0)
 			(effects
@@ -3235,7 +3235,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "45a20386-ea04-4c31-9264-90a52c030af2")
+			(uuid "f80ab879-85f6-424f-9a44-fb7ad3066166")
 		)
 		(instances
 			(project "isolator"
@@ -3255,7 +3255,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8f5e8b51-40b7-4052-b81b-cc60241c2d64")
+		(uuid "692aea2a-12c4-41c2-b276-b1e5dd2d0199")
 	)
 	(wire
 		(pts
@@ -3266,7 +3266,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4e458bed-a168-4a70-a9f5-9edf5b3d2b0b")
+		(uuid "21fe3bf8-c1a7-4b19-b505-506daa3638e6")
 	)
 	(symbol
 		(lib_id "power:GNDPWR")
@@ -3276,7 +3276,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "398be076-b771-40a0-8cc9-0564e42ff39a")
+		(uuid "a1f9e65b-a15d-45e1-832f-d40a617ed4d3")
 		(property "Reference" "#PWR08"
 			(at 140.97 54.61 0)
 			(effects
@@ -3322,7 +3322,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "dcca6cb1-6641-406c-8240-cc4511914a4e")
+			(uuid "ace84a4b-1836-42d2-8cfa-4d9d044f42a6")
 		)
 		(instances
 			(project "isolator"
@@ -3341,7 +3341,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "ce28c0d1-a77e-4648-b879-3e8feec65b26")
+		(uuid "5e5e77e2-1cca-454a-9182-b05d4d48bd7d")
 		(property "Reference" "R1"
 			(at 118.92 45.96 90)
 			(effects
@@ -3386,10 +3386,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "49552411-9333-4890-b835-be4fa8c09988")
+			(uuid "173cbd69-cb68-49cd-9b9b-e71bf80f156c")
 		)
 		(pin "2"
-			(uuid "cd42ed17-669d-4af7-81d4-75577acfca55")
+			(uuid "82ae6a53-e618-4d3e-ba87-dd30a8765eaf")
 		)
 		(instances
 			(project "isolator"
@@ -3408,7 +3408,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "cfc419d1-6b40-405e-8353-4f578d8562eb")
+		(uuid "95df49e3-0513-4951-abea-0bd5c51895ae")
 		(property "Reference" "R2"
 			(at 118.92 53.1 90)
 			(effects
@@ -3453,10 +3453,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "e0f5672f-05cd-436e-b101-c70408600b12")
+			(uuid "03cdf5be-16ba-448f-a43d-44af7fa97bf0")
 		)
 		(pin "2"
-			(uuid "00ce17ac-714f-4759-9c98-39e99c8830c8")
+			(uuid "7565b1b6-5ab4-4a9a-9612-102bee3498d7")
 		)
 		(instances
 			(project "isolator"
@@ -3476,7 +3476,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "85ebe9a1-f095-4eef-a741-860298373b55")
+		(uuid "f8a8a46a-22d9-496d-9d7a-f0dba042a00f")
 	)
 	(wire
 		(pts
@@ -3487,7 +3487,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "bd466eaf-3e54-45ea-bae5-f5dead76df16")
+		(uuid "0def0708-8049-43b3-bcbf-77e1c4d50623")
 	)
 	(wire
 		(pts
@@ -3498,13 +3498,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7be97204-919d-491d-bebf-946bbccbe188")
+		(uuid "3c18e840-2d1f-4acf-afa1-562f1f128262")
 	)
 	(junction
 		(at 134.62 48.26)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "e5f7a3cc-1260-464e-8479-3fbc0ef204f7")
+		(uuid "4f596fb1-b746-44cd-9f84-df2a3d40e8e3")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -3514,7 +3514,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "796e86ea-d7c1-46be-a49d-b6932c15deff")
+		(uuid "e7ccf4d2-3853-42a6-8e5c-f3ebff8811c4")
 		(property "Reference" "TP3"
 			(at 132.62 42.76 0)
 			(effects
@@ -3559,7 +3559,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "e5d5d3d1-ff64-4027-b078-35055c9d127e")
+			(uuid "bcd3d855-9f25-4de2-8932-a2461f7345bf")
 		)
 		(instances
 			(project "isolator"
@@ -3579,7 +3579,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d525b30e-7857-484e-807e-dfc84fe71019")
+		(uuid "08e90f0f-8409-4ec1-882b-cd3fcb9f5bbd")
 	)
 	(wire
 		(pts
@@ -3590,7 +3590,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a6e2fa38-8b2b-4021-a784-e5c07303980d")
+		(uuid "c5d57b39-0bac-4b05-944a-794104f586d4")
 	)
 	(wire
 		(pts
@@ -3601,13 +3601,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fa7894a5-ee2c-4a33-aefa-434629ac1f3f")
+		(uuid "b66217d3-f829-45ed-bdbc-5a078b70618e")
 	)
 	(junction
 		(at 134.62 50.8)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "31cb6770-b46c-4383-a1cc-9501afba1f04")
+		(uuid "1505e12a-051c-4d0e-b33d-d0e0298f18c4")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -3617,7 +3617,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "e8c714e7-0f6c-4f43-bab0-624392ea8923")
+		(uuid "f899fae3-e61c-443f-977e-cdc362ecc2ef")
 		(property "Reference" "TP4"
 			(at 132.62 57.5 0)
 			(effects
@@ -3662,7 +3662,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "71e66e71-19c6-4655-9e3b-07e9160cb6e3")
+			(uuid "8b1147e9-7697-454e-8c61-128ccee0877d")
 		)
 		(instances
 			(project "isolator"
@@ -3681,7 +3681,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "aaae7241-2ab9-4238-9f1b-98ead7656bc5")
+		(uuid "6f1315bc-7d41-4772-81eb-40680928b14c")
 		(property "Reference" "C1"
 			(at 73.89 68.58 0)
 			(effects
@@ -3726,10 +3726,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "dcdfd49e-40e4-4100-937a-50f255ef2be9")
+			(uuid "d4796b90-a4aa-4072-9718-b6059ee5a49d")
 		)
 		(pin "2"
-			(uuid "390b738e-c7af-4d61-879b-210ef6e07200")
+			(uuid "b2b8cfac-4211-4ca3-abab-49e0dc5302e9")
 		)
 		(instances
 			(project "isolator"
@@ -3749,7 +3749,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "cf24e3dc-8c96-4494-928a-b4a31854acbf")
+		(uuid "0c125ea9-dfad-42c8-8e3a-a9f08368efcf")
 	)
 	(wire
 		(pts
@@ -3760,7 +3760,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3488edfe-76f7-443c-9223-264b5e7884a1")
+		(uuid "c6068766-4896-4057-9ee3-607b94e68ec5")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -3770,7 +3770,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "58bc1cfd-39dc-49ee-9535-44bb7a338199")
+		(uuid "f4e8eb86-a237-4fe0-8701-48124c8c4a1b")
 		(property "Reference" "#PWR09"
 			(at 74.93 62.23 0)
 			(effects
@@ -3816,7 +3816,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "ba0f34e3-daa7-4401-9e27-78a0e01cca1f")
+			(uuid "85473bc1-dee6-4579-97ea-28dca6bb8aaa")
 		)
 		(instances
 			(project "isolator"
@@ -3835,7 +3835,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "97247cfb-c68d-4d64-be77-655f80ce6e36")
+		(uuid "8828a560-2851-458a-acc3-34d4d5e51026")
 		(property "Reference" "#PWR10"
 			(at 74.93 74.93 0)
 			(effects
@@ -3881,7 +3881,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "0c56f2d3-4d88-4b35-979c-69eee3eb3752")
+			(uuid "c858d5c4-16f3-45ca-8763-06e7019732db")
 		)
 		(instances
 			(project "isolator"
@@ -3900,7 +3900,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "d4502ae6-53be-4844-90af-d8a3b5e95546")
+		(uuid "2471fddc-bb51-45bd-af53-431eb6489c57")
 		(property "Reference" "C2"
 			(at 84.05 68.58 0)
 			(effects
@@ -3945,10 +3945,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "57454f60-2154-4db2-afaf-c167e3b91877")
+			(uuid "ea616b6b-017b-4366-b5d3-141c3a7cda9f")
 		)
 		(pin "2"
-			(uuid "433da563-39f0-495b-bdd0-5a29ec31acaa")
+			(uuid "588f3800-3af5-4f3c-bb7f-4274ad9a1a8b")
 		)
 		(instances
 			(project "isolator"
@@ -3968,7 +3968,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9c4009b3-92a2-440b-bf01-e93226f389b5")
+		(uuid "68af5b2c-3a5e-460a-8fcb-9ac61c9bc454")
 	)
 	(wire
 		(pts
@@ -3979,7 +3979,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "91530a6b-c38b-40a3-87ba-8b6e3a095b80")
+		(uuid "b0c63368-a823-4a80-8a64-1a644be62499")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -3989,7 +3989,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "4f35cc90-e199-44cc-8c9b-9c5df24a6e75")
+		(uuid "ce4f308e-27aa-42ea-b514-f003d18ed088")
 		(property "Reference" "#PWR11"
 			(at 85.09 62.23 0)
 			(effects
@@ -4035,7 +4035,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "d23a7dce-429c-4342-b646-b987f8e48ac5")
+			(uuid "6916d56c-3a0c-4700-b88b-8cd5e78767da")
 		)
 		(instances
 			(project "isolator"
@@ -4054,7 +4054,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "43c46eab-cf4d-4172-8d6a-94a1575cabc6")
+		(uuid "3fa810a9-4390-4a34-b3d2-a65542ae19cb")
 		(property "Reference" "#PWR12"
 			(at 85.09 74.93 0)
 			(effects
@@ -4100,7 +4100,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "ddafb910-0315-4bcc-b819-c163e091bdbf")
+			(uuid "ea72f3b5-aa6e-403d-821c-6aa0aef5ca5d")
 		)
 		(instances
 			(project "isolator"
@@ -4120,13 +4120,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f92bd294-af7a-4ca8-af40-4cd7956a9211")
+		(uuid "6bbf31c2-6fa3-4959-ba1f-65061115f199")
 	)
 	(junction
 		(at 72.39 63.5)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "5cff5fbb-2e79-4e83-8868-5a906ada51f9")
+		(uuid "43a0228d-d530-4045-9381-8ae193717dcc")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -4136,7 +4136,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "02725bca-c292-4cdc-95b9-3aa0b08e66f6")
+		(uuid "cab9b2f5-c4a7-4bf0-8651-5ac32b7480bb")
 		(property "Reference" "#FLG01"
 			(at 67.31 62.23 0)
 			(effects
@@ -4183,7 +4183,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "1295c32c-6265-41ba-a3cb-8553aa0f2d42")
+			(uuid "79ed6733-df53-4c58-a200-073369b803fe")
 		)
 		(instances
 			(project "isolator"
@@ -4203,13 +4203,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f5f620cf-3dae-4a8e-b47a-aa6ec8a56793")
+		(uuid "0479b6a7-7709-4cf3-bb7e-b0a87ab5b3e3")
 	)
 	(junction
 		(at 72.39 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "a60eedfa-e30e-42b6-a498-4c710fa08224")
+		(uuid "7ba5a109-1eba-408f-b8fe-8c2b44b010ab")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -4219,7 +4219,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "5ccba41f-63d5-4a5e-b258-e44ad2fef004")
+		(uuid "b8031ffc-6ed4-40dc-aaa5-c3677f26af6a")
 		(property "Reference" "#FLG02"
 			(at 67.31 74.93 0)
 			(effects
@@ -4266,7 +4266,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "a89bb334-e346-4c4f-b244-771522449d21")
+			(uuid "b6b3f467-d3a5-4e37-a530-7ae0a3020889")
 		)
 		(instances
 			(project "isolator"
@@ -4281,7 +4281,7 @@
 		(at 68.58 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "6ac3db7b-0e8a-4c47-8157-dd1d2afd35fe")
+		(uuid "409e0479-f1f2-4f24-8995-fba2ce30e6bb")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -4291,7 +4291,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "c211fcb5-98b8-4a26-b207-153563f9db92")
+		(uuid "67a4d9c1-56e3-4d77-8782-0a09a62c6b0c")
 		(property "Reference" "TP5"
 			(at 66.58 82.9 0)
 			(effects
@@ -4336,7 +4336,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "62a80065-f4e9-4405-a7ea-37c5822758ea")
+			(uuid "54a6d4ad-8409-4530-bf7e-8bcac6d367f5")
 		)
 		(instances
 			(project "isolator"
@@ -4355,7 +4355,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "e2aea761-084c-4f6a-88d3-b790e25ea82d")
+		(uuid "1fa1597a-1399-44aa-a35c-9f8b90f71884")
 		(property "Reference" "R3"
 			(at 96.75 66.04 0)
 			(effects
@@ -4400,10 +4400,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "a20482f1-2596-4aa6-9872-2629512472f6")
+			(uuid "013ba495-4c19-49fb-95cd-a0fcf925e5dd")
 		)
 		(pin "2"
-			(uuid "929003fc-a063-4c5f-b4eb-49562a1272d7")
+			(uuid "d5f9c2b8-56b1-4096-b90b-70a63cab8c5b")
 		)
 		(instances
 			(project "isolator"
@@ -4422,7 +4422,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "0c6ec772-2b09-4e46-9a84-7b8cb92865bd")
+		(uuid "8d946c67-17b1-4a2c-b359-7333837c71d2")
 		(property "Reference" "D1"
 			(at 96.75 76.2 90)
 			(effects
@@ -4467,10 +4467,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "d0ac6842-c8fc-4b56-b03a-ef96f3c3c586")
+			(uuid "0d2f4ba7-af15-4699-837b-6a9473e96470")
 		)
 		(pin "2"
-			(uuid "6728262f-5ed4-4f1a-a12e-986c6622c369")
+			(uuid "a807c472-2859-4237-b7ec-387b18f5994b")
 		)
 		(instances
 			(project "isolator"
@@ -4490,7 +4490,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "35b0eeb6-07bc-404b-a84d-12054043eb2c")
+		(uuid "954bcd0d-efdd-4208-9d2f-789a214cc563")
 	)
 	(symbol
 		(lib_id "power:+3V3")
@@ -4500,7 +4500,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "23f4c06a-07f1-4a81-bc1f-1a3843c55977")
+		(uuid "15f1b934-9bbb-48ce-8cdc-894ec82b4c8c")
 		(property "Reference" "#PWR13"
 			(at 97.79 59.69 0)
 			(effects
@@ -4546,7 +4546,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "cc103197-22c6-4d96-8ca0-83f7b8fcbd6b")
+			(uuid "17db18a8-1eea-4c1a-bb44-8533a01b96c9")
 		)
 		(instances
 			(project "isolator"
@@ -4566,7 +4566,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a257ce69-b53b-4f67-aca8-6fd888cd97c5")
+		(uuid "21be823f-e1fd-40e4-b951-e5219c06232c")
 	)
 	(wire
 		(pts
@@ -4577,7 +4577,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d6ef2fb0-4c1e-4deb-9485-74e0b8d42789")
+		(uuid "83a95ddd-10f6-469d-8350-2c88ffffc57a")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4587,7 +4587,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "dd266244-a27e-4658-a2fd-29ba323214e4")
+		(uuid "72330092-58c9-4f5d-aa9d-085a10d2f07f")
 		(property "Reference" "#PWR14"
 			(at 97.79 82.55 0)
 			(effects
@@ -4633,7 +4633,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "83f2b97e-de58-40a6-ae98-ca9a035d74e0")
+			(uuid "5969d866-2613-4c9a-a3b3-119306e8068c")
 		)
 		(instances
 			(project "isolator"
@@ -4652,7 +4652,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "e3ced7d3-ac95-4971-a3ab-af302aac4284")
+		(uuid "932cc5c6-5fc6-437f-ac74-3e6c94293f69")
 		(property "Reference" "C3"
 			(at 123.42 68.58 0)
 			(effects
@@ -4697,10 +4697,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "154c058a-425d-4eec-acec-cc4cae966446")
+			(uuid "d08bd6fe-990d-47aa-aacf-dd32c6e999d7")
 		)
 		(pin "2"
-			(uuid "161e06ed-0929-4c9b-97f9-a2e365888877")
+			(uuid "389eac50-687e-40bd-9a2b-d6674104aed4")
 		)
 		(instances
 			(project "isolator"
@@ -4720,7 +4720,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f8ff57f4-8f2d-4c1e-abd0-081e3c9e29d0")
+		(uuid "a2aca6ff-1d96-49cb-8dfb-e11ec0585f24")
 	)
 	(wire
 		(pts
@@ -4731,7 +4731,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b10e27f3-643b-490a-8bbd-78fc52158cda")
+		(uuid "1518594b-4b5e-446b-ba22-fa2ad5baf43d")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -4741,7 +4741,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "0609efcd-2243-475c-a9ba-524334a9adf4")
+		(uuid "446570b4-10d4-49d6-aa83-0081abab9e18")
 		(property "Reference" "#PWR15"
 			(at 124.46 62.23 0)
 			(effects
@@ -4787,7 +4787,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "79ee4b88-fc7a-474c-8128-983b4336e9d8")
+			(uuid "975d14fc-9ee2-42e9-af6a-6ba31d5c7369")
 		)
 		(instances
 			(project "isolator"
@@ -4806,7 +4806,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "c77a3a8a-d958-4c6a-bbe2-1c6a535fc817")
+		(uuid "fd854ebc-8632-4acb-864b-b03307ae078f")
 		(property "Reference" "#PWR16"
 			(at 124.46 74.93 0)
 			(effects
@@ -4852,7 +4852,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "caca7b74-abc6-41d6-9120-7a83aeb3bc3f")
+			(uuid "2ce5a01b-c326-446b-ab55-38266bf6b122")
 		)
 		(instances
 			(project "isolator"
@@ -4871,7 +4871,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "40fd2ca7-7234-495d-bb87-026a5568741f")
+		(uuid "7ea51afb-d896-4c78-af2c-327dcceb4bab")
 		(property "Reference" "C4"
 			(at 133.58 68.58 0)
 			(effects
@@ -4916,10 +4916,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "4776ff54-dd0a-4901-9c82-8109b4a070e9")
+			(uuid "81e0b792-4dd2-41fc-9a99-a3169aed4a8f")
 		)
 		(pin "2"
-			(uuid "f05bc80a-6c14-4e28-ad21-ed39118dc875")
+			(uuid "4a2b137d-e33e-425d-877b-a306a8d7f236")
 		)
 		(instances
 			(project "isolator"
@@ -4939,7 +4939,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "f5d25ecc-eac2-48e4-b250-6b5410040800")
+		(uuid "381036bf-a1bc-4667-b9ac-fb6e65303e8f")
 	)
 	(wire
 		(pts
@@ -4950,7 +4950,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "729545f0-d2d9-4a86-a64b-e59b5b4d4f26")
+		(uuid "dd9074eb-80a9-4b71-bae8-78fa806be9e2")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -4960,7 +4960,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "08a54eb2-bbb2-41a8-a422-fae3d56ad776")
+		(uuid "cabf84d9-9232-4703-af7b-b2c42dbf157c")
 		(property "Reference" "#PWR17"
 			(at 134.62 62.23 0)
 			(effects
@@ -5006,7 +5006,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "8767624c-5593-464e-8648-06717aa1c3ac")
+			(uuid "87dbc994-8d9f-47b5-aa8c-a5251de00c8d")
 		)
 		(instances
 			(project "isolator"
@@ -5025,7 +5025,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "c71d4d06-5aed-4003-8afb-bfd3ceba61c4")
+		(uuid "400684ff-0bb6-4c76-b315-5dfec2d38466")
 		(property "Reference" "#PWR18"
 			(at 134.62 74.93 0)
 			(effects
@@ -5071,7 +5071,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "7b10e277-ae76-4557-a9c3-9d1f4190a83b")
+			(uuid "f6b86de4-7296-44f1-94ab-7ac29d603093")
 		)
 		(instances
 			(project "isolator"
@@ -5091,13 +5091,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "90594b08-f686-4edb-9054-f29149d3f567")
+		(uuid "882fa17e-27bc-4721-a9f7-1e4791f68652")
 	)
 	(junction
 		(at 121.92 63.5)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "18208eb3-00e4-483a-9213-8b697a956733")
+		(uuid "d782c96f-828d-4d65-8906-62c463e86dd5")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -5107,7 +5107,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "724d14a8-f4d8-4571-8f14-f468abcc2471")
+		(uuid "a96f30b9-f5c0-4968-9fae-1255391d9ab7")
 		(property "Reference" "#FLG03"
 			(at 116.84 62.23 0)
 			(effects
@@ -5154,7 +5154,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "c7fc6869-80fa-4cba-ad7e-753cc4917ccf")
+			(uuid "5401c0da-8c61-4b7a-8b5f-64d4fab0960f")
 		)
 		(instances
 			(project "isolator"
@@ -5174,13 +5174,13 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "033bec86-29ae-4656-9b79-5fd8ed82d6b3")
+		(uuid "7b184bd2-7fdb-49bc-81fe-8a47d6b733c2")
 	)
 	(junction
 		(at 121.92 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "fa140897-e505-47c1-8f0c-8643820e744a")
+		(uuid "e2c1866e-7060-4a81-9bd3-13245e1bf629")
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
@@ -5190,7 +5190,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "3ffb3a9e-888f-42b7-881c-698dbff77874")
+		(uuid "42fbe6c8-373c-4ab9-a451-89ec9cc58258")
 		(property "Reference" "#FLG04"
 			(at 116.84 74.93 0)
 			(effects
@@ -5237,7 +5237,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "cce8b5d8-324c-4043-a16e-a620a8a42767")
+			(uuid "84ed0cb4-659f-47e3-b4c5-5531e9a73bea")
 		)
 		(instances
 			(project "isolator"
@@ -5252,7 +5252,7 @@
 		(at 118.11 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "a03fe7f2-b7b4-4af0-97f5-d284be01f2b6")
+		(uuid "3ccbcfec-cd87-436b-8d66-733eb4a39287")
 	)
 	(symbol
 		(lib_id "Connector:TestPoint")
@@ -5262,7 +5262,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "ec586ae3-39bc-4c62-b5e2-852147b10534")
+		(uuid "b2274567-0177-43c9-9271-99bbf8bf4b54")
 		(property "Reference" "TP6"
 			(at 116.11 82.9 0)
 			(effects
@@ -5307,7 +5307,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "e93d90e9-1800-41a1-b722-93d9c4aa4b12")
+			(uuid "b4feabee-4093-4c13-b602-7bd9a818cd1b")
 		)
 		(instances
 			(project "isolator"
@@ -5326,7 +5326,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "02b63897-a288-4251-8075-633e68e0a122")
+		(uuid "6478a1af-89c8-4933-9710-77748635f751")
 		(property "Reference" "R4"
 			(at 146.28 66.04 0)
 			(effects
@@ -5371,10 +5371,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "7e7ae3d0-e1f7-4b39-b0bd-9431d4593abe")
+			(uuid "92f7f543-54a1-4dc3-a4dc-efe2a2de84a7")
 		)
 		(pin "2"
-			(uuid "9dcbf4c8-2290-4b1c-a26c-386c727da97b")
+			(uuid "d4a04479-5fd0-47e4-b79e-d5382a6caf05")
 		)
 		(instances
 			(project "isolator"
@@ -5393,7 +5393,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "8ec5370f-9122-4b02-a2cd-39535b2b802f")
+		(uuid "19c80f36-2308-4232-8577-364e3a407740")
 		(property "Reference" "D2"
 			(at 146.28 76.2 90)
 			(effects
@@ -5438,10 +5438,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "63e60add-0c59-4b0a-b835-72418fbf779b")
+			(uuid "414e301e-f97e-46b1-bbd2-a43011e668fc")
 		)
 		(pin "2"
-			(uuid "eb6dcf91-d454-4915-861a-599a1d98ed56")
+			(uuid "a1c5a7a8-e858-4a57-970d-600ad14e2154")
 		)
 		(instances
 			(project "isolator"
@@ -5461,7 +5461,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3e3055a6-b2d1-401e-b936-039044d348c6")
+		(uuid "f167004b-7ec9-4d14-b1ca-38357840eb49")
 	)
 	(symbol
 		(lib_id "power:+5V")
@@ -5471,7 +5471,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "29777d7f-67a2-4a3f-b311-df195a1b017e")
+		(uuid "60808eaa-4d59-4df5-8fbf-02d221683c08")
 		(property "Reference" "#PWR19"
 			(at 147.32 59.69 0)
 			(effects
@@ -5517,7 +5517,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "4fd5f0c6-3093-420d-bd90-2f52e2cad8fb")
+			(uuid "6f6418f5-6dba-4639-b34e-ad1fb18c03b7")
 		)
 		(instances
 			(project "isolator"
@@ -5537,7 +5537,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3b276685-c549-4945-bb33-e866e84c9b2e")
+		(uuid "ad017c8a-b734-4791-8f4d-1dee37b8dd54")
 	)
 	(wire
 		(pts
@@ -5548,7 +5548,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7d9edb9b-e04f-4cde-9bf2-6fed0d53a19d")
+		(uuid "91f7c572-c105-4998-84ee-740e0e138dcd")
 	)
 	(symbol
 		(lib_id "power:GNDPWR")
@@ -5558,7 +5558,7 @@
 		(in_bom no)
 		(on_board no)
 		(dnp no)
-		(uuid "ce5934cc-935e-4dd5-8850-e606f7e72932")
+		(uuid "9e53a160-2793-4b35-a9ed-740a6c9d64bc")
 		(property "Reference" "#PWR20"
 			(at 147.32 82.55 0)
 			(effects
@@ -5604,7 +5604,7 @@
 			)
 		)
 		(pin "1"
-			(uuid "c3f201b2-e34a-403d-90b3-d917511add1d")
+			(uuid "305ecb3a-cc50-436d-b7d7-dbac6948cfcf")
 		)
 		(instances
 			(project "isolator"
@@ -5623,7 +5623,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "5cddcc8f-7810-4de6-b20a-4b91b989d1e4")
+		(uuid "21595922-bb62-4ca1-bcbb-568e9bfa19cb")
 		(property "Reference" "H1"
 			(at 155.48 70.66 0)
 			(effects
@@ -5684,7 +5684,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "8f42aff0-061a-464e-bf79-0e2b9aac7712")
+		(uuid "25e52d29-d708-4b6b-b01a-a2ded1204bc7")
 		(property "Reference" "H2"
 			(at 165.64 70.66 0)
 			(effects
@@ -5745,7 +5745,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "7210f84b-a68f-47a9-bbbc-92d38f7ef896")
+		(uuid "7392ed0c-4e58-4c8b-8c78-0b8744d7f809")
 		(property "Reference" "H3"
 			(at 175.8 70.66 0)
 			(effects
@@ -5806,7 +5806,7 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "e896828f-4f11-4b28-808e-7d6e59cca0fe")
+		(uuid "e54e6830-733d-46ce-9e2b-c5e5bc628d4d")
 		(property "Reference" "H4"
 			(at 185.96 70.66 0)
 			(effects
@@ -5869,7 +5869,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "18f438a3-6151-44db-8ce9-f1a374464ffe")
+		(uuid "4038d9b3-385b-4c1e-8dd3-95393565fc32")
 	)
 	(rectangle
 		(start 106.68 33.02)
@@ -5881,7 +5881,7 @@
 		(fill
 			(type none)
 		)
-		(uuid "7b58fa73-9496-43c2-a3de-c2709e404d4d")
+		(uuid "4cc08021-0167-4cd0-b41d-98945c46c519")
 	)
 	(text "DOMAIN A: Pi side, 3.3 V, Pi battery"
 		(exclude_from_sim no)
@@ -5893,7 +5893,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f188f2ee-65f0-458d-b191-b8f85b1d1491")
+		(uuid "5a63a338-4f36-44e6-895d-4457fe49e5c7")
 	)
 	(text "DOMAIN B: LED side, 5 V, LED battery"
 		(exclude_from_sim no)
@@ -5905,7 +5905,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7276a6a5-161f-4eb6-96be-bb6b546cfe5c")
+		(uuid "34895ad2-7d6d-46f2-8369-57f354b3f0e3")
 	)
 	(text "Isolation barrier: only SPI CLK and DATA cross, A -> B. GND and GND_LED never touch."
 		(exclude_from_sim no)
@@ -5916,7 +5916,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2c783a84-100a-49ac-b7f6-649748c09aa1")
+		(uuid "ef57ae2a-8e7d-46a7-acb1-ac9dfb339864")
 	)
 	(text "J1 to Pi header: 1=3V3 (pin 1), 2=SCLK (GPIO11), 3=MOSI (GPIO10), 4=GND."
 		(exclude_from_sim no)
@@ -5927,7 +5927,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b9d714ef-a746-450d-8b81-7b166f2dbcbe")
+		(uuid "c95f1c55-aa6f-49ca-be8a-9e7181db31e0")
 	)
 	(text "J2 to pixel 0 of the strip: 1=5V, 2=CI, 3=DI, 4=GND. Tap 5V/GND at the strip end so VCC2 never exceeds the pixel rail."
 		(exclude_from_sim no)
@@ -5938,7 +5938,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d3ff3d50-25b7-4a07-acb0-24c86af21329")
+		(uuid "30d2dc4d-ea23-4c17-80f0-45087c12f3cd")
 	)
 	(text "R1/R2 tame ringing on the CLK/DATA leads; keep leads to pixel 0 short, twisted with GND_LED."
 		(exclude_from_sim no)
@@ -5949,7 +5949,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "a03c0a18-4f84-49b3-9769-cbf65b1e2378")
+		(uuid "0d0f1126-b789-457e-9539-e959f93f5060")
 	)
 	(sheet_instances
 		(path "/"

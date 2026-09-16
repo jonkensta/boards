@@ -1,235 +1,78 @@
 #!/usr/bin/env python3
-"""Generate boards/chromatone/chromatone.kicad_pcb: placement, routing, pours, outline."""
-import math, os, sys, uuid
+"""Write isolator.kicad_pcb: 46 x 30 mm, connectors on the short edges, 3 mm barrier under U1."""
+import os, sys
 _d = os.path.dirname(os.path.abspath(__file__))
 while not os.path.isdir(os.path.join(_d, 'boardtools')):
     _d = os.path.dirname(_d)
-sys.path.insert(0, _d)   # repo root, whatever depth this board sits at
-from boardtools import sexpr
-Q = sexpr.Quoted
-S = os.path.dirname(os.path.abspath(__file__))
-PCB = os.path.join(S, '..', 'isolator.kicad_pcb')
-FPDIR = '/usr/share/kicad/footprints'
-OX, OY = 50.0, 50.0          # board origin in KiCad sheet space
+sys.path.insert(0, _d)
+from boardtools.pcbgen import Board, Netlist, SIG, PWR
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+PCB = os.path.join(HERE, '..', 'isolator.kicad_pcb')
 W, H = 46.0, 30.0
+b = Board(PCB, Netlist(os.path.join(HERE, 'isolator.net')), 'isolator.kicad_sch', W, H)
 
-def u(): return Q(str(uuid.uuid4()))
-def n(v): return f"{v:.4f}".rstrip('0').rstrip('.') if isinstance(v, float) else str(v)
-def P(x, y): return (OX + x, OY + y)
-
-# ---------------------------------------------------------------- netlist from the schematic
-net = sexpr.parse(open(os.path.join(S, 'isolator.net')).read())
-nets = {}   # name -> code
-node_net = {}  # (ref, pin) -> name
-for nn in sexpr.children(sexpr.child(net, 'nets'), 'net'):
-    name = sexpr.child(nn, 'name')[1]; code = int(sexpr.child(nn, 'code')[1])
-    nets[name] = code
-    for x in sexpr.children(nn, 'node'):
-        node_net[(sexpr.child(x, 'ref')[1], sexpr.child(x, 'pin')[1])] = name
-comp_uuid = {}; comp_value = {}; comp_fp = {}; comp_fields = {}; comp_meta = {}
-for c in sexpr.children(sexpr.child(net, 'components'), 'comp'):
-    ref = c[1][1]
-    comp_uuid[ref] = sexpr.child(c, 'tstamps')[1]
-    comp_value[ref] = sexpr.child(c, 'value')[1]
-    comp_fp[ref] = sexpr.child(c, 'footprint')[1]
-    comp_fields.setdefault(ref, {})
-    ds = sexpr.child(c, 'datasheet'); de = sexpr.child(c, 'description')
-    comp_ds = ds[1] if ds is not None and len(ds) > 1 else ''
-    comp_de = de[1] if de is not None and len(de) > 1 else ''
-    fields = {}
-    fl = sexpr.child(c, 'fields')
-    if fl:
-        for f in sexpr.children(fl, 'field'):
-            if len(f) > 2: fields[f[1][1]] = f[2]
-    comp_fields[ref] = fields
-    comp_meta[ref] = (comp_ds, comp_de)
-
-# ---------------------------------------------------------------- base board from the template (KiCad-10 native)
-board = sexpr.parse(open(PCB).read())
-board = [x for x in board if not (isinstance(x, list) and x[0] in ('gr_line', 'gr_rect', 'footprint', 'segment', 'via', 'zone', 'gr_text', 'net') )]
-# aux (drill/place) origin bottom-left, grid origin top-left
-setup = sexpr.child(board, 'setup')
-for el in setup:
-    if isinstance(el, list) and el[0] == 'aux_axis_origin': el[1:] = [n(OX), n(OY + H)]
-    if isinstance(el, list) and el[0] == 'grid_origin': el[1:] = [n(OX), n(OY)]
-# nets: insert after (general)/(paper)/(layers)/(setup) i.e. before footprints (order is not semantically important)
-net_nodes = [['net', '0', Q('')]] + [['net', str(code), Q(name)] for name, code in sorted(nets.items(), key=lambda kv: kv[1])]
-board += net_nodes
-
-items = []
-def rot_pt(px, py, rot):
-    r = math.radians(rot)
-    return (px * math.cos(r) + py * math.sin(r), -px * math.sin(r) + py * math.cos(r))
-
-def footprint(ref, x, y, rot=0, ref_pos=None, ref_fab=False, val_pos=None):
-    lib, name = comp_fp[ref].split(':')
-    fp = sexpr.parse(open(f'{FPDIR}/{lib}.pretty/{name}.kicad_mod').read())
-    fp[1] = Q(f'{lib}:{name}')
-    out = ['footprint', fp[1]]
-    # keep layer/descr/tags/attr/graphics/pads/model; replace properties and add placement + path
-    props_seen = set()
-    for el in fp[2:]:
-        if not isinstance(el, list):
-            continue
-        head = el[0]
-        if head in ('version', 'generator', 'generator_version', 'tedit', 'tstamp', 'uuid'):
-            continue
-        if head == 'property':
-            k = el[1]
-            props_seen.add(k)
-            val = {'Reference': ref, 'Value': comp_value[ref], 'Footprint': comp_fp[ref],
-                   'Datasheet': comp_meta[ref][0], 'Description': comp_meta[ref][1]}.get(k, el[2] if len(el) > 2 else '')
-            el = ['property', Q(k), Q(val)] + [c for c in el[3:] if isinstance(c, list)]
-            if k in ('Reference', 'Value'):
-                el = [c for c in el if not (isinstance(c, list) and c[0] in ('hide', 'at', 'layer', 'effects'))]
-                pos = ref_pos if k == 'Reference' else val_pos
-                on_silk = (k == 'Reference' and not ref_fab) or (k == 'Value' and val_pos is not None)
-                el.append(['at', n(pos[0]) if pos else '0', n(pos[1]) if pos else '0', '0'])
-                el.append(['layer', Q('F.SilkS' if on_silk else 'F.Fab')])
-                if not on_silk and not (k == 'Reference' and not ref_fab): el.append(['hide', 'yes'])
-                el.append(['effects', ['font', ['size', '0.8', '0.8'], ['thickness', '0.15']]])
-        if head in ('fp_text', 'pad'):
-            at = sexpr.child(el, 'at')
-            if at is not None:
-                a = float(at[3]) if len(at) > 3 else 0.0
-                at[:] = ['at', at[1], at[2], n((a + rot) % 360)]
-            if head == 'pad':
-                nname = node_net.get((ref, el[1]))
-                el = [c for c in el if not (isinstance(c, list) and c[0] == 'net')]
-                if nname:
-                    el.append(['net', str(nets[nname]), Q(nname)])
-        # every graphic/pad element gets a uuid
-        if head in ('property', 'fp_text', 'fp_line', 'fp_rect', 'fp_circle', 'fp_arc', 'fp_poly', 'pad', 'model'):
-            el = [c for c in el if not (isinstance(c, list) and c[0] == 'uuid')]
-            if head != 'model':
-                el.append(['uuid', u()])
-        out.append(el)
-    for k, v in [('Footprint', comp_fp[ref]), ('Datasheet', comp_meta[ref][0]), ('Description', comp_meta[ref][1])]:
-        if k not in props_seen:
-            out.append(['property', Q(k), Q(v), ['at', '0', '0', n(rot)], ['layer', Q('F.Fab')], ['hide', 'yes'], ['uuid', u()],
-                        ['effects', ['font', ['size', '1', '1'], ['thickness', '0.15']]]])
-    for k, v in comp_fields[ref].items():
-        if k in ('MPN', 'Manufacturer', 'LCSC'):
-            out.append(['property', Q(k), Q(v), ['at', '0', '0', n(rot)], ['layer', Q('F.Fab')], ['hide', 'yes'], ['uuid', u()],
-                        ['effects', ['font', ['size', '1', '1'], ['thickness', '0.15']]]])
-    X, Y = P(x, y)
-    out[2:2] = [['layer', Q('F.Cu')], ['uuid', u()], ['at', n(X), n(Y), n(rot)]]
-    # drop the .kicad_mod's own (layer ..) if duplicated later
-    seen_layer = False
-    cleaned = []
-    for el in out:
-        if isinstance(el, list) and el[0] == 'layer':
-            if seen_layer: continue
-            seen_layer = True
-        cleaned.append(el)
-    cleaned.append(['path', Q('/' + comp_uuid[ref])])
-    cleaned.append(['sheetname', Q('/')]); cleaned.append(['sheetfile', Q('isolator.kicad_sch')])
-    items.append(cleaned)
-
-def seg(net_name, width, *pts, layer='F.Cu'):
-    for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
-        (X1, Y1), (X2, Y2) = P(x1, y1), P(x2, y2)
-        items.append(['segment', ['start', n(X1), n(Y1)], ['end', n(X2), n(Y2)], ['width', n(width)],
-                      ['layer', Q(layer)], ['net', str(nets[net_name])], ['uuid', u()]])
-def via(net_name, x, y):
-    X, Y = P(x, y)
-    items.append(['via', ['at', n(X), n(Y)], ['size', '0.6'], ['drill', '0.3'], ['layers', Q('F.Cu'), Q('B.Cu')],
-                  ['net', str(nets[net_name])], ['uuid', u()]])
-def zone(net_name, zname, x1, y1, x2, y2, layer='B.Cu'):
-    pts = [P(x1, y1), P(x2, y1), P(x2, y2), P(x1, y2)]
-    items.append(['zone', ['net', str(nets[net_name])], ['net_name', Q(net_name)], ['layers', Q(layer)], ['uuid', u()],
-                  ['name', Q(zname)], ['hatch', 'edge', '0.5'], ['connect_pads', ['clearance', '0.3']],
-                  ['min_thickness', '0.25'], ['filled_areas_thickness', 'no'],
-                  ['fill', 'yes', ['thermal_gap', '0.5'], ['thermal_bridge_width', '0.5']],
-                  ['polygon', ['pts'] + [['xy', n(X), n(Y)] for X, Y in pts]]])
-def gr_line(x1, y1, x2, y2, layer, width):
-    (X1, Y1), (X2, Y2) = P(x1, y1), P(x2, y2)
-    items.append(['gr_line', ['start', n(X1), n(Y1)], ['end', n(X2), n(Y2)], ['stroke', ['width', n(width)], ['type', 'default']],
-                  ['layer', Q(layer)], ['uuid', u()]])
-def gr_text(s, x, y, layer='F.SilkS', size=0.8, rot=0, justify=None):
-    X, Y = P(x, y)
-    eff = ['effects', ['font', ['size', n(size), n(size)], ['thickness', n(size * 0.15)]]]
-    if justify: eff.append(['justify'] + justify)
-    items.append(['gr_text', Q(s), ['at', n(X), n(Y), n(rot)], ['layer', Q(layer)], ['uuid', u()], eff])
-
-SIG, PWR = 0.25, 0.4
-# ---------------------------------------------------------------- placement (board-local mm, y down)
 for i, (hx, hy) in enumerate([(3.5, 3.5), (42.5, 3.5), (3.5, 26.5), (42.5, 26.5)]):
-    footprint(f'H{i+1}', hx, hy, ref_fab=True)
-footprint('J1', 4.5, 10.5, 270, ref_pos=(11.5, 0))   # ref text below the connector (offset is in board coords: +x local after rot... see note)      # pads: 1 3V3 (4.5,10.5) 2 SCLK (4.5,13) 3 MOSI (4.5,15.5) 4 GND (4.5,18)
-footprint('J2', 41.5, 10.5, 270, ref_pos=(11.5, 0))     # pads: 1 5V (41.5,10.5) 2 CLK 13 3 DATA 15.5 4 GND 18
-footprint('U1', 23.0, 16.0, 0, ref_pos=(-4.0, 4.7))       # pads 1-4 x=20.525 y=14.095/15.365/16.635/17.905; 5-8 x=25.475 same y reversed
-footprint('C1', 18.5, 13.32, 90, ref_fab=True)     # rot 90: 1 +3V3 (18.5,14.095) beside U1.1, 2 GND (18.5,12.545)
-footprint('C2', 17.0, 9.9, 0, ref_fab=True)
-footprint('C3', 27.5, 13.32, 90, ref_fab=True)     # rot 90: 1 +5V_LED (27.5,14.095) beside U1.8, 2 GND_LED (27.5,12.545)
-footprint('C4', 29.0, 9.9, 180, ref_fab=True)
-footprint('R1', 31.0, 15.365, 0, ref_fab=True)     # 1 (30.175) from U1.7, 2 (31.825) to J2 CLK
-footprint('R2', 31.0, 17.8, 0, ref_fab=True)
-footprint('R3', 13.5, 23.5, 0, ref_fab=True)       # 1 (12.675) +3V3, 2 (14.325) -> D1 A
-footprint('D1', 17.5, 23.5, 180, ref_fab=True)     # 1 K (18.2875) GND, 2 A (16.7125)
-footprint('R4', 32.5, 23.5, 180, ref_fab=True)     # 1 (33.325) +5V_LED, 2 (31.675) -> D2 A
-footprint('D2', 28.5, 23.5, 0, ref_fab=True)       # 1 K (27.7125) GND_LED, 2 A (29.2875)
-footprint('TP1', 11.5, 10.0, ref_fab=True, val_pos=(0, -2.0)); footprint('TP2', 10.0, 20.5, ref_fab=True, val_pos=(0, 2.0))
-footprint('TP3', 34.0, 11.0, ref_fab=True, val_pos=(0, -2.0)); footprint('TP4', 35.0, 21.5, ref_fab=True, val_pos=(0, 2.0))
-footprint('TP5', 14.5, 20.0, ref_fab=True, val_pos=(0, 2.0)); footprint('TP6', 31.5, 20.0, ref_fab=True, val_pos=(0, 2.0))
+    b.footprint(f'H{i+1}', hx, hy, ref_fab=True); b.keepout(hx, hy)
+J1 = b.footprint('J1', 4.5, 10.5, 270, ref_pos=(11.5, 0))     # 1 3V3 (4.5,10.5) 2 SCLK 13 3 MOSI 15.5 4 GND 18
+J2 = b.footprint('J2', 41.5, 10.5, 270, ref_pos=(11.5, 0))    # 1 5V 2 CLK 3 DATA 4 GND
+U1 = b.footprint('U1', 23.0, 16.0, 0, ref_pos=(-4.0, 4.7))    # 1-4 x=20.525 (y 14.095..17.905), 5-8 x=25.475 reversed
+C1 = b.footprint('C1', 18.5, 13.32, 90, ref_fab=True)         # 1 +3V3 beside U1.1, 2 GND
+C2 = b.footprint('C2', 17.0, 9.9, 0, ref_fab=True)            # 1 +3V3, 2 GND
+C3 = b.footprint('C3', 27.5, 13.32, 90, ref_fab=True)         # 1 +5V_LED beside U1.8, 2 GND_LED
+C4 = b.footprint('C4', 29.0, 9.9, 180, ref_fab=True)          # 1 +5V_LED, 2 GND_LED
+R1 = b.footprint('R1', 31.0, 15.365, 0, ref_fab=True)
+R2 = b.footprint('R2', 31.0, 17.8, 0, ref_fab=True)
+R3 = b.footprint('R3', 13.5, 23.5, 0, ref_fab=True)
+D1 = b.footprint('D1', 17.5, 23.5, 180, ref_fab=True)         # 1 K, 2 A
+R4 = b.footprint('R4', 32.5, 23.5, 180, ref_fab=True)
+D2 = b.footprint('D2', 28.5, 23.5, 0, ref_fab=True)
+TP = {}
+for ref, x, y, dy in [('TP1', 11.5, 10.0, -2.0), ('TP2', 10.0, 20.5, 2.0), ('TP3', 34.0, 11.0, -2.0), ('TP4', 35.0, 21.5, 2.0),
+                      ('TP5', 14.5, 20.0, 2.0), ('TP6', 31.5, 20.0, 2.0)]:
+    TP[ref] = b.footprint(ref, x, y, ref_fab=True, val_pos=(0, dy))['1']
+assert J1['1'] == (4.5, 10.5) and U1['1'] == (20.525, 14.095) and U1['8'] == (25.475, 14.095) and C1['1'] == (18.5, 14.095), (J1, U1, C1)
 
-# ---------------------------------------------------------------- routing, domain A
-seg('+3V3', PWR, (4.5, 10.5), (4.5, 8.0), (16.225, 8.0), (16.225, 14.095), (20.525, 14.095))
-seg('+3V3', PWR, (4.5, 10.5), (2.5, 12.5), (2.5, 19.5), (6.5, 23.5), (12.675, 23.5))
-seg('GND', SIG, (17.775, 9.9), (19.2, 9.9)); via('GND', 19.2, 9.9)          # C2 ground
-seg('GND', SIG, (18.5, 12.545), (18.5, 11.3)); via('GND', 18.5, 11.3)        # C1 ground
-seg('GND', SIG, (20.525, 17.905), (18.75, 17.905)); via('GND', 18.75, 17.905)
-seg('GND', SIG, (18.2875, 23.5), (19.8, 23.5)); via('GND', 19.8, 23.5)
-seg('Net-(J1-Pin_2)', SIG, (4.5, 13), (12.0, 13), (14.365, 15.365), (20.525, 15.365))
-seg('Net-(J1-Pin_2)', SIG, (11.5, 13), (11.5, 10.0))
-seg('Net-(J1-Pin_3)', SIG, (4.5, 15.5), (6.0, 15.5), (7.135, 16.635), (20.525, 16.635))
-seg('Net-(J1-Pin_3)', SIG, (10.0, 16.635), (10.0, 20.5))
-seg('Net-(D1-A)', SIG, (14.325, 23.5), (16.7125, 23.5))
-seg('GND', SIG, (14.5, 20.0), (16.0, 20.0)); via('GND', 16.0, 20.0)         # TP5
-# ---------------------------------------------------------------- routing, domain B
-seg('+5V_LED', PWR, (41.5, 10.5), (41.5, 8.0), (29.775, 8.0), (29.775, 14.095), (25.475, 14.095))
-seg('+5V_LED', PWR, (41.5, 10.5), (43.5, 12.5), (43.5, 19.5), (39.5, 23.5), (33.325, 23.5))
-seg('GND_LED', SIG, (28.225, 9.9), (26.8, 9.9)); via('GND_LED', 26.8, 9.9)   # C4 ground
-seg('GND_LED', SIG, (27.5, 12.545), (27.5, 11.3)); via('GND_LED', 27.5, 11.3)  # C3 ground
-seg('GND_LED', SIG, (25.475, 17.905), (27.25, 17.905)); via('GND_LED', 27.25, 17.905)
-seg('GND_LED', SIG, (27.7125, 23.5), (26.2, 23.5)); via('GND_LED', 26.2, 23.5)
-seg('Net-(U1-OUTA)', SIG, (25.475, 15.365), (30.175, 15.365))
-seg('Net-(J2-Pin_2)', SIG, (31.825, 15.365), (38.5, 15.365), (40.865, 13.0), (41.5, 13.0))
-seg('Net-(J2-Pin_2)', SIG, (34.0, 15.365), (34.0, 11.0))
-seg('Net-(U1-OUTB)', SIG, (25.475, 16.635), (28.5, 16.635), (29.665, 17.8), (30.175, 17.8))
-seg('Net-(J2-Pin_3)', SIG, (31.825, 17.8), (38.5, 17.8), (40.8, 15.5), (41.5, 15.5))
-seg('Net-(J2-Pin_3)', SIG, (35.0, 17.8), (35.0, 21.5))
-seg('Net-(D2-A)', SIG, (29.2875, 23.5), (31.675, 23.5))
-seg('GND_LED', SIG, (31.5, 20.0), (30.0, 20.0)); via('GND_LED', 30.0, 20.0)  # TP6
-# ---------------------------------------------------------------- pours: split grounds, 3 mm barrier under U1
-zone('GND', 'GND_A', 0, 0, 21.5, H)
-zone('GND_LED', 'GND_B', 24.5, 0, W, H)
-def keepout(x, y, r=3.2, nseg=24):
-    pts = [P(x + r * math.cos(2 * math.pi * i / nseg), y + r * math.sin(2 * math.pi * i / nseg)) for i in range(nseg)]
-    items.append(['zone', ['net', '0'], ['net_name', Q('')], ['layers', Q('F.Cu'), Q('B.Cu')], ['uuid', u()],
-                  ['name', Q('mounting keepout')], ['hatch', 'edge', '0.5'],
-                  ['keepout', ['tracks', 'not_allowed'], ['vias', 'not_allowed'], ['pads', 'allowed'],
-                   ['copperpour', 'not_allowed'], ['footprints', 'allowed']],
-                  ['connect_pads', ['clearance', '0']], ['min_thickness', '0.25'], ['filled_areas_thickness', 'no'],
-                  ['fill', ['thermal_gap', '0.5'], ['thermal_bridge_width', '0.5']],
-                  ['polygon', ['pts'] + [['xy', n(X), n(Y)] for X, Y in pts]]])
-for (hx, hy) in [(3.5, 3.5), (42.5, 3.5), (3.5, 26.5), (42.5, 26.5)]:
-    keepout(hx, hy)
-# ---------------------------------------------------------------- outline, silk
-for (x1, y1, x2, y2) in [(0, 0, W, 0), (W, 0, W, H), (W, H, 0, H), (0, H, 0, 0)]:
-    gr_line(x1, y1, x2, y2, 'Edge.Cuts', 0.1)
+# domain A
+b.seg('+3V3', PWR, J1['1'], (4.5, 8.0), (16.225, 8.0), C2['1'], (16.225, 14.095), U1['1'])
+b.seg('+3V3', PWR, J1['1'], (2.5, 12.5), (2.5, 19.5), (6.5, 23.5), R3['1'])
+b.seg('GND', SIG, C2['2'], (19.2, 9.9)); b.via('GND', 19.2, 9.9)
+b.seg('GND', SIG, C1['2'], (18.5, 11.3)); b.via('GND', 18.5, 11.3)
+b.seg('GND', SIG, U1['4'], (18.75, 17.905)); b.via('GND', 18.75, 17.905)
+b.seg('GND', SIG, D1['1'], (19.8, 23.5)); b.via('GND', 19.8, 23.5)
+b.seg('GND', SIG, TP['TP5'], (16.0, 20.0)); b.via('GND', 16.0, 20.0)
+b.seg('Net-(J1-Pin_2)', SIG, J1['2'], (12.0, 13), (14.365, 15.365), U1['2'])
+b.seg('Net-(J1-Pin_2)', SIG, (11.5, 13), TP['TP1'])
+b.seg('Net-(J1-Pin_3)', SIG, J1['3'], (6.0, 15.5), (7.135, 16.635), U1['3'])
+b.seg('Net-(J1-Pin_3)', SIG, (10.0, 16.635), TP['TP2'])
+b.seg('Net-(D1-A)', SIG, R3['2'], D1['2'])
+# domain B
+b.seg('+5V_LED', PWR, J2['1'], (41.5, 8.0), (29.775, 8.0), C4['1'], (29.775, 14.095), U1['8'])
+b.seg('+5V_LED', PWR, J2['1'], (43.5, 12.5), (43.5, 19.5), (39.5, 23.5), R4['1'])
+b.seg('GND_LED', SIG, C4['2'], (26.8, 9.9)); b.via('GND_LED', 26.8, 9.9)
+b.seg('GND_LED', SIG, C3['2'], (27.5, 11.3)); b.via('GND_LED', 27.5, 11.3)
+b.seg('GND_LED', SIG, U1['5'], (27.25, 17.905)); b.via('GND_LED', 27.25, 17.905)
+b.seg('GND_LED', SIG, D2['1'], (26.2, 23.5)); b.via('GND_LED', 26.2, 23.5)
+b.seg('GND_LED', SIG, TP['TP6'], (30.0, 20.0)); b.via('GND_LED', 30.0, 20.0)
+b.seg('Net-(U1-OUTA)', SIG, U1['7'], R1['1'])
+b.seg('Net-(J2-Pin_2)', SIG, R1['2'], (38.5, 15.365), (40.865, 13.0), J2['2'])
+b.seg('Net-(J2-Pin_2)', SIG, (34.0, 15.365), TP['TP3'])
+b.seg('Net-(U1-OUTB)', SIG, U1['6'], (28.5, 16.635), (29.665, 17.8), R2['1'])
+b.seg('Net-(J2-Pin_3)', SIG, R2['2'], (38.5, 17.8), (40.8, 15.5), J2['3'])
+b.seg('Net-(J2-Pin_3)', SIG, (35.0, 17.8), TP['TP4'])
+b.seg('Net-(D2-A)', SIG, D2['2'], R4['2'])
+# pours: split grounds, 3 mm barrier under U1
+b.zone('GND', 'GND_A', 0, 0, 21.5, H)
+b.zone('GND_LED', 'GND_B', 24.5, 0, W, H)
+# outline, silk
+b.outline_rect()
 for layer in ('F.SilkS', 'B.SilkS'):
-    gr_line(23.0, 4.0, 23.0, 11.5, layer, 0.15)
-    gr_line(23.0, 21.0, 23.0, 26.0, layer, 0.15)
-gr_text('PI  3.3V', 12.0, 2.2, size=1.0)
-gr_text('LED  5V', 34.0, 2.2, size=1.0)
-gr_text('ISOLATED', 23.0, 27.8, size=0.8)
+    b.gr_line(23.0, 4.0, 23.0, 11.5, layer, 0.15); b.gr_line(23.0, 21.0, 23.0, 26.0, layer, 0.15)
+b.gr_text('PI  3.3V', 12.0, 2.2, size=1.0); b.gr_text('LED  5V', 34.0, 2.2, size=1.0); b.gr_text('ISOLATED', 23.0, 27.8)
 for y, lab in zip((10.5, 13, 15.5, 18), ('3V3', 'SCLK', 'MOSI', 'GND')):
-    gr_text(lab, 7.7, y, size=0.8, justify=['left'])
+    b.gr_text(lab, 7.7, y, justify=['left'])
 for y, lab in zip((10.5, 13, 15.5, 18), ('5V', 'CI', 'DI', 'GND')):
-    gr_text(lab, 37.4, y, size=0.8, justify=['right'])
-gr_text('chromatone rev A', 23.0, 2.2, layer='B.SilkS', size=0.8, justify=['mirror'])
-
-board += items
-open(PCB, 'w').write(sexpr.dumps(board) + '\n')
-print('wrote', PCB, len(items), 'items')
+    b.gr_text(lab, 37.4, y, justify=['right'])
+b.gr_text('chromatone/isolator rev A', 23.0, 2.2, layer='B.SilkS', justify=['mirror'])
+b.write(PCB)
+print('wrote', PCB)

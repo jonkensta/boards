@@ -107,9 +107,12 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 
 ## Generating KiCad files from Python (learned on boards/chromatone/isolator)
 
-`boards/chromatone/isolator/generate/` is the worked example: `schematic.py` and `pcb.py` write native
-`.kicad_sch`/`.kicad_pcb` with `boardtools.sexpr` (parse + `dumps`, `Quoted` marks atoms that
-must be re-quoted). Facts that cost time to discover:
+`boardtools/schgen.py` (`Schematic`: place/power/flag/wire/junction/text/box, `g()` grid helper,
+`extends` flattening) and `boardtools/pcbgen.py` (`Netlist`, `Board`: footprint/seg/via/zone/
+keepout/gr_*; `footprint()` returns pad centres in board-local mm) are the shared generators.
+`boards/chromatone/isolator/generate/` and `boards/chromatone/dac/generate/` are the worked
+examples. Route with `N(ref, pin)` net lookups from the netlist, never assumed pad roles: on the
+DAC every resistor and the flying cap were initially backwards. Facts that cost time to discover:
 
 - **Schematic connection points must sit on the 1.27 mm grid** or ERC reports every pin/wire
   end as `endpoint_off_grid`. Work in integer grid units and multiply.
@@ -134,6 +137,12 @@ must be re-quoted). Facts that cost time to discover:
 - Silk rules in the template project: text >= 0.8 mm / 0.12 mm stroke, 0.15 mm silk clearance,
   silk over pads is an error. Put passive references on F.Fab (hidden) and place the few silk
   labels deliberately; test points read best with their Value on silk instead of the reference.
+- 0.65 mm pitch (TSSOP) with 0.2 mm clearance and 0.6 mm vias: a via can never sit at a pad
+  column beside a neighbouring row; put vias at least (0.3 + 0.2) beyond the pad's x-span or
+  0.65 mm away in y, use 0.2 mm traces, fan out with short stubs then 45 deg diagonals, and let
+  DRC find the rest. Same-net overlap (via touching its own pad) is fine.
+- Mirrored back-silk text: `justify left mirror` extends away from the anchor in board +x;
+  `right mirror` extends toward it. Back-side labels near THT pads need ~1.5 mm from the ring.
 - Rule-area keepouts: `(zone (net 0) ... (keepout (tracks not_allowed) (vias not_allowed)
   (pads allowed) (copperpour not_allowed) (footprints allowed)) (polygon ...))`. With `pads
   not_allowed` an NPTH mounting hole inside its own keepout is a violation.
@@ -165,3 +174,4 @@ reproduction-based re-check, not a read-through.
 5. Assembly drawings (`pcb_export_pdf` job with F.Fab/F.SilkS/Edge.Cuts) and SVG-based revision diffs.
 6. Panelization (KiKit is SWIG-based; no `kicad-cli` equivalent yet).
 7. Board revision in PCB markings and output filenames (currently schematic title block only).
+8. `schgen`: net labels and hierarchical sheets (both boards so far are single-sheet, wire-only).
