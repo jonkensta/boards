@@ -20,7 +20,7 @@ Raspberry Pi Zero 2 W I2S -> TI PCM5102A -> 2.1 Vrms ground-centred line out on 
 | R1..R3 | 33 R | Damping at the receiving end of BCK, LRCK, DIN | C23140 (basic) |
 | R4, R5 + C8, C9 | 470 R + 2.2 nF | TI's recommended output filter (C1604 is X7R; swap for a C0G if one is stocked) | C23179, C1604 (basic) |
 | R6 | 10k | XSMT pull-up: un-muted by default | C25804 (basic) |
-| R7, D1 | 1k + green 0603 LED | 3.3 V present | C21190 (basic), C72043 |
+| R7, D1 | 1k + green 0603 LED | 3.3 V present | C21190 (basic), C72043 (extended) |
 | H1..H4 | M2.5 holes | with copper keepouts | |
 
 ## Pi wiring and configuration
@@ -44,7 +44,7 @@ MCLK). The device then appears as an ALSA card; no driver install.
 - **XSMT needs clean edges (< 20 ns), so there is deliberately no RC on it.** The
   10k pull-up un-mutes at power-up. For pop-free mute drive it from a GPIO configured
   push-pull (not open-drain: the 10k pull-up cannot make a 20 ns rising edge), and
-  assert mute at least 150 sample periods before cutting power, per the datasheet.
+  assert mute at least 4 ms before cutting power (datasheet: 150 sample periods + 0.2 ms).
 - Output is 2.1 Vrms open-circuit through the 470 R filter resistor: about 2.0 Vrms
   into a 10 k aux input, 1.4 Vrms into 1 k. That is line level, louder than a phone;
   start the speaker's volume low.

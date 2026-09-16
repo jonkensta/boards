@@ -15,16 +15,16 @@ LED_FP = 'LED_SMD:LED_0603_1608Metric'; TP_FP = 'TestPoint:TestPoint_Pad_D1.5mm'
 JST_FP = 'Connector_JST:JST_XH_B6B-XH-A_1x06_P2.50mm_Vertical'; HOLE_FP = 'MountingHole:MountingHole_2.7mm_M2.5'
 JACK_FP = 'Connector_Audio:Jack_3.5mm_PJ320D_Horizontal'
 JST = {'MPN': 'B6B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C144397'}
-PARTS = {   # JLCPCB basic parts (checked on jlcpcb.com/partdetail, 2026-09-16)
+PARTS = {   # JLCPCB parts (checked on jlcpcb.com/partdetail, 2026-09-16); all basic except the LED
     '10u': {'MPN': 'CL10A106MA8NRNC', 'Manufacturer': 'Samsung', 'LCSC': 'C96446'},      # 10 uF 25 V X5R 0603
     '2.2u': {'MPN': 'CL10A225KO8NNNC', 'Manufacturer': 'Samsung', 'LCSC': 'C23630'},     # 2.2 uF 16 V X5R 0603
-    '100n': {'MPN': 'CL10B104KB8NNNC', 'Manufacturer': 'Samsung', 'LCSC': 'C14663'},     # 100 nF 50 V X7R 0603
+    '100n': {'MPN': 'CC0603KRX7R9BB104', 'Manufacturer': 'Yageo', 'LCSC': 'C14663'},   # 100 nF 50 V X7R 0603
     '2.2n': {'MPN': '0603B222K500NT', 'Manufacturer': 'Fenghua', 'LCSC': 'C1604'},      # 2.2 nF 50 V X7R 0603 (basic; no C0G basic in 0603)
     '33': {'MPN': '0603WAF330JT5E', 'Manufacturer': 'Uniroyal', 'LCSC': 'C23140'},
     '470': {'MPN': '0603WAF4700T5E', 'Manufacturer': 'Uniroyal', 'LCSC': 'C23179'},
     '10k': {'MPN': '0603WAF1002T5E', 'Manufacturer': 'Uniroyal', 'LCSC': 'C25804'},
     '1k': {'MPN': '0603WAF1001T5E', 'Manufacturer': 'Uniroyal', 'LCSC': 'C21190'},
-    'GREEN': {'MPN': '19-217/GHC-YR1S2/3T', 'Manufacturer': 'Everlight', 'LCSC': 'C72043'},
+    'GREEN': {'MPN': '19-217/GHC-YR1S2/3T', 'Manufacturer': 'Everlight', 'LCSC': 'C72043'},   # extended
 }
 
 
