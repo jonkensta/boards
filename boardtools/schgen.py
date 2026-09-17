@@ -7,7 +7,8 @@ so wires can be drawn from symbol to symbol without hand-computing offsets.
 
 Only what the boards in this repo have needed is implemented: single-unit
 symbols (with `extends` flattened), wires, junctions, power symbols, PWR_FLAG,
-text, dashed boxes. No hierarchical sheets, buses or net labels yet.
+local net labels, no-connect flags, text, dashed boxes, DNP and KiCad 10 design
+variants. No hierarchical sheets or buses yet.
 """
 
 from __future__ import annotations
@@ -117,8 +118,15 @@ class Schematic:
     def place(self, lib: str, name: str, ref: str, x: float, y: float, rot: int = 0, *, value: str | None = None,
               footprint: str = "", fields: dict | None = None, mirror: str | None = None, in_bom: bool = True,
               on_board: bool = True, prop_pos: dict | None = None, hide_value: bool = False,
-              description: str | None = None) -> dict[str, tuple[float, float]]:
-        """Place one symbol; returns {pin number: (x, y)} in sheet coordinates."""
+              description: str | None = None, dnp: bool = False, in_pos_files: bool | None = None,
+              variants: dict[str, dict] | None = None, prop_rot: int | None = None) -> dict[str, tuple[float, float]]:
+        """Place one symbol; returns {pin number: (x, y)} in sheet coordinates.
+
+        `variants` = {variant name: {"dnp": bool, ...}} records per-variant overrides
+        (KiCad 10 design variants); only attributes that differ from the base symbol
+        are meaningful. `in_pos_files=False` keeps pad-only parts out of position files.
+        `prop_rot` forces the Reference/Value text angle (default: rot % 180).
+        """
         key = f"{lib}:{name}"
         sym = self.lib_symbols.setdefault(key, lib_symbol(lib, name))
         libprops = {p[1]: (p[2] if len(p) > 2 else "") for p in sexpr.children(sym, "property")}
@@ -129,7 +137,7 @@ class Schematic:
         def prop(k, v, hide=False, dx=2.54, dy=0.0, rotp=None):
             px, py = pp.get(k, (dx, dy))
             if rotp is None:
-                rotp = rot % 180
+                rotp = rot % 180 if prop_rot is None else prop_rot
             e = ["effects", ["font", ["size", "1.27", "1.27"]]]
             if hide:
                 e.append(["hide", "yes"])
@@ -138,8 +146,11 @@ class Schematic:
         node = ["symbol", ["lib_id", Q(key)], ["at", _n(x), _n(y), _n(rot)]]
         if mirror:
             node.append(["mirror", mirror])
-        node += [["unit", "1"], ["exclude_from_sim", "no"], ["in_bom", "yes" if in_bom else "no"],
-                 ["on_board", "yes" if on_board else "no"], ["dnp", "no"], ["uuid", _u()],
+        yn = lambda b: "yes" if b else "no"
+        node += [["unit", "1"], ["exclude_from_sim", "no"], ["in_bom", yn(in_bom)], ["on_board", yn(on_board)]]
+        if in_pos_files is not None:
+            node.append(["in_pos_files", yn(in_pos_files)])
+        node += [["dnp", yn(dnp)], ["uuid", _u()],
                  prop("Reference", ref, hide=key.startswith("power:"), dx=2.54, dy=-1.27),
                  prop("Value", val, hide=hide_value, dx=2.54, dy=1.27),
                  prop("Footprint", fp, hide=True), prop("Datasheet", libprops.get("Datasheet", ""), hide=True),
@@ -151,8 +162,14 @@ class Schematic:
             node.append(["pin", Q(num), ["uuid", _u()]])
             ex, ey = xform(dx, dy, rot, mirror)
             pins[num] = (round(x + ex, 2), round(y + ey, 2))
-        node.append(["instances", ["project", Q(self.project),
-                                   ["path", Q("/" + self.root_uuid), ["reference", Q(ref)], ["unit", "1"]]]])
+        path = ["path", Q("/" + self.root_uuid), ["reference", Q(ref)], ["unit", "1"]]
+        for vname, ov in (variants or {}).items():
+            v = ["variant", ["name", Q(vname)]]
+            for k in ("dnp", "in_bom", "on_board", "in_pos_files", "exclude_from_sim"):
+                if k in ov:
+                    v.append([k, yn(ov[k])])
+            path.append(v)
+        node.append(["instances", ["project", Q(self.project), path]])
         self.items.append(node)
         return pins
 
@@ -174,6 +191,12 @@ class Schematic:
 
     def junction(self, x: float, y: float):
         self.items.append(["junction", ["at", _n(x), _n(y)], ["diameter", "0"], ["color", "0", "0", "0", "0"], ["uuid", _u()]])
+
+    def label(self, name: str, x: float, y: float, rot: int = 0):
+        """Local net label anchored at (x, y); rot 0 reads right, 180 left, 90 up, 270 down."""
+        just = ["left", "bottom"] if rot in (0, 90) else ["right", "bottom"]
+        self.items.append(["label", Q(name), ["at", _n(x), _n(y), _n(rot)],
+                           ["effects", ["font", ["size", "1.27", "1.27"]], ["justify"] + just], ["uuid", _u()]])
 
     def no_connect(self, x: float, y: float):
         self.items.append(["no_connect", ["at", _n(x), _n(y)], ["uuid", _u()]])

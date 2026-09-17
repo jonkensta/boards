@@ -110,7 +110,8 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 `boardtools/schgen.py` (`Schematic`: place/power/flag/wire/junction/text/box, `g()` grid helper,
 `extends` flattening) and `boardtools/pcbgen.py` (`Netlist`, `Board`: footprint/seg/via/zone/
 keepout/gr_*; `footprint()` returns pad centres in board-local mm) are the shared generators.
-`boards/chromatone/isolator/generate/` and `boards/chromatone/dac/generate/` are the worked
+`boards/chromatone/isolator/generate/`, `boards/chromatone/dac/generate/` and
+`boards/net/node/generate/` (RP2040, label-wired blocks, design variants) are the worked
 examples. Route with `N(ref, pin)` net lookups from the netlist, never assumed pad roles: on the
 DAC every resistor and the flying cap were initially backwards. Facts that cost time to discover:
 
@@ -152,6 +153,23 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   is the quickest visual check; `sch export pdf` + `pdftoppm -r 300 -png -x -y -W -H` for crops.
 - SPI-to-LED specifics recorded in `boards/chromatone/isolator/README.md` (SK9822 has no VIH spec, only
   VDD+0.3 V abs max; ISO7720 is 2/0, fail-safe high, PWD up to 5.9 ns; start at 8 MHz).
+- `Schematic.label(name, x, y, rot)` writes local labels; KiCad justifies them `left bottom` for
+  rot 0/90 and `right bottom` for 180/270, so the text always extends away from the wire end.
+  Wiring big parts (RP2040) block-by-block with labels is far cleaner than direct wires.
+- Property (Reference/Value) text is centre-justified at its `at`, and its angle is relative to
+  the symbol (schgen's default `rot % 180` keeps it horizontal; do not force 0 on rotated parts).
+  Offsets of 3+ mm keep values clear of bodies and of `Device:C` plates.
+- Stacked pins (RP2040 IOVDD 1/10/22/33/42/49, DVDD 23/50) share one position; one wire end
+  connects them all, and a `no_connect` on any of them ties the flag to the whole net.
+- **KiCad 10 design variants** live per symbol instance:
+  `(instances (project "x" (path "/uuid" (reference "U3") (unit 1) (variant (name "vib") (dnp yes)))))`,
+  with `dnp`, `in_bom`, `on_board`, `in_pos_files`, `exclude_from_sim` and `(field (name) (value))`
+  overrides; only differences from the base symbol matter and the variant name set is collected
+  from these entries (no project-file registry needed). `schgen.place(variants={...}, dnp=...)`
+  writes them; `kicad-cli sch export bom --variant vib` / `pcb export pos --variant vib` apply them
+  (`${VARIANT}` in `-o` for several at once). The jobset exports the default variant only.
+- `kicad-cli pcb drc --schematic-parity` on a PCB with no footprints reports zero parity issues,
+  so `make check` passes for a board whose layout has not started.
 
 ## Review history
 
@@ -174,4 +192,6 @@ reproduction-based re-check, not a read-through.
 5. Assembly drawings (`pcb_export_pdf` job with F.Fab/F.SilkS/Edge.Cuts) and SVG-based revision diffs.
 6. Panelization (KiKit is SWIG-based; no `kicad-cli` equivalent yet).
 7. Board revision in PCB markings and output filenames (currently schematic title block only).
-8. `schgen`: net labels and hierarchical sheets (both boards so far are single-sheet, wire-only).
+8. `schgen`: hierarchical sheets and buses (labels exist; all boards are still single-sheet).
+9. Per-variant jobset outputs (`variant_names` in the BOM/pos jobs) so `make jlcpcb` can build
+   the `vib`/`bare` variants of `boards/net/node` instead of the hand-run `--variant` commands.
