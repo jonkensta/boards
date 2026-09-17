@@ -5,8 +5,12 @@ four neighbour links. A node that detects something lights up and tells its neig
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-Status (rev A, 2026-09-16): schematic generated and ERC-clean, design variants in place.
-**No PCB layout yet** (`node.kicad_pcb` is the empty template; DRC still passes).
+## Status: parked (2026-09-17)
+
+Rev A schematic is generated, ERC-clean and committed, with the three sensor variants in
+place. **No PCB layout, no firmware, nothing ordered.** `node.kicad_pcb` is still the empty
+template, so `make check` passes only because DRC parity ignores footprints that were never
+placed. Work stopped here deliberately; the open questions and the resume path are at the end.
 
 ## Decisions
 
@@ -108,11 +112,31 @@ the wave terminates on any topology, loops included. Add a deliberate per-hop de
 ms) or the ripple is invisible. Flood with a hop count for global commands (colour, reset), and
 put a WiFi gateway (ESP32 on J5, or a future variant) on one node if a host is wanted.
 
-## Next
+## Open questions (decide before resuming)
 
-1. PCB layout (`generate/pcb.py`): about 40 x 40 mm, one link connector centred on each edge,
-   LED in the middle, J6 pads and the sensor on the top side, M2 holes in the corners.
-2. Order a handful of default + bare boards; build the jig; write the link protocol.
-3. Then decide on the LED power class and bus voltage for a larger net.
+- **LED power class.** Rev A uses a WS2812B-2020 (about 60 mA max). A "powerful" LED per node
+  changes the power design: a 12 V or 24 V bus with a buck per node, a constant-current driver,
+  and connector current ratings. Decide the target net size and worst-case lit count first.
+- **Sensor for the first batch.** VL53L0X (default variant) gives distance-scaled excitation but
+  is the costliest part on the board; `bare` plus an off-board PIR or LD2410 on J5 is cheaper
+  and enough to prove the wave behaviour.
+- **Cable.** JST-XH keyed 3-pin is the rev A choice. Pre-made XH cables are cheap but each
+  link needs one; check cable cost against node cost before ordering many.
+- **LCSC numbers.** Only C2040, C82317, C82942, C9002 and C8545 are filled in and none are
+  confirmed on the order page; the rest are blank on purpose.
+
+## Resume path
+
+1. Re-read this file and `generate/README.md`; regenerate the schematic only if the design
+   changes (`python3 boards/net/node/generate/schematic.py`, then `make check BOARD=net/node`).
+2. PCB layout as `generate/pcb.py`, following `boards/chromatone/isolator/generate/`: about
+   40 x 40 mm, one link connector centred on each edge, LED in the middle, J6 pads and the
+   sensor on the top side, M2 holes in the corners. Export the netlist first
+   (`kicad-cli sch export netlist --format kicadsexpr`).
+3. `make jlcpcb BOARD=net/node` for the default variant; the hand-run `--variant` commands
+   above for `vib` and `bare`. Order a handful of default + bare boards.
+4. Build the pogo jig (Programming jig section), bring up one node over USB, then write the
+   link protocol (Firmware sketch) and the UART bootloader so the jig is a one-time touch.
+5. Then revisit LED power and bus voltage for a larger net.
 
 `generate/` holds the script that produced the schematic (see its README).
