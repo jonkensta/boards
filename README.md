@@ -19,6 +19,18 @@ boards/<id>/out/        generated outputs (git-ignored)
 .github/workflows/      CI: unit tests, smoke test, ERC/DRC, fab exports in kicad/kicad:10.0
 ```
 
+## Boards
+
+| Board | What | Status (2026-09-19) |
+| --- | --- | --- |
+| [`chromatone/isolator`](boards/chromatone/isolator/README.md) | ISO7720 isolated SPI daughterboard, Pi (3.3 V) -> SK9822 strip (5 V), 46 x 30 mm | Rev A layout done, review-clean; pick passives in JLCPCB's BOM tool, then orderable |
+| [`chromatone/dac`](boards/chromatone/dac/README.md) | PCM5102A I2S line-out DAC (experiment), 56 x 36 mm | Rev A layout done, review-clean, fully numbered BOM; not yet built |
+| [`net/node`](boards/net/node/README.md) | RP2040 sensor-net node with neighbour links and sensor build variants | Parked: schematic done, no layout, no firmware |
+
+`boards/chromatone/README.md` holds the Chromatone-wide decisions, strip wiring, order and
+bench checklists. Every board so far was generated from `generate/` scripts (see below) and
+put through an adversarial Codex review loop before being called done.
+
 ## Usage
 
 ```sh
@@ -54,6 +66,10 @@ Other targets: `make export` (jobset without the Makefile checks), `make erc|drc
 (boardtools unit tests), `make smoke` (scaffolds throwaway 2- and 8-layer boards in a temp dir
 and runs the whole pipeline, including a deliberate DRC failure), `make list`, `make clean`.
 
+KiCad 10 **design variants** (per-symbol DNP/field overrides, used by `net/node`) are honoured
+by `kicad-cli sch export bom --variant <name>` and `pcb export pos --variant <name>`; the
+jobset and `make jlcpcb` export the default variant only (backlog item 9 in `CLAUDE.md`).
+
 ## boardtools
 
 ```sh
@@ -66,9 +82,21 @@ python3 -m boardtools jlcpcb bom <kicad-bom.csv> <jlc-bom.csv>   # warns on line
 ## Generating boards from Python
 
 `boardtools.schgen` and `boardtools.pcbgen` write native `.kicad_sch` / `.kicad_pcb` files from
-short Python scripts using the stock symbol and footprint libraries; `boards/chromatone/*/generate/`
-show the pattern (place symbols, draw wires, export the netlist, place footprints, route, pour,
-DRC). No KiCad Python bindings are involved.
+short Python scripts using the stock symbol and footprint libraries. `boards/*/*/generate/`
+show the pattern: place symbols on the 1.27 mm grid, draw wires (or local labels for big parts),
+run ERC, export the netlist, place footprints, route with `N(ref, pin)` net lookups, pour, run
+DRC with `--refill-zones --save-board`, render. No KiCad Python bindings are involved.
+Regenerating replaces every UUID, so once a board is edited in the KiCad GUI the scripts become
+history rather than the source. `CLAUDE.md` lists the format details that cost time to learn
+(pin transforms, junctions, PWR_FLAG, 0.65 mm pitch fan-out, mirrored silk, keepouts).
+
+## Review workflow
+
+Tooling changes and boards are reviewed adversarially with the Codex CLI: one fresh
+`codex exec -s read-only` review, then `codex exec resume --last` rounds after each fix until
+it reports no substantive findings. Codex is asked to reproduce (run `make test`/`make smoke`,
+scaffold boards, run DRC in a temp copy), not just read. The findings that changed the design
+are summarised in `CLAUDE.md` under "Review history".
 
 ## Design
 
@@ -94,3 +122,17 @@ DRC). No KiCad Python bindings are involved.
   move the outline. Gerbers, drill, and position files use it.
 - Board revision lives in the schematic title block.
 - JLCPCB rotations are passed through unchanged; check the placement preview on the order page.
+- Mounting holes get copper keepouts (`Board.keepout`) and nylon standoffs; on isolated boards
+  metal hardware would tie the domains together.
+- Passive references go on `F.Fab` (hidden); silk carries connector pin labels and test-point
+  names instead.
+
+## Where things stand
+
+- Tooling is complete for the current workflow: scaffold, check, export, JLCPCB files, CI.
+- Backlog, ranked, lives in `CLAUDE.md` ("Ideas not yet implemented"): order bundle with a
+  manifest, BOM/CPL lint, per-fab constraint profiles, HTML BOM, assembly drawings and revision
+  diffs, panelization, revision in PCB markings, hierarchical sheets in `schgen`, per-variant
+  jobset outputs.
+- Known gap: `pcbgen` does not yet carry a schematic DNP flag onto footprints (parity DRC only
+  warns about it).
