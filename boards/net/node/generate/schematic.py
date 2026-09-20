@@ -83,14 +83,14 @@ W((UX - 20, UY - 24), (UX - 24, UY - 24), (UX - 24, UY - 20)); s.power('GND', g(
 
 # GPIO map (right side) and left-side signals
 GPIO = {'2': 'LINK_N', '3': 'LINK_E', '4': 'LINK_S', '5': 'LINK_W', '6': 'LED_DIN',
-        '8': 'SENS_INT', '9': 'SENS_XSHUT', '11': 'SDA', '12': 'SCL', '38': 'SENS_AIN'}
+        '7': 'SENS_XSHUT', '8': 'SENS_INT', '13': 'SDA', '14': 'SCL', '38': 'SENS_AIN'}   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10
 LEFT = {'26': 'RUN', '46': 'USB_DM', '47': 'USB_DP', '56': 'QSPI_SS', '52': 'QSPI_SCLK', '53': 'QSPI_SD0',
         '55': 'QSPI_SD1', '54': 'QSPI_SD2', '51': 'QSPI_SD3', '24': 'SWCLK', '25': 'SWDIO'}
 for pin, name in GPIO.items():
     stub_label(U1[pin], name, 'r')
 for pin, name in LEFT.items():
     stub_label(U1[pin], name, 'l')
-for pin in ['7'] + [str(n) for n in range(13, 19)] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD; 7 = GPIO5 (buzzer dropped)
+for pin in ['9', '11', '12'] + [str(n) for n in range(15, 19)] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD
     s.no_connect(*U1[pin])
 
 # crystal: 12 MHz, 27 pF loads, 1k in series with XOUT (RP2040 hardware design guide)
@@ -184,11 +184,12 @@ J6 = s.place('Connector_Generic', 'Conn_02x04_Odd_Even', 'J6', g(JX), g(JY), rot
 assert J6['1'] == (g(JX - 2), g(JY + 4)) and J6['2'] == (g(JX - 2), g(JY - 6)) and J6['8'] == (g(JX + 4), g(JY - 6))
 for pin, name in {'2': 'SWDIO', '4': 'SWCLK', '6': 'RUN', '8': 'QSPI_SS'}.items():
     stub_label(J6[pin], name, 'u', length=3)
-# bottom row: 1 USB_DP, 3 USB_DM, 5 GND, 7 +5V
+# bottom row: 1 USB_DM, 3 USB_DP, 5 GND, 7 +5V (DM left of DP, matching the RP2040 pin order so the
+# board traces do not cross; swapped 2026-09-20)
 W((JX - 2, JY + 4), (JX - 2, JY + 6), (JX - 8, JY + 6)); _, r = passive('R', g(JX - 8), g(JY + 9), '27')
-s.wire((g(JX - 8), g(JY + 6)), r['1']); stub_label(r['2'], 'USB_DP', 'd', length=3)
+s.wire((g(JX - 8), g(JY + 6)), r['1']); stub_label(r['2'], 'USB_DM', 'd', length=3)
 W((JX, JY + 4), (JX, JY + 8), (JX - 4, JY + 8)); _, r = passive('R', g(JX - 4), g(JY + 11), '27')
-s.wire((g(JX - 4), g(JY + 8)), r['1']); stub_label(r['2'], 'USB_DM', 'd', length=3)
+s.wire((g(JX - 4), g(JY + 8)), r['1']); stub_label(r['2'], 'USB_DP', 'd', length=3)
 W((JX + 2, JY + 4), (JX + 2, JY + 8)); s.power('GND', g(JX + 2), g(JY + 8))
 W((JX + 4, JY + 4), (JX + 4, JY + 6), (JX + 8, JY + 6), (JX + 8, JY + 2)); s.power('+5V', g(JX + 8), g(JY + 2))
 

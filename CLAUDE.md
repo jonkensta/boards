@@ -177,18 +177,53 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   43+44, 48+49) can be joined at the pad tips to free a lane. A 0603 in line with a 0.4 mm pin
   is impossible (its pad is 0.95 mm wide). Decision taken: the node board is 4-layer (In1 GND,
   In2 +3V3); `pcbgen.Board(copper_layers=4)`.
-- pcbgen (2026-09-20): `copper_layers`, zone `priority`, keepouts on `*.Cu`, `boards:`
-  footprints resolved from `lib/footprints/boards.pretty`, and the netlist's
-  dnp/exclude_from_bom/exclude_from_pos_files copied into the footprint `attr`. Known bugs
-  from the Codex review, unfixed: layer insertion is not idempotent when a generator reads its
-  own output as the template; footprints without an `attr` clause lose the flags; per-variant
-  dnp is not carried into the board, so `pcb export pos --variant` disagrees with the BOM.
+- pcbgen (2026-09-20): `copper_layers` (idempotent: InN.Cu entries are rebuilt, so a generator
+  may read its own output), zone `priority` and per-zone `thermal_gap`/`thermal_bridge`,
+  keepouts on `*.Cu`, `boards:` footprints from `lib/footprints/boards.pretty`, the netlist's
+  dnp/exclude flags copied into `attr` (added when the library footprint has no `attr`),
+  per-variant overrides written as KiCad 10 `(variants ...)` on the board and `(variant (name)
+  (dnp yes) ...)` on the footprint (parsed from the netlist's `(variants ...)` per component; the
+  board-side syntax came from `pcb_io_kicad_sexpr_parser.cpp`), `solid_pads=` for pads that must
+  connect to pours without thermal spokes, and empty fields (`(field (name "LCSC"))` with no
+  value) emitted as empty properties so schematic parity passes. `sch export bom --exclude-dnp
+  --variant x` still filters on the *base* dnp; filter on the `${DNP}` column instead.
+- **Routing at 0.4 mm pitch, learned on boards/net/node (all DRC-verified):** an escape must
+  leave its pad straight for >= 0.2 mm before bending or it clips the neighbouring pad; two
+  neighbours bending 45 deg the same way need bend points offset >= 0.17 mm along the row (the
+  pin nearer the bend direction bends first) or >= 0.97 mm the other way (parallel 45 deg lines
+  offset (a, b) are |a - b| / sqrt 2 apart); a via needs 0.6 mm from every other track centre
+  and 0.8 mm from other vias, so rows of parallel tracks must be >= 1.2 mm apart for a via to
+  sit between them; a via never "touches" a pad unless a track joins them (leave no 0.3 mm
+  gap); the U1 pin whose two neighbours are unrouted is the only one that can via straight out,
+  which is why GPIO7..9 are unused on the node. `R_0603` pads sit at +-0.825 mm, `C_0603` at
+  +-0.775, both 0.95 across the short axis; rot 180 puts pad 1 on the right, rot 90 puts it at
+  +y (below), rot 270 above. `ref_pos`/`val_pos` offsets rotate with the footprint. Vias may sit
+  inside pogo/test pads. A B.Cu ring around M2 keepouts needs square notches at >= hole + 3.6
+  mm; leaving one corner open costs two `track_dangling` warnings and frees the corner. Pad
+  dicts returned by `footprint()` beat hand-derived pad coordinates (D2's WS2812 pads and every
+  resistor were initially wrong).
+- **Fan-out pattern that works:** pin k of a group bends at a staggered point, then all turn
+  onto parallel rows/columns at 0.7 mm (tracks only) or 1.2 mm (vias between) pitch; give each
+  row its own destination and put pull-ups *on* the run (pad 2 centred on the track, pad 1
+  hanging off to a via). A via field for a bundle: stagger vias on alternate rows.
+- **KiCad without a system install:** `flatpak install --user flathub org.kicad.KiCad` (10.0.6,
+  ~600 MB) plus the `org.kicad.KiCad.Library.{Symbols,Footprints}` extensions; a wrapper
+  `~/.local/bin/kicad-cli` running `flatpak run --user --command=kicad-cli --filesystem=host
+  org.kicad.KiCad "$@"`, the global `sym-lib-table`/`fp-lib-table` copied from the extensions'
+  `template/` dirs into `~/.var/app/org.kicad.KiCad/config/kicad/10.0/` (otherwise ERC reports
+  every library missing), and `KICAD_SYMBOL_DIR` / `KICAD_FOOTPRINT_DIR` pointing at
+  `~/.local/share/flatpak/runtime/org.kicad.KiCad.Library.*/x86_64/stable/active/files/{symbols,footprints}`
+  for schgen/pcbgen. Output paths must be under `$HOME` (`/tmp` is not shared).
 - `*.net` is git-ignored: PCB generators need the netlist exported first (command in each
   `generate/README.md`).
+- The DRC loop that worked: a script that regenerates, runs `kicad-cli pcb drc
+  --severity-error --severity-warning --schematic-parity --refill-zones`, and prints the
+  report's `[type]` lines with `@(x, y)` converted to board-local mm; then a bounding-box
+  courtyard checker (parse `F.CrtYd`, transform by `at`) for placement passes.
 
 ## Review history
 
-Four Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+Five Codex critique loops so far (five rounds on the original scaffold, three on the jobset
 restructure, one on the net/node placement and pcbgen changes (findings in
 `boards/net/node/README.md`, Resume path), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
 loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export

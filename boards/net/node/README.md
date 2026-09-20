@@ -5,13 +5,14 @@ neighbour links. A node that detects something lights up and tells its neighbour
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-## Status: PCB placement done, routing not started (2026-09-20)
+## Status: PCB placed and routed, DRC clean (2026-09-20)
 
-Rev A schematic is generated and ERC-clean (0784855, 587ccf0 added D4). `generate/pcb.py`
-places every footprint on a **48 x 48 mm, 4-layer** board (e1650c8); nothing is routed, so
-`make check` reports 146 unconnected items. **No firmware, nothing ordered, no jig built.**
-A Codex review of the placement (findings summarised under Resume path) is the to-do list
-for the next session. This file is meant to be enough to resume cold.
+Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
+board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
+0 unconnected items and 0 schematic-parity issues (two `track_dangling` warnings are the open
+corner of the 5 V ring, by design). Buzzer dropped, sensor GPIOs moved (see Decisions), J6 USB
+pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
+`make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Concept and first-iteration scope
 
@@ -87,7 +88,7 @@ for the next session. This file is meant to be enough to resume cold.
   (SENS_INT, SENS_XSHUT, SDA/SCL, SENS_AIN), so firmware needs no board knowledge beyond
   "which variant". VL53L0X was chosen for the default because it is fast and returns distance,
   so the initial excitation can scale with how close the hand is. It runs at 3.3 V (AVDD range
-  2.6 to 3.5 V; I/O tolerant up to AVDD), with 100 nF + 4.7 uF, XSHUT on GPIO7 (the RP2040's
+  2.6 to 3.5 V; I/O tolerant up to AVDD), with 100 nF + 4.7 uF, XSHUT on GPIO5 (the RP2040's
   reset-default pull-down holds the sensor off until firmware raises it), GPIO1 interrupt is
   open drain and uses the shared 10 k SENS_INT pull-up. The spring switch is bouncy and
   event-like: 10 k pull-up, 100 nF debounce, treat it as a pulse in firmware. An IR reflective
@@ -104,7 +105,7 @@ for the next session. This file is meant to be enough to resume cold.
 
 Link J1..J4 (N, E, S, W): 1 = +5V, 2 = DATA, 3 = GND.
 
-Sensor header J5: 1 +5V, 2 +3V3, 3 SENS_INT (GPIO6), 4 SDA (GPIO8), 5 SCL (GPIO9),
+Sensor header J5: 1 +5V, 2 +3V3, 3 SENS_INT (GPIO6), 4 SDA (GPIO10), 5 SCL (GPIO11),
 6 SENS_AIN (GPIO26/ADC0), 7 GND.
 
 Programming pads J6 (2x4, odd pins in one row, even in the other; on the board the two rows
@@ -112,16 +113,18 @@ are 5.05 mm apart and the columns 2.54 mm, see the PCB section):
 
 | pin | signal  | pin | signal          |
 |-----|---------|-----|-----------------|
-| 1   | USB_DP  | 2   | SWDIO           |
-| 3   | USB_DM  | 4   | SWCLK           |
+| 1   | USB_DM  | 2   | SWDIO           |
+| 3   | USB_DP  | 4   | SWCLK           |
 | 5   | GND     | 6   | RUN             |
 | 7   | +5V     | 8   | BOOT (QSPI_SS)  |
 
 USB D+/D- have the 27 R series resistors on the board. Ground BOOT while applying power to
 force the USB bootloader on a programmed node.
 
-GPIO map: 0..3 LINK_N/E/S/W, 4 LED_DIN, 6 SENS_INT, 7 SENS_XSHUT, 8 SDA (I2C0), 9 SCL (I2C0),
-26 SENS_AIN (ADC0). GPIO5 (ex buzzer), 10..25 and 27..29 are unconnected (no-connect flags).
+GPIO map: 0..3 LINK_N/E/S/W, 4 LED_DIN, 5 SENS_XSHUT, 6 SENS_INT, 10 SDA (I2C1), 11 SCL (I2C1),
+26 SENS_AIN (ADC0). GPIO7..9, 12..25 and 27..29 are unconnected (no-connect flags). GPIO7..9
+are left free on purpose: IOVDD pin 10 sits between GPIO7 and GPIO8 on the QFN, and with
+0.4 mm pitch its decoupling via only fits if both neighbours stay unrouted (2026-09-20).
 Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 
 ## Reference designators
@@ -240,66 +243,71 @@ Cables are a real line item: one 3-wire XH cable per link, roughly two per node 
 - **LCSC numbers.** Only C2040, C82317, C82942 and C9002 are filled in and none are
   confirmed on the order page; the rest are blank on purpose.
 
-## PCB (rev A, in progress)
+## PCB (rev A, routed)
 
-`generate/pcb.py` -> `node.kicad_pcb`, 48 x 48 mm, **4 copper layers**: F.Cu signals, In1.Cu
-GND plane, In2.Cu +3V3 plane, B.Cu GND pour plus the 5 V ring and the back-layer crossings.
-Why four: with 0.2 mm track / 0.2 mm clearance / 0.6 mm vias a via needs a 1.0 mm lane, so at
-the RP2040's 0.4 mm pitch only every third pin can via near the chip; on two layers the QSPI
-group (51..56) and the power/USB group (43..50) on the same edge fight for the same space, and
-every IOVDD/DVDD pin still needs a cap and a ground return. Codex confirmed a six-track QSPI
-escape does fit on two layers, so the plane argument (return paths, decoupling by via) is the
-real one. JLCPCB 4-layer adds roughly $1 per board at this size.
+`generate/pcb.py` -> `node.kicad_pcb`, 48 x 48 mm, **4 copper layers**: F.Cu escapes and short
+runs, In1.Cu GND plane, In2.Cu +3V3 plane, B.Cu GND pour plus the 5 V ring and the long signal
+runs. Why four: with 0.2 mm track / 0.2 mm clearance / 0.6 mm vias a via needs 0.6 mm from any
+neighbouring track centre, so at the RP2040's 0.4 mm pitch only a pin whose neighbours are
+unrouted can via out; on two layers the QSPI group and the power/USB group on the same edge
+fight for the same space, and every IOVDD/DVDD pin still needs a cap and a ground return.
+JLCPCB 4-layer adds roughly $1 per board at this size.
 
 Floorplan (board-local mm, origin top-left): J1..J4 centred on each edge (N top, E right, S
 bottom, W left; pin 1 = +5V is the clockwise-first pin); M2 holes 3.5 mm in from each corner
-with 3.2 mm keepouts on all copper layers; U1 rot 180 at (12, 13) so GPIO0..12 face the
+with 3.2 mm keepouts on all copper layers; **U1 rot 180 at (14, 13)** so GPIO0..GPIO11 face the
 centre on its right edge, crystal/SWD/RUN on its top edge, QSPI/USB/core power on its bottom
 edge; U2 flash rot 90 directly below U1 (near row SD3/SCLK/SD0 straight down, far row
-SS/SD1/SD2 around the right side); Y1/R1/C1/C2 above U1; D2/D4 at (21.5, 24)/(25.5, 24);
-buzzer body centred (34.2, 26.7) with Q1/R17/R18 to its left and D3 above; U4 LDO top-right;
-J6 pogo pads rot 90 at (12.5, 36) (even row y 33.5 = SWDIO/SWCLK/RUN/BOOT, odd row y 38.5 =
-USB_DP/USB_DM/GND/+5V, columns 2.54 mm apart, rows 5.05 mm apart); U3 + C20/C21 + I2C
-pull-ups bottom-centre; J5 rot 90 with pin 1 at (20.73, 38.6) so the J3 data trace passes
-between pins 1 and 2 at x = 22 (0.32 mm to each pad, DRC-clean); SW1/C22 bottom-right.
-Courtyards are DRC-clean; a bounding-box checker for quick iteration lives in the session
-scratchpad only (parse F.CrtYd, transform by `at`, report overlaps).
+SS/SD1/SD2 around the right side and back under the far row); crystal cluster above U1's right
+half with XIN straight up into Y1 and XOUT going up-left with the SWD fan to R1, the crystal
+node returning over the top at y 1.9; J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
+SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd row y 40.5 = USB_DM/USB_DP/GND/+5V,
+columns 2.54 mm apart, rows 5.05 mm apart); D2 at (29, 24) with D4 chained below it; D1/C19 to
+their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5/C11 in a row; U3 rot
+180 at (30, 34.6) with C20/C21 to its right; J5 rot 90 with pin 1 at (20.73, 38.6); SW1/C22
+bottom-right.
+
+Routing plan, in the order pcb.py writes it:
+
+- **U1 escapes.** Top edge: 19 GND to a via, 20 XIN straight up, 21..26 fan up-left and turn
+  west onto rows 1.2 mm apart (RUN 8.7, SWDIO 7.5, SWCLK 6.3, DVDD 5.1, 3V3 3.9, XOUT 2.7).
+  Left edge: 33/42 to C6/C7, 38 SENS_AIN west on F.Cu to a via at (4.6, 14). Bottom edge:
+  43+44 and 48+49 joined at the pad tips (same net), 45 down to C13/C15, 46/47 USB straight
+  down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
+  GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
+  turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east.
+- **B.Cu lanes.** West side x 5.2/5.7/6.3/6.9 = SENS_AIN/SWDIO/SWCLK/RUN, ending in vias
+  *inside* the J6 pogo pads (nothing is soldered there). LINK_N north on x 20.5, LINK_E north on
+  x 22.2 then east on y 15.4, LINK_W south then west on y 25.6 (east of the west lanes, into a
+  via between R13 and R14), LED_DIN east on y 20.3, INT east on y 30.5 to C22/SW1, SDA/SCL/INT
+  short diagonals to J5 pins 3..5 from vias below U3.
+- **F.Cu long runs.** LINK_S on x 22.9 to R11, then between J5 pins 1 and 2 to J3; XSHUT and
+  INT on x 25.0/25.7, SDA/SCL on x 26.6/27.3 down to U3. Pull-ups sit *on* their run with the
+  3V3 pad hanging off (R4, R5, R6, R12, R3, R2); R6's body straddles the XSHUT track.
+- **5 V ring** on B.Cu, 0.8 mm wide, inset 1.5 mm, square notches inside three M2 keepouts,
+  **open at the top-left corner** (the crystal and SWD vias live there); feeds: J1..J4 pin 1,
+  J6 pin 7 (via from a F.Cu stub that also serves J5 pin 1), U4/C17 via a via at (31.6, 2.4),
+  D1's anode on F.Cu straight to J2 pin 1. J4 pin 3 connects solidly to the B.Cu pour (no room
+  for two thermal spokes between the ring and the SENS_AIN lane).
+- Every cap has a via per pad; U1's centre pad has four; U2 VCC comes from a via next to C9.
+
+Last step of every regeneration: `kicad-cli pcb drc --refill-zones --save-board` so the
+committed board carries the zone fills.
 
 ## Resume path
 
-1. Re-read this file, `generate/README.md` and the CLAUDE.md section on generating KiCad files.
+1. Re-read this file, `generate/README.md` and the CLAUDE.md sections on generating KiCad files
+   (the 0.4 mm-pitch escape rules and the flatpak KiCad setup are recorded there).
    `generate/sch-1.png` is the rendered sheet. Regenerate the schematic only if the design
-   changes; regeneration replaces every UUID. Regenerate the PCB with
-   `kicad-cli sch export netlist --format kicadsexpr -o boards/net/node/generate/node.net
-   boards/net/node/node.kicad_sch && python3 boards/net/node/generate/pcb.py` (the `.net` is
-   git-ignored) and check with `make check BOARD=net/node` plus
-   `kicad-cli pcb render --side top`.
-2. Fix the pcbgen bugs Codex found first, with tests: (a) `copper_layers` re-inserts
-   In1/In2 on every run because pcb.py reads its own output as the template (the committed
-   board has six copies of each); skip layers already present. (b) A footprint without an
-   `attr` clause loses the dnp/exclude flags. (c) `kicad-cli pcb export pos --variant vib` gives
-   the opposite of the BOM because footprints carry only the base dnp; find the KiCad 10
-   board-side variant syntax and emit it, or document that position files are exported per
-   variant from the BOM's reference list instead.
-3. Re-place per the review before routing: decoupling caps within ~2 mm of their pins (C9
-   USB_VDD, C10 ADC_AVDD, C13 VREG_VOUT, C14/C15 DVDD are 5.6 to 7.3 mm away; C5/C8/C11/C16
-   3.8 to 4.3 mm); R15/R16 together next to U1's USB pins; C17/C18 on U4's pin side; C20/C21 on
-   U3's supply side (AVDDVCSEL/AVSSVCSEL); crystal cluster rotated so Y1's XIN pad is not
-   6.8 mm from the pin and R1 is not over XIN's escape; a bypass cap for D4.
-4. Route, in this order: 5 V ring on B.Cu (inset 1.5 mm, notched around the hole keepouts)
-   feeding J1..J4 pin 1, J6 pin 7, U4, BZ1, D1, J5 pin 1; via every 3V3/GND pad to the planes;
-   U1 escapes (right edge GPIOs fan out then via to B.Cu for LINK_N/E/W, LED_DIN, BUZZ, SDA/SCL,
-   SENS_*; bottom edge: QSPI as above, USB_DM/DP via to B.Cu to R15/R16, DVDD 45/50 joined on
-   B.Cu with 23; top edge: RUN/SWDIO/SWCLK left then down the west side to J6, XOUT straight
-   to R1, XIN jogs right over the NC pins 15..18 to Y1, TESTEN to a GND via at (14.8, 8.5));
-   then finish with `kicad-cli pcb drc --refill-zones --save-board --schematic-parity`. Place
-   silk deliberately at the end (19 silk warnings now: references over pads).
-5. README fixes from the review: J6 jig geometry (2.54 mm columns, 5.05 mm rows); D4 needs
-   the firmware to always send two pixels; add the buzzer to the power budget (two LEDs already
-   take 4.75 A of a 5 A supply, so pick the buzzer and cap simultaneous sound).
-6. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
+   changes; regeneration replaces every UUID. Regenerate the PCB with the commands in
+   `generate/README.md`, then `make check BOARD=net/node`.
+2. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
+   XSHUT track, vias inside the J6 pads). Silk is minimal: connector refs sit inside the
+   housings, passives have no silk reference.
+3. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
    check LED/connector orientation in the JLCPCB preview. Cables: JST-XH 3-pin pre-made,
    one length; XH has no strain relief, so a bush deployment needs a printed clip or tie.
-7. Pogo jig, USB bring-up, link protocol, UART bootloader; then rev B (LED power, bus voltage).
+4. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, UART bootloader;
+   then rev B (LED power, bus voltage, maybe a small SMD buzzer).
 
 `generate/` holds the scripts that produced the schematic and the board (see its README).

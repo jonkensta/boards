@@ -64,9 +64,8 @@ class Netlist:
                     flags.add(str(pr[1][1]))
             fl = sexpr.child(c, "fields")
             if fl:
-                for f in sexpr.children(fl, "field"):
-                    if len(f) > 2:
-                        fields[f[1][1]] = f[2]
+                for f in sexpr.children(fl, "field"):          # (field (name "LCSC") "C123"); an empty field has no value
+                    fields[f[1][1]] = f[2] if len(f) > 2 else ""
 
             def opt(k):
                 el = sexpr.child(c, k)
@@ -124,12 +123,13 @@ class Board:
 
     # ---- footprints -----------------------------------------------------------
     def footprint(self, ref: str, x: float, y: float, rot: float = 0, *, ref_pos=None, ref_fab=False,
-                  val_pos=None) -> dict[str, tuple[float, float]]:
+                  val_pos=None, solid_pads=()) -> dict[str, tuple[float, float]]:
         """Place the footprint the netlist assigns to `ref`; returns {pad: (x, y)} board-local.
 
         ref_pos: (dx, dy) offset of the Reference text on F.SilkS (default: library position);
         ref_fab: put the Reference on F.Fab hidden instead; val_pos: show the Value on F.SilkS
-        at this offset. Offsets are unrotated board-local millimetres.
+        at this offset. Offsets are in the footprint's own frame (KiCad rotates them with it).
+        solid_pads: pad numbers that connect to zones solidly instead of with thermal reliefs.
         """
         comp = self.net.comps[ref]
         lib, name = comp["footprint"].split(":")
@@ -175,9 +175,11 @@ class Board:
                     at[:] = ["at", at[1], at[2], _n((a + rot) % 360)]
                 if head == "pad":
                     nname = self.net.node_net.get((ref, el[1]))
-                    el = [c for c in el if not (isinstance(c, list) and c[0] == "net")]
+                    el = [c for c in el if not (isinstance(c, list) and c[0] in ("net", "zone_connect"))]
                     if nname:
                         el.append(["net", str(self.net.codes[nname]), Q(nname)])
+                    if el[1] in solid_pads:
+                        el.append(["zone_connect", "2"])
                     if el[1]:
                         dx, dy = rot_pt(float(at[1]), float(at[2]), rot)
                         pads[el[1]] = (round(x + dx, 4), round(y + dy, 4))
@@ -212,12 +214,13 @@ class Board:
         self.items.append(["via", ["at", _n(X), _n(Y)], ["size", _n(size)], ["drill", _n(drill)],
                            ["layers", Q("F.Cu"), Q("B.Cu")], ["net", str(self.net.codes[net_name])], ["uuid", _u()]])
 
-    def zone(self, net_name: str, zname: str, x1, y1, x2, y2, layer: str = "B.Cu", pad_clearance: float = 0.3, priority: int = 0):
+    def zone(self, net_name: str, zname: str, x1, y1, x2, y2, layer: str = "B.Cu", pad_clearance: float = 0.3, priority: int = 0,
+             thermal_gap: float = 0.5, thermal_bridge: float = 0.5):
         pts = [self.P(x1, y1), self.P(x2, y1), self.P(x2, y2), self.P(x1, y2)]
         self.items.append(["zone", ["net", str(self.net.codes[net_name])], ["net_name", Q(net_name)], ["layers", Q(layer)],
                            ["uuid", _u()], ["name", Q(zname)], ["hatch", "edge", "0.5"], ["priority", str(priority)],
                            ["connect_pads", ["clearance", _n(pad_clearance)]], ["min_thickness", "0.25"],
-                           ["filled_areas_thickness", "no"], ["fill", "yes", ["thermal_gap", "0.5"], ["thermal_bridge_width", "0.5"]],
+                           ["filled_areas_thickness", "no"], ["fill", "yes", ["thermal_gap", _n(thermal_gap)], ["thermal_bridge_width", _n(thermal_bridge)]],
                            ["polygon", ["pts"] + [["xy", _n(X), _n(Y)] for X, Y in pts]]])
 
     def keepout(self, x: float, y: float, r: float = 3.2, nseg: int = 24, name: str = "mounting keepout"):
