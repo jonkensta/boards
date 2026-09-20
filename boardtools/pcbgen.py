@@ -22,6 +22,7 @@ from . import sexpr
 
 Q = sexpr.Quoted
 FOOTPRINT_DIR = os.environ.get("KICAD_FOOTPRINT_DIR", "/usr/share/kicad/footprints")
+REPO_FOOTPRINT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib", "footprints", "boards.pretty")
 SIG, PWR = 0.25, 0.4
 
 
@@ -56,6 +57,10 @@ class Netlist:
         for c in sexpr.children(sexpr.child(net, "components"), "comp"):
             ref = c[1][1]
             fields = {}
+            flags = set()
+            for pr in sexpr.children(c, "property"):          # top-level (property (name "dnp")) etc.
+                if len(pr) > 1 and isinstance(pr[1], list) and pr[1][0] == "name" and pr[1][1] in ("dnp", "exclude_from_bom", "exclude_from_pos_files"):
+                    flags.add(str(pr[1][1]))
             fl = sexpr.child(c, "fields")
             if fl:
                 for f in sexpr.children(fl, "field"):
@@ -68,12 +73,12 @@ class Netlist:
 
             self.comps[ref] = dict(uuid=sexpr.child(c, "tstamps")[1], value=sexpr.child(c, "value")[1],
                                    footprint=sexpr.child(c, "footprint")[1], datasheet=opt("datasheet"),
-                                   description=opt("description"), fields=fields)
+                                   description=opt("description"), fields=fields, flags=flags)
 
 
 class Board:
     def __init__(self, template_pcb: str, netlist: Netlist, sheetfile: str, width: float, height: float,
-                 origin: tuple[float, float] = (50.0, 50.0)):
+                 origin: tuple[float, float] = (50.0, 50.0), copper_layers: int = 2):
         self.net = netlist
         self.sheetfile = sheetfile
         self.W, self.H = width, height
@@ -82,6 +87,10 @@ class Board:
             board = sexpr.parse(f.read())
         drop = ("gr_line", "gr_rect", "footprint", "segment", "via", "zone", "gr_text", "net")
         self.board = [x for x in board if not (isinstance(x, list) and x[0] in drop)]
+        if copper_layers > 2:      # KiCad 9+ numbering: In1.Cu = 4, In2.Cu = 6, ...
+            layers = sexpr.child(self.board, "layers")
+            i = next(k for k, el in enumerate(layers) if isinstance(el, list) and el[1] == "F.Cu")
+            layers[i + 1:i + 1] = [[str(2 * n + 2), Q(f"In{n}.Cu"), "signal"] for n in range(1, copper_layers - 1)]
         setup = sexpr.child(self.board, "setup")
         for el in setup:
             if isinstance(el, list) and el[0] == "aux_axis_origin":
@@ -107,7 +116,8 @@ class Board:
         """
         comp = self.net.comps[ref]
         lib, name = comp["footprint"].split(":")
-        with open(os.path.join(FOOTPRINT_DIR, f"{lib}.pretty", f"{name}.kicad_mod"), encoding="utf-8") as f:
+        lib_dir = REPO_FOOTPRINT_DIR if lib == "boards" else os.path.join(FOOTPRINT_DIR, f"{lib}.pretty")
+        with open(os.path.join(lib_dir, f"{name}.kicad_mod"), encoding="utf-8") as f:
             fp = sexpr.parse(f.read())
         out = ["footprint", Q(f"{lib}:{name}"), ["layer", Q("F.Cu")], ["uuid", _u()],
                ["at", _n(self.OX + x), _n(self.OY + y), _n(rot)]]
@@ -119,6 +129,8 @@ class Board:
             head = el[0]
             if head in ("version", "generator", "generator_version", "tedit", "tstamp", "uuid", "layer"):
                 continue
+            if head == "attr":      # keep smd/through_hole, add the schematic's dnp / exclude flags
+                el = ["attr"] + [a for a in el[1:] if a in ("smd", "through_hole")] + sorted(comp["flags"])
             if head == "property":
                 k = el[1]
                 props_seen.add(k)
@@ -178,10 +190,10 @@ class Board:
         self.items.append(["via", ["at", _n(X), _n(Y)], ["size", _n(size)], ["drill", _n(drill)],
                            ["layers", Q("F.Cu"), Q("B.Cu")], ["net", str(self.net.codes[net_name])], ["uuid", _u()]])
 
-    def zone(self, net_name: str, zname: str, x1, y1, x2, y2, layer: str = "B.Cu", pad_clearance: float = 0.3):
+    def zone(self, net_name: str, zname: str, x1, y1, x2, y2, layer: str = "B.Cu", pad_clearance: float = 0.3, priority: int = 0):
         pts = [self.P(x1, y1), self.P(x2, y1), self.P(x2, y2), self.P(x1, y2)]
         self.items.append(["zone", ["net", str(self.net.codes[net_name])], ["net_name", Q(net_name)], ["layers", Q(layer)],
-                           ["uuid", _u()], ["name", Q(zname)], ["hatch", "edge", "0.5"],
+                           ["uuid", _u()], ["name", Q(zname)], ["hatch", "edge", "0.5"], ["priority", str(priority)],
                            ["connect_pads", ["clearance", _n(pad_clearance)]], ["min_thickness", "0.25"],
                            ["filled_areas_thickness", "no"], ["fill", "yes", ["thermal_gap", "0.5"], ["thermal_bridge_width", "0.5"]],
                            ["polygon", ["pts"] + [["xy", _n(X), _n(Y)] for X, Y in pts]]])
@@ -189,7 +201,7 @@ class Board:
     def keepout(self, x: float, y: float, r: float = 3.2, nseg: int = 24, name: str = "mounting keepout"):
         """Circular rule area: no tracks, vias or pour on either copper layer (pads allowed)."""
         pts = [self.P(x + r * math.cos(2 * math.pi * i / nseg), y + r * math.sin(2 * math.pi * i / nseg)) for i in range(nseg)]
-        self.items.append(["zone", ["net", "0"], ["net_name", Q("")], ["layers", Q("F.Cu"), Q("B.Cu")], ["uuid", _u()],
+        self.items.append(["zone", ["net", "0"], ["net_name", Q("")], ["layers", Q("*.Cu")], ["uuid", _u()],
                            ["name", Q(name)], ["hatch", "edge", "0.5"],
                            ["keepout", ["tracks", "not_allowed"], ["vias", "not_allowed"], ["pads", "allowed"],
                             ["copperpour", "not_allowed"], ["footprints", "allowed"]],
