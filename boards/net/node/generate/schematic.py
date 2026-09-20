@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write node.kicad_sch: RP2040 net node, 4 single-wire neighbour links, RGB LED, sensor port.
+"""Write node.kicad_sch: RP2040 net node, 4 single-wire neighbour links, RGB LED, piezo sounder, sensor port.
 
 Blocks are wired with local net labels; only the RP2040's crystal, TESTEN and supply pins
 are wired directly. Sensor options are KiCad 10 design variants (see README.md).
@@ -21,7 +21,7 @@ JST3 = {'MPN': 'B3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': ''}
 VARIANTS_TOF_ONLY = {'vib': {'dnp': True}, 'bare': {'dnp': True}}      # populated by default, gone elsewhere
 VARIANTS_VIB_ONLY = {'vib': {'dnp': False}}                             # DNP by default, populated in "vib"
 
-s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, RGB LED, sensor port',
+s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, RGB LED, piezo, sensor port',
               rev='A', date='2026-09-16', paper='A3',
               comment='PoC. Variants: default = VL53L0X ToF, vib = SW-18010P, bare = header only')
 
@@ -83,14 +83,15 @@ W((UX - 20, UY - 24), (UX - 24, UY - 24), (UX - 24, UY - 20)); s.power('GND', g(
 
 # GPIO map (right side) and left-side signals
 GPIO = {'2': 'LINK_N', '3': 'LINK_E', '4': 'LINK_S', '5': 'LINK_W', '6': 'LED_DIN',
-        '7': 'SENS_XSHUT', '8': 'SENS_INT', '13': 'SDA', '14': 'SCL', '38': 'SENS_AIN'}   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10
+        '7': 'SENS_XSHUT', '8': 'SENS_INT', '13': 'SDA', '14': 'SCL', '15': 'BUZZ_A', '16': 'BUZZ_B',
+        '38': 'SENS_AIN'}   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10; GPIO12/13 drive the piezo antiphase
 LEFT = {'26': 'RUN', '46': 'USB_DM', '47': 'USB_DP', '56': 'QSPI_SS', '52': 'QSPI_SCLK', '53': 'QSPI_SD0',
         '55': 'QSPI_SD1', '54': 'QSPI_SD2', '51': 'QSPI_SD3', '24': 'SWCLK', '25': 'SWDIO'}
 for pin, name in GPIO.items():
     stub_label(U1[pin], name, 'r')
 for pin, name in LEFT.items():
     stub_label(U1[pin], name, 'l')
-for pin in ['9', '11', '12'] + [str(n) for n in range(15, 19)] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD
+for pin in ['9', '11', '12', '17', '18'] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD
     s.no_connect(*U1[pin])
 
 # crystal: 12 MHz, 27 pF loads, 1k in series with XOUT (RP2040 hardware design guide)
@@ -278,6 +279,18 @@ _, cd = passive('C', g(VX + 6), g(VY - 3), *C100, dnp=True, variants=VARIANTS_VI
 s.wire((g(VX), g(VY - 6)), cd['1']); s.wire(cd['2'], (g(VX + 6), g(VY + 8)), (g(VX), g(VY + 8)))
 s.wire(SW1['1'], (g(VX), g(VY + 8))); s.power('GND', g(VX), g(VY + 8))
 s.text('debounce', g(VX + 8), g(VY + 2), size=1.0)
+
+# ---- BZ1 piezo sounder: 9 mm SMD element driven antiphase from two GPIOs through 100 R -------------
+BX, BY = 300, 92
+s.text('Piezo element, not a self-oscillating buzzer: pitch = drive frequency (PWM/PIO). Two GPIOs in antiphase give 6.6 Vpp; one GPIO and the other held low gives half.', g(BX - 24), g(BY - 10))
+BZ = s.place('Device', 'Buzzer', 'BZ1', g(BX), g(BY), value='PKMCS0909E4000-R1', footprint='Buzzer_Beeper:Buzzer_Murata_PKMCS0909E',
+             description='Piezo sounder element, 9 x 9 x 1.9 mm SMD, 4 kHz, 3 Vp-p', fields={'MPN': 'PKMCS0909E4000-R1', 'Manufacturer': 'Murata', 'LCSC': ''},
+             prop_pos={'Reference': (8.0, -1.27), 'Value': (8.0, 1.27)})
+assert BZ['1'] == (g(BX - 2), g(BY - 2)) and BZ['2'] == (g(BX - 2), g(BY + 2))
+_, ra = passive('R', g(BX - 10), g(BY - 2), '100', rot=90)
+_, rb = passive('R', g(BX - 10), g(BY + 2), '100', rot=90)
+s.wire(ra['2'], BZ['1']); s.wire(rb['2'], BZ['2'])
+stub_label(ra['1'], 'BUZZ_A', 'l', length=3); stub_label(rb['1'], 'BUZZ_B', 'l', length=3)
 
 # ---- mounting holes -------------------------------------------------------------------------------
 for i in range(4):

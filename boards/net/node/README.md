@@ -10,8 +10,8 @@ of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular dra
 Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
 board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
 0 unconnected items and 0 schematic-parity issues (two `track_dangling` warnings are the open
-corner of the 5 V ring, by design). Buzzer dropped, sensor GPIOs moved (see Decisions), J6 USB
-pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
+corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo (BZ1/R17/R18, schematic only so far, not yet
+placed), sensor GPIOs moved (see Decisions), J6 USB pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
 `make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Concept and first-iteration scope
@@ -94,10 +94,14 @@ pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverif
   event-like: 10 k pull-up, 100 nF debounce, treat it as a pulse in firmware. An IR reflective
   option (TCRT5000 on the ADC line) was considered but dropped for rev A: no stock KiCad symbol,
   and the header covers it.
-- **No buzzer (dropped 2026-09-20).** Rev A had a 12 mm magnetic buzzer with a 2N7002 low-side
-  switch on GPIO5; it was the largest part after the connectors, and sound would have had to
-  share the 5 V budget with the LEDs (two LEDs already take most of a 5 A supply). GPIO5 is now
-  a no-connect; a buzzer can come back in rev B as a small SMD part if sound turns out to matter.
+- **Piezo sounder, not a magnetic buzzer (2026-09-20).** The 12 mm magnetic buzzer with its
+  2N7002/flyback driver was dropped (largest part after the connectors, and it would have shared
+  the 5 V budget with the LEDs). BZ1 is now a Murata PKMCS0909E4000-R1 9 x 9 x 1.9 mm SMD piezo
+  *element* driven from GPIO12/GPIO13 (BUZZ_A/BUZZ_B) through 100 R each: no transistor, no 5 V
+  draw, and pitch is whatever frequency firmware drives (PWM or PIO). Driving the two pins in
+  antiphase gives 6.6 Vpp (about 6 dB more); loudness is otherwise only coarse (near/far from
+  the 4 kHz resonance, burst modulation). Roughly 65 to 70 dB at 10 cm: a beep in the room, not
+  across it. Timbre is square-wave only; no speech or samples.
 - **Mechanical:** four M2 holes (H1..H4, no pads, excluded from BOM/pos). No jig locating
   holes on the board; the jig can register on the M2 holes or a printed frame.
 
@@ -122,7 +126,8 @@ USB D+/D- have the 27 R series resistors on the board. Ground BOOT while applyin
 force the USB bootloader on a programmed node.
 
 GPIO map: 0..3 LINK_N/E/S/W, 4 LED_DIN, 5 SENS_XSHUT, 6 SENS_INT, 10 SDA (I2C1), 11 SCL (I2C1),
-26 SENS_AIN (ADC0). GPIO7..9, 12..25 and 27..29 are unconnected (no-connect flags). GPIO7..9
+12/13 BUZZ_A/BUZZ_B (piezo, antiphase), 26 SENS_AIN (ADC0). GPIO7..9, 14..25 and 27..29 are
+unconnected (no-connect flags). GPIO7..9
 are left free on purpose: IOVDD pin 10 sits between GPIO7 and GPIO8 on the QFN, and with
 0.4 mm pitch its decoupling via only fits if both neighbours stay unrouted (2026-09-20).
 Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
@@ -144,6 +149,7 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 | J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST B3B-XH-A, LCSC blank |
 | J6, R15, R16 | pogo pads, 27 R x2               | J6 not in BOM/pos                       |
 | D1, D2, D4, C19 | 1N4148W, WS2812B-2020 x2, 100 nF  | LED supply drop, LED, second LED (DNP), cap |
+| BZ1, R17, R18 | PKMCS0909E4000-R1, 100 R x2    | piezo element, series R from GPIO12/13 (LCSC blank) |
 | J5         | 1x7 pin header                         | sensor port                             |
 | C20, C21   | 100 nF, 4.7 uF                         | VL53L0X, default variant only           |
 | SW1, C22   | SW-18010P, 100 nF                      | `vib` variant only (DNP otherwise)      |
