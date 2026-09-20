@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write node.kicad_sch: RP2040 net node, 4 single-wire neighbour links, RGB LED, buzzer, sensor port.
+"""Write node.kicad_sch: RP2040 net node, 4 single-wire neighbour links, RGB LED, sensor port.
 
 Blocks are wired with local net labels; only the RP2040's crystal, TESTEN and supply pins
 are wired directly. Sensor options are KiCad 10 design variants (see README.md).
@@ -21,7 +21,7 @@ JST3 = {'MPN': 'B3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': ''}
 VARIANTS_TOF_ONLY = {'vib': {'dnp': True}, 'bare': {'dnp': True}}      # populated by default, gone elsewhere
 VARIANTS_VIB_ONLY = {'vib': {'dnp': False}}                             # DNP by default, populated in "vib"
 
-s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, RGB LED, buzzer, sensor port',
+s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, RGB LED, sensor port',
               rev='A', date='2026-09-16', paper='A3',
               comment='PoC. Variants: default = VL53L0X ToF, vib = SW-18010P, bare = header only')
 
@@ -82,7 +82,7 @@ W((UX, UY + 36), (UX, UY + 40)); s.power('GND', g(UX), g(UY + 40))
 W((UX - 20, UY - 24), (UX - 24, UY - 24), (UX - 24, UY - 20)); s.power('GND', g(UX - 24), g(UY - 20))
 
 # GPIO map (right side) and left-side signals
-GPIO = {'2': 'LINK_N', '3': 'LINK_E', '4': 'LINK_S', '5': 'LINK_W', '6': 'LED_DIN', '7': 'BUZZ',
+GPIO = {'2': 'LINK_N', '3': 'LINK_E', '4': 'LINK_S', '5': 'LINK_W', '6': 'LED_DIN',
         '8': 'SENS_INT', '9': 'SENS_XSHUT', '11': 'SDA', '12': 'SCL', '38': 'SENS_AIN'}
 LEFT = {'26': 'RUN', '46': 'USB_DM', '47': 'USB_DP', '56': 'QSPI_SS', '52': 'QSPI_SCLK', '53': 'QSPI_SD0',
         '55': 'QSPI_SD1', '54': 'QSPI_SD2', '51': 'QSPI_SD3', '24': 'SWCLK', '25': 'SWDIO'}
@@ -90,7 +90,7 @@ for pin, name in GPIO.items():
     stub_label(U1[pin], name, 'r')
 for pin, name in LEFT.items():
     stub_label(U1[pin], name, 'l')
-for pin in [str(n) for n in range(13, 19)] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD
+for pin in ['7'] + [str(n) for n in range(13, 19)] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD; 7 = GPIO5 (buzzer dropped)
     s.no_connect(*U1[pin])
 
 # crystal: 12 MHz, 27 pF loads, 1k in series with XOUT (RP2040 hardware design guide)
@@ -235,26 +235,6 @@ W((EX, EY - 10), (DX, EY - 10)); s.wire((g(DX), g(EY - 10)), cl['1']); s.wire(D4
 s.flag(g(EX + 48), g(EY - 10)); s.label('LED_VDD', g(EX + 3), g(EY - 10), rot=90)
 s.wire(cl['2'], (g(EX + 48), g(EY + 8)), (g(DX), g(EY + 8))); s.wire(D4['2'], (g(DX), g(EY + 8))); J(DX, EY + 8)
 W((DX, EY + 8), (EX, EY + 8)); s.wire(D2['2'], (g(EX), g(EY + 8))); s.power('GND', g(EX), g(EY + 8))
-
-# ---- BZ1 buzzer ---------------------------------------------------------------------------------
-BX, BY = 300, 92
-BZ = s.place('Device', 'Buzzer', 'BZ1', g(BX), g(BY), value='Buzzer 5V', footprint='Buzzer_Beeper:Buzzer_12x9.5RM7.6',
-             description='Passive magnetic buzzer, 12 mm, 5 V, THT', prop_pos={'Reference': (8.0, -1.27), 'Value': (8.0, 1.27)})
-assert BZ['1'] == (g(BX - 2), g(BY - 2)) and BZ['2'] == (g(BX - 2), g(BY + 2))
-Q1 = s.place('Transistor_FET', '2N7002', 'Q1', g(BX - 8), g(BY + 12), value='2N7002',
-             fields={'MPN': '2N7002', 'Manufacturer': '', 'LCSC': 'C8545'}, prop_pos={'Reference': (7.0, -1.27), 'Value': (7.5, 1.27)})
-assert Q1['3'] == (g(BX - 6), g(BY + 8)) and Q1['2'] == (g(BX - 6), g(BY + 16)) and Q1['1'] == (g(BX - 12), g(BY + 12))
-s.wire(BZ['1'], (g(BX - 6), g(BY - 2)), (g(BX - 6), g(BY - 6))); s.power('+5V', g(BX - 6), g(BY - 6))
-s.wire(BZ['2'], (g(BX - 6), g(BY + 2)), Q1['3']); J(BX - 6, BY + 8)
-_, rg = passive('R', g(BX - 16), g(BY + 12), '1k', rot=90)
-s.wire(rg['2'], Q1['1']); stub_label(rg['1'], 'BUZZ', 'l', length=3); J(BX - 12, BY + 12)
-_, rd = passive('R', g(BX - 12), g(BY + 15), '100k')
-s.wire(rd['2'], (g(BX - 12), g(BY + 18)), (g(BX - 6), g(BY + 18))); s.wire(Q1['2'], (g(BX - 6), g(BY + 18))); s.power('GND', g(BX - 6), g(BY + 18))
-D3 = s.place('Device', 'D', 'D3', g(BX + 12), g(BY), rot=270, value='1N4148W', footprint='Diode_SMD:D_SOD-123',
-             fields={'MPN': '1N4148W', 'Manufacturer': '', 'LCSC': ''}, prop_pos={'Reference': (5.0, -1.27), 'Value': (7.0, 1.27)})
-assert D3['1'] == (g(BX + 12), g(BY - 3)) and D3['2'] == (g(BX + 12), g(BY + 3))
-s.wire(D3['1'], (g(BX + 12), g(BY - 6)), (g(BX - 6), g(BY - 6))); J(BX - 6, BY - 6)
-s.wire(D3['2'], (g(BX + 12), g(BY + 8)), (g(BX - 6), g(BY + 8)))
 
 # ---- sensor port ---------------------------------------------------------------------------------
 SX, SY = 200, 150

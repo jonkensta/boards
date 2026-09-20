@@ -58,12 +58,7 @@ D2 = b.footprint('D2', 21.5, 24.0, 180, ref_fab=True)           # 3 DIN (20.585,
 D4 = b.footprint('D4', 25.5, 24.0, 180, ref_fab=True)
 D1 = b.footprint('D1', 19.9, 20.3, 90, ref_fab=True)            # 1N4148W: 1 K LED_VDD (19.9,21.95) 2 A +5V (19.9,18.65)
 C19 = b.footprint('C19', 21.5, 27.0, 0, ref_fab=True)           # LED_VDD cap
-# buzzer right of centre, driver left of it
-BZ1 = b.footprint('BZ1', 34.2, 30.5, 90, ref_pos=(0, -10.0))    # 1 +5V (34.2,30.5) 2 drain (34.2,22.9); body centre (34.2,26.7) r 6
-Q1 = b.footprint('Q1', 25.5, 28.5, 0, ref_fab=True)             # 2N7002: 1 G (24.56,27.55) 2 S (24.56,29.45) 3 D (26.44,28.5)
-R17 = b.footprint('R17', 22.8, 30.0, 90, ref_fab=True)          # 1k gate: 1 BUZZ (22.8,30.825) 2 G (22.8,29.175)
-R18 = b.footprint('R18', 25.5, 31.0, 0, ref_fab=True)           # 100k pull-down: 1 G (24.675) 2 GND (26.325)
-D3 = b.footprint('D3', 34.2, 19.0, 180, ref_fab=True)           # flyback: 1 K +5V (35.85) 2 A drain (32.55)
+
 # LDO top-right
 U4 = b.footprint('U4', 34.2, 4.2, 0, ref_pos=(0, -3.0))         # 1 VIN (33.06,3.25) 2 GND (33.06,4.2) 3 CE (33.06,5.15) 4 NC 5 VOUT (35.34,3.25)
 C17 = b.footprint('C17', 38.6, 4.2, 90, ref_fab=True)           # 10u in
@@ -93,7 +88,7 @@ SW1 = b.footprint('SW1', 42.0, 33.5, 0, ref_fab=True, val_pos=(0, -3.6))   # vib
 C22 = b.footprint('C22', 38.4, 33.5, 90, ref_fab=True)
 
 if __name__ == '__main__' and '--pads' in sys.argv:
-    for ref in ('U1', 'U2', 'Y1', 'J6', 'U3', 'J5', 'BZ1', 'Q1', 'U4', 'D2', 'D4', 'D1', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'R16'):
+    for ref in ('U1', 'U2', 'Y1', 'J6', 'U3', 'J5', 'U4', 'D2', 'D4', 'D1', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'R16'):
         print(ref, {k: v for k, v in globals()[ref].items() if not k.isdigit() or int(k) <= 60})
 
 b.zone('GND', 'GND', 0, 0, W, H, layer='In1.Cu')

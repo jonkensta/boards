@@ -1,7 +1,7 @@
 # net/node
 
-One cell of a sensor "net": a small RP2040 board with an RGB LED, a buzzer, a sensor port and
-four neighbour links. A node that detects something lights up and tells its neighbours; they
+One cell of a sensor "net": a small RP2040 board with an RGB LED, a sensor port and four
+neighbour links. A node that detects something lights up and tells its neighbours; they
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
@@ -17,7 +17,7 @@ for the next session. This file is meant to be enough to resume cold.
 
 - The original idea: a cheap board with a bright LED, connected to four others, those to four
   more, forming a net that can be laid over an object, a wall or a bush. Each board has a sensor;
-  on detection it lights or sounds and signals its neighbours, who act on it with the signal
+  on detection it lights up and signals its neighbours, who act on it with the signal
   attenuated at each hop.
 - The behaviour is a cellular automaton: node state depends only on its own sensor and its
   immediate neighbours. That fact drove every interconnect decision below.
@@ -71,7 +71,8 @@ for the next session. This file is meant to be enough to resume cold.
   the cheaper alternative (no level issue) but dimmer and three pins. A "powerful" emitter with
   a MOSFET was left out of rev A on purpose. D4 is a second WS2812B-2020 chained on D2's DOUT,
   DNP in every variant: fitting it doubles the light with no firmware or power-design change
-  (the LED budget becomes about 120 mA per node; firmware must always send two pixels).
+  (the LED budget becomes about 120 mA per node). Firmware must always send two pixels,
+  whether or not D4 is fitted: D2 forwards the second pixel on DOUT and nothing listens.
 - **Sensor port with build variants** (KiCad 10 design variants, all in one schematic):
 
   | variant   | populated                                    | use                          |
@@ -92,8 +93,10 @@ for the next session. This file is meant to be enough to resume cold.
   event-like: 10 k pull-up, 100 nF debounce, treat it as a pulse in firmware. An IR reflective
   option (TCRT5000 on the ADC line) was considered but dropped for rev A: no stock KiCad symbol,
   and the header covers it.
-- **Buzzer:** 12 mm passive magnetic buzzer on 5 V, 2N7002 low-side switch (1 k gate, 100 k
-  pull-down), 1N4148W flyback. Populated by default; make it DNP if sound is not wanted.
+- **No buzzer (dropped 2026-09-20).** Rev A had a 12 mm magnetic buzzer with a 2N7002 low-side
+  switch on GPIO5; it was the largest part after the connectors, and sound would have had to
+  share the 5 V budget with the LEDs (two LEDs already take most of a 5 A supply). GPIO5 is now
+  a no-connect; a buzzer can come back in rev B as a small SMD part if sound turns out to matter.
 - **Mechanical:** four M2 holes (H1..H4, no pads, excluded from BOM/pos). No jig locating
   holes on the board; the jig can register on the M2 holes or a printed frame.
 
@@ -104,7 +107,8 @@ Link J1..J4 (N, E, S, W): 1 = +5V, 2 = DATA, 3 = GND.
 Sensor header J5: 1 +5V, 2 +3V3, 3 SENS_INT (GPIO6), 4 SDA (GPIO8), 5 SCL (GPIO9),
 6 SENS_AIN (GPIO26/ADC0), 7 GND.
 
-Programming pads J6 (2x4, odd pins in one row, even in the other):
+Programming pads J6 (2x4, odd pins in one row, even in the other; on the board the two rows
+are 5.05 mm apart and the columns 2.54 mm, see the PCB section):
 
 | pin | signal  | pin | signal          |
 |-----|---------|-----|-----------------|
@@ -116,8 +120,8 @@ Programming pads J6 (2x4, odd pins in one row, even in the other):
 USB D+/D- have the 27 R series resistors on the board. Ground BOOT while applying power to
 force the USB bootloader on a programmed node.
 
-GPIO map: 0..3 LINK_N/E/S/W, 4 LED_DIN, 5 BUZZ, 6 SENS_INT, 7 SENS_XSHUT, 8 SDA (I2C0),
-9 SCL (I2C0), 26 SENS_AIN (ADC0). GPIO10..25 and 27..29 are unconnected (no-connect flags).
+GPIO map: 0..3 LINK_N/E/S/W, 4 LED_DIN, 6 SENS_INT, 7 SENS_XSHUT, 8 SDA (I2C0), 9 SCL (I2C0),
+26 SENS_AIN (ADC0). GPIO5 (ex buzzer), 10..25 and 27..29 are unconnected (no-connect flags).
 Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 
 ## Reference designators
@@ -137,7 +141,6 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 | J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST B3B-XH-A, LCSC blank |
 | J6, R15, R16 | pogo pads, 27 R x2               | J6 not in BOM/pos                       |
 | D1, D2, D4, C19 | 1N4148W, WS2812B-2020 x2, 100 nF  | LED supply drop, LED, second LED (DNP), cap |
-| BZ1, Q1, R17, R18, D3 | buzzer, 2N7002 (C8545), 1 k, 100 k, 1N4148W | buzzer driver            |
 | J5         | 1x7 pin header                         | sensor port                             |
 | C20, C21   | 100 nF, 4.7 uF                         | VL53L0X, default variant only           |
 | SW1, C22   | SW-18010P, 100 nF                      | `vib` variant only (DNP otherwise)      |
@@ -145,7 +148,8 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 
 ## Programming jig
 
-Eight P75 pogo pins in a 2x4 grid on 2.54 mm pitch (perfboard or a small 3D-printed block),
+Eight P75 pogo pins in a 2x4 grid: columns on 2.54 mm pitch, the two rows 5.05 mm apart (the
+SMD header footprint, not a 2.54 mm grid; a printed block, not perfboard),
 plus two pins for the M2 holes or a printed frame to locate the board. Wire them to:
 
 - a Raspberry Pi Debug Probe or a Pico running picoprobe (SWDIO, SWCLK, GND; power from +5V),
@@ -181,13 +185,13 @@ kicad-cli pcb export pos --variant vib --exclude-dnp --format csv --units mm --s
 ## Parts and cost
 
 LCSC numbers in the schematic that still need checking on the order page: C2040 (RP2040),
-C82317 (W25Q16JVSSIQ), C82942 (ME6211C33M5G-N), C9002 (12 MHz 3225), C8545 (2N7002).
+C82317 (W25Q16JVSSIQ), C82942 (ME6211C33M5G-N), C9002 (12 MHz 3225).
 Blank and to be picked in JLCPCB's BOM tool: WS2812B-2020, 1N4148W, VL53L0CXV0DH/1, JST
-B3B-XH-A, SW-18010P, buzzer, all 0603 passives. As with the other boards, `Description`
+B3B-XH-A, SW-18010P, all 0603 passives. As with the other boards, `Description`
 carries ratings (X7R 16 V, C0G, etc.) into the JLCPCB Comment column.
 
 Rough per-node parts cost at 50 to 100 pieces: about $1.50 for the RP2040, flash, crystal and
-LDO; $0.50 for connectors, LED, buzzer driver and passives; the VL53L0X adds about $1.50, the
+LDO; $0.50 for connectors, LED and passives; the VL53L0X adds about $1.50, the
 spring switch a few cents. Add PCB (small 2-layer, cheap) and assembly (the RP2040 and the
 VL53L0X are reflow-only; everything THT is hand-solderable). The ToF variant is the expensive
 one; the bare variant plus a $1 PIR module on J5 is the cheapest way to get a working net.
@@ -233,7 +237,7 @@ Cables are a real line item: one 3-wire XH cable per link, roughly two per node 
   range must be well above 8 (use 0..255) or a corner touch never reaches the far corner.
 - **Outdoor use** stays deferred: series R + TVS on each link, sealed connectors and a coating
   before any bush deployment that sees weather.
-- **LCSC numbers.** Only C2040, C82317, C82942, C9002 and C8545 are filled in and none are
+- **LCSC numbers.** Only C2040, C82317, C82942 and C9002 are filled in and none are
   confirmed on the order page; the rest are blank on purpose.
 
 ## PCB (rev A, in progress)

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import uuid
 
 from . import sexpr
@@ -71,9 +72,21 @@ class Netlist:
                 el = sexpr.child(c, k)
                 return el[1] if el is not None and len(el) > 1 else ""
 
+            # (variants (variant (name "vib") (property (name "dnp") (value "1")) ...)): per-variant
+            # overrides of dnp / exclude_from_bom / exclude_from_pos_files, only where they differ.
+            variants: dict[str, dict[str, bool]] = {}
+            vs = sexpr.child(c, "variants")
+            for v in (sexpr.children(vs, "variant") if vs else []):
+                ov = {}
+                for pr in sexpr.children(v, "property"):
+                    k, val = sexpr.child(pr, "name")[1], sexpr.child(pr, "value")[1]
+                    if k in ("dnp", "exclude_from_bom", "exclude_from_pos_files"):
+                        ov[str(k)] = val == "1"
+                variants[str(sexpr.child(v, "name")[1])] = ov
             self.comps[ref] = dict(uuid=sexpr.child(c, "tstamps")[1], value=sexpr.child(c, "value")[1],
                                    footprint=sexpr.child(c, "footprint")[1], datasheet=opt("datasheet"),
-                                   description=opt("description"), fields=fields, flags=flags)
+                                   description=opt("description"), fields=fields, flags=flags, variants=variants)
+        self.variants: list[str] = sorted({v for c in self.comps.values() for v in c["variants"]})
 
 
 class Board:
@@ -87,16 +100,20 @@ class Board:
             board = sexpr.parse(f.read())
         drop = ("gr_line", "gr_rect", "footprint", "segment", "via", "zone", "gr_text", "net")
         self.board = [x for x in board if not (isinstance(x, list) and x[0] in drop)]
-        if copper_layers > 2:      # KiCad 9+ numbering: In1.Cu = 4, In2.Cu = 6, ...
-            layers = sexpr.child(self.board, "layers")
-            i = next(k for k, el in enumerate(layers) if isinstance(el, list) and el[1] == "F.Cu")
-            layers[i + 1:i + 1] = [[str(2 * n + 2), Q(f"In{n}.Cu"), "signal"] for n in range(1, copper_layers - 1)]
+        # Inner copper layers, KiCad 9+ numbering (In1.Cu = 4, In2.Cu = 6, ...). Existing InN.Cu
+        # entries are dropped first so a generator that reads its own output stays idempotent.
+        layers = sexpr.child(self.board, "layers")
+        layers[:] = [el for el in layers if not (isinstance(el, list) and re.fullmatch(r"In\d+\.Cu", str(el[1])))]
+        i = next(k for k, el in enumerate(layers) if isinstance(el, list) and el[1] == "F.Cu")
+        layers[i + 1:i + 1] = [[str(2 * n + 2), Q(f"In{n}.Cu"), "signal"] for n in range(1, copper_layers - 1)]
         setup = sexpr.child(self.board, "setup")
         for el in setup:
             if isinstance(el, list) and el[0] == "aux_axis_origin":
                 el[1:] = [_n(self.OX), _n(self.OY + self.H)]
             if isinstance(el, list) and el[0] == "grid_origin":
                 el[1:] = [_n(self.OX), _n(self.OY)]
+        if self.net.variants:
+            self.board.append(["variants"] + [["variant", ["name", Q(v)]] for v in self.net.variants])
         self.board.append(["net", "0", Q("")])
         for name, code in sorted(self.net.codes.items(), key=lambda kv: kv[1]):
             self.board.append(["net", str(code), Q(name)])
@@ -122,6 +139,11 @@ class Board:
         out = ["footprint", Q(f"{lib}:{name}"), ["layer", Q("F.Cu")], ["uuid", _u()],
                ["at", _n(self.OX + x), _n(self.OY + y), _n(rot)]]
         props_seen = set()
+        has_attr = any(isinstance(el, list) and el[0] == "attr" for el in fp[2:])
+        if not has_attr and comp["flags"]:     # footprints without an attr clause still need the flags
+            out.append(["attr"] + sorted(comp["flags"]))
+        for vname, ov in comp["variants"].items():
+            out.append(["variant", ["name", Q(vname)]] + [[k, "yes" if on else "no"] for k, on in ov.items()])
         pads: dict[str, tuple[float, float]] = {}
         for el in fp[2:]:
             if not isinstance(el, list):
