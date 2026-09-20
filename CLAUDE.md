@@ -21,6 +21,26 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 - Run `make test && make smoke` before committing tooling changes. Smoke covers a 2-layer and a
   8-layer board with hostile layer names and silkscreen text, and a deliberate DRC failure.
 
+## Keeping agent sessions bounded (learned the hard way on boards/net/node)
+
+A previous session hit the 64k output-token cap seven times in a row, each time a turn of pure
+reasoning with no tool call (13-30 min each); the "resume" nudge just started another one. The
+cause was doing 0.4 mm pitch routing geometry in reasoning. Rules:
+
+- **Never derive placement or routing coordinates in reasoning.** If more than a handful of
+  numbers are needed, write a script (pad-centre dump via `pcb.py --pads`, the courtyard
+  checker, a DRC-report-to-board-mm converter) and read its output. Every turn should end in a
+  tool call or a message within a few paragraphs of thought.
+- **Feedback signal is text, not pictures.** Iterate on the DRC report and `--pads` output;
+  render (`kicad-cli pcb render`) at most once per block and at <= 400 px, only as a final check.
+  A 900 px board render is ~180 KB and triggered the first runaway turn.
+- **Never cat `.kicad_pcb`, `.kicad_sch` or `.net` files** (100-600 KB); grep or parse them
+  with `boardtools.sexpr`.
+- **One block per task**: place the crystal cluster, route the left-edge bundle, etc., DRC-clean
+  it, commit, then the next. Do not take "route the board" as one prompt.
+- `.claude/settings.json` in this repo caps thinking (`MAX_THINKING_TOKENS`) and sets medium
+  effort for this reason; do not raise them for routing work.
+
 ## Working in this repo
 
 - Layout: `boards/<id>/` projects (any depth; files named after the leaf directory, e.g.

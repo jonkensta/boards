@@ -1,0 +1,6 @@
+{
+  "effortLevel": "medium",
+  "env": {
+    "MAX_THINKING_TOKENS": "16000"
+  }
+}
