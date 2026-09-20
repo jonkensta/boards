@@ -170,11 +170,27 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   (`${VARIANT}` in `-o` for several at once). The jobset exports the default variant only.
 - `kicad-cli pcb drc --schematic-parity` on a PCB with no footprints reports zero parity issues,
   so `make check` passes for a board whose layout has not started.
+- **QFN-56 0.4 mm pitch with 0.2/0.2 rules and 0.6 mm vias (boards/net/node):** a via needs a
+  1.0 mm lane, so only every third pin can via near the chip and adjacent pins must escape
+  straight on the front first; parallel 45 deg escapes from adjacent pins are only 0.28 mm apart
+  (violation), so stagger them (one straight, one diagonal). Adjacent same-net pins (RP2040
+  43+44, 48+49) can be joined at the pad tips to free a lane. A 0603 in line with a 0.4 mm pin
+  is impossible (its pad is 0.95 mm wide). Decision taken: the node board is 4-layer (In1 GND,
+  In2 +3V3); `pcbgen.Board(copper_layers=4)`.
+- pcbgen (2026-09-20): `copper_layers`, zone `priority`, keepouts on `*.Cu`, `boards:`
+  footprints resolved from `lib/footprints/boards.pretty`, and the netlist's
+  dnp/exclude_from_bom/exclude_from_pos_files copied into the footprint `attr`. Known bugs
+  from the Codex review, unfixed: layer insertion is not idempotent when a generator reads its
+  own output as the template; footprints without an `attr` clause lose the flags; per-variant
+  dnp is not carried into the board, so `pcb export pos --variant` disagrees with the BOM.
+- `*.net` is git-ignored: PCB generators need the netlist exported first (command in each
+  `generate/README.md`).
 
 ## Review history
 
-Three Codex critique loops so far (five rounds on the original scaffold, three on the jobset
-restructure, three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
+Four Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+restructure, one on the net/node placement and pcbgen changes (findings in
+`boards/net/node/README.md`, Resume path), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
 loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export
 (ordered under `-j`); zone refill; strict severity flags; whitespace/quote-proof layer parsing;
 every copper layer in the fab zip (the In1..In4 cap bit an 8-layer board); warnings reports

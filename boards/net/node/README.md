@@ -5,13 +5,13 @@ four neighbour links. A node that detects something lights up and tells its neig
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-## Status: parked (2026-09-17)
+## Status: PCB placement done, routing not started (2026-09-20)
 
-Rev A schematic is generated, ERC-clean and committed (0784855, 96f31b5), with the three
-sensor variants in place. **No PCB layout, no firmware, nothing ordered, no jig built.**
-`node.kicad_pcb` is still the empty template, so `make check` passes only because DRC parity
-ignores footprints that were never placed. Work stopped here deliberately; the first-batch decisions and
-the resume path are at the end. This file is meant to be enough to resume cold.
+Rev A schematic is generated and ERC-clean (0784855, 587ccf0 added D4). `generate/pcb.py`
+places every footprint on a **48 x 48 mm, 4-layer** board (e1650c8); nothing is routed, so
+`make check` reports 146 unconnected items. **No firmware, nothing ordered, no jig built.**
+A Codex review of the placement (findings summarised under Resume path) is the to-do list
+for the next session. This file is meant to be enough to resume cold.
 
 ## Concept and first-iteration scope
 
@@ -71,7 +71,7 @@ the resume path are at the end. This file is meant to be enough to resume cold.
   the cheaper alternative (no level issue) but dimmer and three pins. A "powerful" emitter with
   a MOSFET was left out of rev A on purpose. D4 is a second WS2812B-2020 chained on D2's DOUT,
   DNP in every variant: fitting it doubles the light with no firmware or power-design change
-  (the LED budget becomes about 120 mA per node).
+  (the LED budget becomes about 120 mA per node; firmware must always send two pixels).
 - **Sensor port with build variants** (KiCad 10 design variants, all in one schematic):
 
   | variant   | populated                                    | use                          |
@@ -236,23 +236,66 @@ Cables are a real line item: one 3-wire XH cable per link, roughly two per node 
 - **LCSC numbers.** Only C2040, C82317, C82942, C9002 and C8545 are filled in and none are
   confirmed on the order page; the rest are blank on purpose.
 
+## PCB (rev A, in progress)
+
+`generate/pcb.py` -> `node.kicad_pcb`, 48 x 48 mm, **4 copper layers**: F.Cu signals, In1.Cu
+GND plane, In2.Cu +3V3 plane, B.Cu GND pour plus the 5 V ring and the back-layer crossings.
+Why four: with 0.2 mm track / 0.2 mm clearance / 0.6 mm vias a via needs a 1.0 mm lane, so at
+the RP2040's 0.4 mm pitch only every third pin can via near the chip; on two layers the QSPI
+group (51..56) and the power/USB group (43..50) on the same edge fight for the same space, and
+every IOVDD/DVDD pin still needs a cap and a ground return. Codex confirmed a six-track QSPI
+escape does fit on two layers, so the plane argument (return paths, decoupling by via) is the
+real one. JLCPCB 4-layer adds roughly $1 per board at this size.
+
+Floorplan (board-local mm, origin top-left): J1..J4 centred on each edge (N top, E right, S
+bottom, W left; pin 1 = +5V is the clockwise-first pin); M2 holes 3.5 mm in from each corner
+with 3.2 mm keepouts on all copper layers; U1 rot 180 at (12, 13) so GPIO0..12 face the
+centre on its right edge, crystal/SWD/RUN on its top edge, QSPI/USB/core power on its bottom
+edge; U2 flash rot 90 directly below U1 (near row SD3/SCLK/SD0 straight down, far row
+SS/SD1/SD2 around the right side); Y1/R1/C1/C2 above U1; D2/D4 at (21.5, 24)/(25.5, 24);
+buzzer body centred (34.2, 26.7) with Q1/R17/R18 to its left and D3 above; U4 LDO top-right;
+J6 pogo pads rot 90 at (12.5, 36) (even row y 33.5 = SWDIO/SWCLK/RUN/BOOT, odd row y 38.5 =
+USB_DP/USB_DM/GND/+5V, columns 2.54 mm apart, rows 5.05 mm apart); U3 + C20/C21 + I2C
+pull-ups bottom-centre; J5 rot 90 with pin 1 at (20.73, 38.6) so the J3 data trace passes
+between pins 1 and 2 at x = 22 (0.32 mm to each pad, DRC-clean); SW1/C22 bottom-right.
+Courtyards are DRC-clean; a bounding-box checker for quick iteration lives in the session
+scratchpad only (parse F.CrtYd, transform by `at`, report overlaps).
+
 ## Resume path
 
-1. Re-read this file, `generate/README.md` and the CLAUDE.md section on generating KiCad files
-   (labels, variants, property text). `generate/sch-1.png` is the rendered sheet. Regenerate
-   only if the design changes (`python3 boards/net/node/generate/schematic.py`, then
-   `make check BOARD=net/node`); regeneration replaces every UUID.
-2. PCB layout as `generate/pcb.py`, following `boards/chromatone/isolator/generate/`: about
-   40 x 40 mm, one link connector centred on each edge, LED in the middle, J6 pads and the
-   sensor on the top side, M2 holes in the corners. Export the netlist first
-   (`kicad-cli sch export netlist --format kicadsexpr`). Expect the RP2040's 0.4 mm QFN fan-out
-   to be the hard part on two layers (see the TSSOP notes in CLAUDE.md for the via rules).
-   Finish with `kicad-cli pcb drc --refill-zones --save-board --schematic-parity`.
-3. Fill in / confirm LCSC numbers, `make jlcpcb BOARD=net/node` for the default variant, the
-   hand-run `--variant` commands above for `vib` and `bare`. Order a handful of default + bare
-   boards; check LED and connector orientation in the JLCPCB placement preview.
-4. Build the pogo jig, bring up one node over USB, then write the link protocol and the UART
-   bootloader so the jig is a one-time touch.
-5. Then revisit LED power and bus voltage for a larger net (rev B).
+1. Re-read this file, `generate/README.md` and the CLAUDE.md section on generating KiCad files.
+   `generate/sch-1.png` is the rendered sheet. Regenerate the schematic only if the design
+   changes; regeneration replaces every UUID. Regenerate the PCB with
+   `kicad-cli sch export netlist --format kicadsexpr -o boards/net/node/generate/node.net
+   boards/net/node/node.kicad_sch && python3 boards/net/node/generate/pcb.py` (the `.net` is
+   git-ignored) and check with `make check BOARD=net/node` plus
+   `kicad-cli pcb render --side top`.
+2. Fix the pcbgen bugs Codex found first, with tests: (a) `copper_layers` re-inserts
+   In1/In2 on every run because pcb.py reads its own output as the template (the committed
+   board has six copies of each); skip layers already present. (b) A footprint without an
+   `attr` clause loses the dnp/exclude flags. (c) `kicad-cli pcb export pos --variant vib` gives
+   the opposite of the BOM because footprints carry only the base dnp; find the KiCad 10
+   board-side variant syntax and emit it, or document that position files are exported per
+   variant from the BOM's reference list instead.
+3. Re-place per the review before routing: decoupling caps within ~2 mm of their pins (C9
+   USB_VDD, C10 ADC_AVDD, C13 VREG_VOUT, C14/C15 DVDD are 5.6 to 7.3 mm away; C5/C8/C11/C16
+   3.8 to 4.3 mm); R15/R16 together next to U1's USB pins; C17/C18 on U4's pin side; C20/C21 on
+   U3's supply side (AVDDVCSEL/AVSSVCSEL); crystal cluster rotated so Y1's XIN pad is not
+   6.8 mm from the pin and R1 is not over XIN's escape; a bypass cap for D4.
+4. Route, in this order: 5 V ring on B.Cu (inset 1.5 mm, notched around the hole keepouts)
+   feeding J1..J4 pin 1, J6 pin 7, U4, BZ1, D1, J5 pin 1; via every 3V3/GND pad to the planes;
+   U1 escapes (right edge GPIOs fan out then via to B.Cu for LINK_N/E/W, LED_DIN, BUZZ, SDA/SCL,
+   SENS_*; bottom edge: QSPI as above, USB_DM/DP via to B.Cu to R15/R16, DVDD 45/50 joined on
+   B.Cu with 23; top edge: RUN/SWDIO/SWCLK left then down the west side to J6, XOUT straight
+   to R1, XIN jogs right over the NC pins 15..18 to Y1, TESTEN to a GND via at (14.8, 8.5));
+   then finish with `kicad-cli pcb drc --refill-zones --save-board --schematic-parity`. Place
+   silk deliberately at the end (19 silk warnings now: references over pads).
+5. README fixes from the review: J6 jig geometry (2.54 mm columns, 5.05 mm rows); D4 needs
+   the firmware to always send two pixels; add the buzzer to the power budget (two LEDs already
+   take 4.75 A of a 5 A supply, so pick the buzzer and cap simultaneous sound).
+6. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
+   check LED/connector orientation in the JLCPCB preview. Cables: JST-XH 3-pin pre-made,
+   one length; XH has no strain relief, so a bush deployment needs a printed clip or tie.
+7. Pogo jig, USB bring-up, link protocol, UART bootloader; then rev B (LED power, bus voltage).
 
-`generate/` holds the script that produced the schematic (see its README).
+`generate/` holds the scripts that produced the schematic and the board (see its README).
