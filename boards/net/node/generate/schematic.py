@@ -212,26 +212,32 @@ s.wire(co['2'], (g(LX + 12), g(LY + 8)))
 W((LX - 18, LY + 8), (LX + 12, LY + 8)); s.wire(U4['2'], (g(LX), g(LY + 8))); J(LX, LY + 8); J(LX - 14, LY + 8)
 s.power('GND', g(LX), g(LY + 8)); s.flag(g(LX - 18), g(LY + 8))
 
-# ---- D2 RGB LED ---------------------------------------------------------------------------------
+# ---- D2, D4 RGB LEDs (D4 chained on DOUT, DNP: fit for double brightness) ---------------------
 EX, EY = 220, 96
-s.text('D1 drops the LED supply to ~4.3 V so 3.3 V logic meets the WS2812B VIH (0.7 VDD).', g(198), g(72))
-D2 = s.place('LED', 'WS2812B-2020', 'D2', g(EX), g(EY), value='WS2812B-2020',
-             fields={'MPN': 'WS2812B-2020', 'Manufacturer': 'Worldsemi', 'LCSC': ''},
-             prop_pos={'Reference': (10.0, -3.0), 'Value': (16.0, 5.0)})
-assert D2['3'] == (g(EX - 6), g(EY)) and D2['4'] == (g(EX), g(EY - 6))
-stub_label(D2['3'], 'LED_DIN', 'l'); s.no_connect(*D2['1'])
+s.text('D1 drops the LED supply to ~4.3 V so 3.3 V logic meets the WS2812B VIH (0.7 VDD). D4 is DNP: fit it for a brighter node.', g(198), g(72))
+LED_FIELDS = {'MPN': 'WS2812B-2020', 'Manufacturer': 'Worldsemi', 'LCSC': ''}
+LED_PP = {'Reference': (10.0, -3.0), 'Value': (16.0, 5.0)}
+D2 = s.place('LED', 'WS2812B-2020', 'D2', g(EX), g(EY), value='WS2812B-2020', fields=LED_FIELDS, prop_pos=LED_PP)
+assert D2['3'] == (g(EX - 6), g(EY)) and D2['4'] == (g(EX), g(EY - 6)) and D2['1'] == (g(EX + 6), g(EY))
+stub_label(D2['3'], 'LED_DIN', 'l')
+DX = EX + 28                                                            # D4 column; C19 sits at EX + 48
+D4 = s.place('LED', 'WS2812B-2020', 'D4', g(DX), g(EY), value='WS2812B-2020', fields=LED_FIELDS, prop_pos=LED_PP, dnp=True)
+assert D4['3'] == (g(DX - 6), g(EY)) and D4['4'] == (g(DX), g(EY - 6)) and D4['1'] == (g(DX + 6), g(EY))
+s.wire(D2['1'], D4['3']); s.no_connect(*D4['1'])
 D1 = s.place('Device', 'D', 'D1', g(EX - 9), g(EY - 10), rot=180, value='1N4148W', footprint='Diode_SMD:D_SOD-123',
              fields={'MPN': '1N4148W', 'Manufacturer': '', 'LCSC': ''}, prop_pos={'Reference': (-2.0, -2.5), 'Value': (-3.5, 2.8)})
 assert D1['2'] == (g(EX - 12), g(EY - 10)) and D1['1'] == (g(EX - 6), g(EY - 10))
 s.wire(D1['1'], (g(EX), g(EY - 10)), D2['4']); J(EX, EY - 10)
 s.wire(D1['2'], (g(EX - 16), g(EY - 10)), (g(EX - 16), g(EY - 14))); s.power('+5V', g(EX - 16), g(EY - 14))
-_, cl = passive('C', g(EX + 6), g(EY - 7), *C100)
-s.wire((g(EX), g(EY - 10)), cl['1']); s.wire(cl['2'], (g(EX + 6), g(EY + 8)), (g(EX), g(EY + 8)))
-s.flag(g(EX + 6), g(EY - 10)); s.label('LED_VDD', g(EX + 3), g(EY - 10), rot=90)
-s.wire(D2['2'], (g(EX), g(EY + 8))); s.power('GND', g(EX), g(EY + 8))
+_, cl = passive('C', g(EX + 48), g(EY - 7), *C100)
+assert cl['1'] == (g(EX + 48), g(EY - 10))
+W((EX, EY - 10), (DX, EY - 10)); s.wire((g(DX), g(EY - 10)), cl['1']); s.wire(D4['4'], (g(DX), g(EY - 10))); J(DX, EY - 10)
+s.flag(g(EX + 48), g(EY - 10)); s.label('LED_VDD', g(EX + 3), g(EY - 10), rot=90)
+s.wire(cl['2'], (g(EX + 48), g(EY + 8)), (g(DX), g(EY + 8))); s.wire(D4['2'], (g(DX), g(EY + 8))); J(DX, EY + 8)
+W((DX, EY + 8), (EX, EY + 8)); s.wire(D2['2'], (g(EX), g(EY + 8))); s.power('GND', g(EX), g(EY + 8))
 
 # ---- BZ1 buzzer ---------------------------------------------------------------------------------
-BX, BY = 290, 92
+BX, BY = 300, 92
 BZ = s.place('Device', 'Buzzer', 'BZ1', g(BX), g(BY), value='Buzzer 5V', footprint='Buzzer_Beeper:Buzzer_12x9.5RM7.6',
              description='Passive magnetic buzzer, 12 mm, 5 V, THT', prop_pos={'Reference': (8.0, -1.27), 'Value': (8.0, 1.27)})
 assert BZ['1'] == (g(BX - 2), g(BY - 2)) and BZ['2'] == (g(BX - 2), g(BY + 2))

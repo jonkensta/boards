@@ -69,7 +69,9 @@ the resume path are at the end. This file is meant to be enough to resume cold.
   obvious in a room. D1 (1N4148W) drops its supply to about 4.3 V so 3.3 V logic meets the
   0.7 x VDD input threshold; C19 100 nF at the LED. A discrete RGB LED on three PWM pins was
   the cheaper alternative (no level issue) but dimmer and three pins. A "powerful" emitter with
-  a MOSFET was left out of rev A on purpose.
+  a MOSFET was left out of rev A on purpose. D4 is a second WS2812B-2020 chained on D2's DOUT,
+  DNP in every variant: fitting it doubles the light with no firmware or power-design change
+  (the LED budget becomes about 120 mA per node).
 - **Sensor port with build variants** (KiCad 10 design variants, all in one schematic):
 
   | variant   | populated                                    | use                          |
@@ -134,7 +136,7 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 | R2..R6     | 10 k, 10 k, 4k7, 4k7, 10 k             | RUN, QSPI_SS, SDA, SCL, SENS_INT pull-ups |
 | J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST B3B-XH-A, LCSC blank |
 | J6, R15, R16 | pogo pads, 27 R x2               | J6 not in BOM/pos                       |
-| D1, D2, C19 | 1N4148W, WS2812B-2020, 100 nF         | LED supply drop, LED, cap               |
+| D1, D2, D4, C19 | 1N4148W, WS2812B-2020 x2, 100 nF  | LED supply drop, LED, second LED (DNP), cap |
 | BZ1, Q1, R17, R18, D3 | buzzer, 2N7002 (C8545), 1 k, 100 k, 1N4148W | buzzer driver            |
 | J5         | 1x7 pin header                         | sensor port                             |
 | C20, C21   | 100 nF, 4.7 uF                         | VL53L0X, default variant only           |
