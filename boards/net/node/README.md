@@ -10,7 +10,7 @@ of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular dra
 Rev A schematic is generated, ERC-clean and committed (0784855, 96f31b5), with the three
 sensor variants in place. **No PCB layout, no firmware, nothing ordered, no jig built.**
 `node.kicad_pcb` is still the empty template, so `make check` passes only because DRC parity
-ignores footprints that were never placed. Work stopped here deliberately; open questions and
+ignores footprints that were never placed. Work stopped here deliberately; the first-batch decisions and
 the resume path are at the end. This file is meant to be enough to resume cold.
 
 ## Concept and first-iteration scope
@@ -56,7 +56,7 @@ the resume path are at the end. This file is meant to be enough to resume cold.
   with ceramic input/output caps; AMS1117 was rejected because it wants a low-ESR tantalum
   output cap). Node draw is roughly 30 to 50 mA for the RP2040, up to 60 mA for the LED, about
   20 mA for the VL53L0X. A dozen nodes on 5 V is fine; bus voltage and bucks come later if the
-  LED gets serious (see Open questions).
+  LED gets serious (see Decisions for the first batch).
 - **No USB connector.** J6 is a bare 2x4 SMD pad array on 2.54 mm pitch (footprint
   `PinHeader_2x04_P2.54mm_Vertical_SMD`, nothing fitted, excluded from BOM and position files)
   for a pogo-pin jig carrying SWD, USB D+/D- (27 R series on the board), RUN, BOOT and 5 V. A
@@ -210,22 +210,31 @@ Cables are a real line item: one 3-wire XH cable per link, roughly two per node 
   a WiFi node (ESP32 on J5, or a future variant) or a node on the jig's USB.
 - **Later:** UART bootloader over the links so a programmed node can flash its neighbours.
 
-## Open questions (decide before resuming)
+## Decisions for the first batch (2026-09-19)
 
-- **LED power class.** Rev A uses a WS2812B-2020 (about 60 mA max). A "powerful" LED per node
-  changes the power design: a 12 V or 24 V bus with a buck per node, a constant-current driver
-  (AL8860 class), and connector current ratings. Decide the target net size and the worst-case
-  number of lit nodes first; that sets the supply and the number of injection points.
-- **Sensor for the first batch.** VL53L0X (default variant) gives distance-scaled excitation but
-  is the costliest part on the board; `bare` plus an off-board PIR or LD2410 on J5 is cheaper
-  and enough to prove the wave behaviour.
-- **Cable.** JST-XH keyed 3-pin is the rev A choice. Pre-made XH cables are cheap but each
-  link needs one; check cable cost against node cost before ordering many. 2.54 mm headers with
-  Dupont jumpers would be cheaper but unkeyed (reversal puts 5 V on DATA or GND).
+- **Net size: 5 x 5, 25 nodes.** Order 30 boards (5 spares). A 5 x 5 grid has 40 links, so
+  order about 50 XH cables plus a few to cut into power tails.
+- **LED power class: WS2812B-2020 stays.** D4 (second LED, DNP) is the brightness hedge; a
+  1 W emitter means a 12/24 V bus and a driver per node, which is rev B. Budget per node: about
+  130 mA with one LED lit (RP2040 + VL53L0X + LED), 190 mA with D4 fitted; 3.3 to 4.8 A for the
+  whole net at full white.
+- **5 V injection: one tail per row**, into the free W connector at the grid edge, from a 5 V
+  5 A supply. A single corner injection would push the full net current through one XH contact
+  (rated 3 A) and drop several hundred mV over the first hops; per row the worst chain carries
+  four nodes and drops about 0.1 V on 30 cm 26 AWG cables. Any edge connector works as a tail,
+  so no board change.
+- **Cable: JST-XH keyed 3-pin**, pre-made double-ended, one length for the whole net. 20 cm gives
+  a net about 0.8 m square, 30 cm about 1.2 m; pick from where it will hang.
+- **Sensor: one assembled build, the default (VL53L0X) variant.** J5 is always fitted, so a
+  default board also takes a PIR or LD2410; `vib` is a default board plus a hand-soldered SW1
+  (THT) and C22 (0603). A second assembly order for `bare` only pays past roughly 20 to 30 nodes
+  of savings, so not for this batch.
+- **Level scale:** corner to corner is 8 hops, so with one level lost per hop the excitation
+  range must be well above 8 (use 0..255) or a corner touch never reaches the far corner.
+- **Outdoor use** stays deferred: series R + TVS on each link, sealed connectors and a coating
+  before any bush deployment that sees weather.
 - **LCSC numbers.** Only C2040, C82317, C82942, C9002 and C8545 are filled in and none are
   confirmed on the order page; the rest are blank on purpose.
-- **Outdoor use** was explicitly deferred: add series R + TVS on each link, sealed connectors,
-  and a coating before any bush deployment that sees weather.
 
 ## Resume path
 
