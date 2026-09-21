@@ -10,8 +10,8 @@ of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular dra
 Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
 board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
 0 unconnected items and 0 schematic-parity issues (two `track_dangling` warnings are the open
-corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo (BZ1/R17/R18, schematic only so far, not yet
-placed), sensor GPIOs moved (see Decisions), J6 USB pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
+corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo (BZ1/R17/R18, placed and routed), sensor GPIOs
+moved (see Decisions), J6 USB pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
 `make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Concept and first-iteration scope
@@ -271,7 +271,7 @@ SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd row y 40.5 = USB_DM/USB_DP
 columns 2.54 mm apart, rows 5.05 mm apart); D2 at (29, 24) with D4 chained below it; D1/C19 to
 their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5/C11 in a row; U3 rot
 180 at (30, 34.6) with C20/C21 to its right; J5 rot 90 with pin 1 at (20.73, 38.6); SW1/C22
-bottom-right.
+bottom-right; BZ1 piezo rot 90 at (34, 14.4) with R17/R18 between it and U4.
 
 Routing plan, in the order pcb.py writes it:
 
@@ -281,7 +281,9 @@ Routing plan, in the order pcb.py writes it:
   43+44 and 48+49 joined at the pad tips (same net), 45 down to C13/C15, 46/47 USB straight
   down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
   GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
-  turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east.
+  turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east; 15/16 BUZZ_A/B up-right
+  onto rows y 7.0 / 6.2 (the right pin bends first) east to R17/R18, R7's J1 leg drops to B.Cu
+  to pass under them.
 - **B.Cu lanes.** West side x 5.2/5.7/6.3/6.9 = SENS_AIN/SWDIO/SWCLK/RUN, ending in vias
   *inside* the J6 pogo pads (nothing is soldered there). LINK_N north on x 20.5, LINK_E north on
   x 22.2 then east on y 15.4, LINK_W south then west on y 25.6 (east of the west lanes, into a

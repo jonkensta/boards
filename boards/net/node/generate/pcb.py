@@ -94,6 +94,10 @@ C12 = b.footprint('C12', 39.6, 4.2, 90, ref_fab=True)           # 10u bulk
 C8 = b.footprint('C8', 39.6, 8.4, 90, ref_fab=True)             # 100n
 C5 = b.footprint('C5', 41.2, 9.6, 90, ref_fab=True)             # 100n
 C11 = b.footprint('C11', 41.2, 12.8, 90, ref_fab=True)          # 1u
+# piezo element right of centre, series resistors between it and U4; GPIO12/13 (pins 15/16) arrive on rows y 6.2 / 7.0
+BZ1 = b.footprint('BZ1', 34.0, 14.4, 90, ref_fab=True)          # pads 2 (34.0,10.05) top, 1 (34.0,18.75) bottom, 3.4 x 1.3
+R18 = b.footprint('R18', 31.0, 6.7, 0, ref_fab=True)            # BUZZ_B: 1 (30.175,6.7) 2 (31.825,6.7)
+R17 = b.footprint('R17', 31.0, 8.3, 0, ref_fab=True)            # BUZZ_A: 1 (30.175,8.3) 2 (31.825,8.3)
 # links: 100 R series near the connector, 4k7 pull-up beside it
 R7 = b.footprint('R7', 24.0, 8.4, 0, ref_fab=True)              # N: 1 LINK_N (23.175,8.4) 2 J1 (24.825,8.4)   (R_0603 pads at +-0.825, C_0603 at +-0.775)
 R8 = b.footprint('R8', 21.0, 8.4, 0, ref_fab=True)              # N pull-up: 1 3V3 (20.175,8.4) 2 LINK_N (21.825,8.4)
@@ -134,7 +138,13 @@ for x in (UX - 0.6, UX + 0.6):
 
 # ---- U1 top edge: pins 15..28 at x = UX + 2.6 - 0.4 (pin - 15): 19 GND 15.0, 20 XIN 14.6, 21 XOUT 14.2,
 # 22 3V3 13.8, 23 DVDD 13.4, 24 SWCLK 13.0, 25 SWDIO 12.6, 26 RUN 12.2 --------------------------
-T(G, (15.0, 9.125), (15.0, 8.7), (15.3, 8.4), (15.7, 8.4)); V(G, 15.7, 8.4)                     # 19
+T(G, (15.0, 9.125), (15.0, 8.7), (15.5, 8.2)); V(G, 15.5, 8.2)                                 # 19
+# 15 BUZZ_A (16.6) and 16 BUZZ_B (16.2) up-right onto rows y 6.2 / 7.0, east to R17/R18, then BZ1
+BA, BB = N('U1', '15'), N('U1', '16')
+T(BB, (16.2, 9.125), (16.2, 8.9), (18.9, 6.2), (29.7, 6.2), (30.175, 6.675))   # right pin (15) bends first; its line is the lower one east of x 18.7
+T(BA, (16.6, 9.125), (16.6, 9.1), (18.7, 7.0), (28.9, 7.0), (30.0, 8.1), (30.175, 8.3))
+T(N('R18', '2'), (31.825, 6.7), (33.0, 7.875), (33.0, 9.5), BZ1['2'])
+T(N('R17', '2'), (31.825, 8.3), (31.825, 8.9), (28.9, 11.825), (28.7, 12.025), (28.7, 18.75), BZ1['1'])
 T(XIN, (14.6, 9.125), (14.6, 5.55))                                                            # 20 straight up into Y1.1
 # up-left fan: pin k (26 = 0 .. 21 = 5) goes straight to y 8.9 - 0.2k, then 45 deg up-left, then west along its row
 ROWS = [8.7, 7.5, 6.3, 5.1, 3.9, 2.7]
@@ -233,7 +243,8 @@ T(LS, (XK[2], 18.1), (XK[2], 34.125)); pad_via(V3, 20.925, 32.6, 20.925, 31.6)
 T(J3S, (22.9, 35.675), (22.0, 36.575), (22.0, 43.2), (24.0, 43.2), (24.0, 44.5))
 # LINK_N: B.Cu north on x 20.5, east on y 9.4 to R7 (24, 9.375); R8 pull-up beside it
 T(LN, (XK[0], 19.6), (20.5, 18.6), (20.5, 9.4), (23.1, 9.4), layer=B); V(LN, 23.1, 9.4)
-T(LN, (23.1, 9.4), (23.1, 8.4), (21.825, 8.4)); T(N('R7', '2'), (24.825, 8.4), (24.825, 4.3), (24.0, 3.5)); pad_via(V3, 20.175, 8.4, 19.4, 8.4)
+T(LN, (23.1, 9.4), (23.1, 8.4), (21.825, 8.4)); T(N('R7', '2'), (24.825, 8.4), (24.825, 9.4)); V(N('R7', '2'), 24.825, 9.4); T(N('R7', '2'), (24.825, 9.4), (24.825, 4.3), (24.0, 3.5), layer=B)   # under the BUZZ rows
+pad_via(V3, 20.175, 8.4, 19.4, 8.4)                                                            # R8.1
 # LINK_E: B.Cu north on x 22.2, east on y 15.4, south on x 36.4 to R9/R10
 T(LE, (XK[1], 20.1), (XK[1], 15.4), (36.4, 15.4), (36.4, 24.0), layer=B); V(LE, 36.4, 24.0)
 T(LE, (36.4, 24.0), (38.225, 24.0), (38.225, 25.6)); T(N('R9', '2'), (39.775, 24.0), (44.5, 24.0)); pad_via(V3, 39.775, 25.6, 40.7, 26.6)
