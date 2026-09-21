@@ -24,3 +24,6 @@ out/
 *.swp
 .venv/
 __pycache__/
+
+# Claude Code worktrees (created by EnterWorktree)
+.claude/worktrees/
