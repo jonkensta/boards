@@ -78,7 +78,7 @@ for ref, pin, net in (('R5', '2', 'U2'), ('R8', '1', 'U2'), ('C9', '1', 'U2'), (
     assert net in N(ref, pin), (ref, pin, N(ref, pin))
 
 # LDO -> 3.3 V rail (5 V arrives at old (30, 4) = new (35, 26.5) from the header escapes)
-SD('+5V', PWR, (30.0, 4.0), (30.0, 6.95), U3['3'])
+SD('+5V', PWR, (30.0, 4.4), (30.0, 6.95), U3['3'])      # (30, 4.4) = the 5 V via at (35.4, 26.5)
 SD('+5V', PWR, (30.0, 5.05), U3['1'])
 SD('+5V', SIG, C5['1'], (30.0, 5.6))
 SD('GND', SIG, C5['2'], (27.6, 5.6)); VD('GND', 27.6, 5.6)
@@ -140,7 +140,7 @@ b.gr_text('LINE OUT', *T(7.0, 29.0), size=1.0)
 # Header escapes for the DAC. 5V and BCK leave their THT pads on the back (5V down the west
 # side, BCK east along y = 6.3 under the socket); LRCK/DIN/XSMT on the front.
 # ======================================================================================
-b.seg('+5V', PWR, HP(4), (12.18, 3.5), (12.18, 25.23), (13.45, 26.5), (35.0, 26.5), layer='B.Cu'); b.via('+5V', 35.0, 26.5)
+b.seg('+5V', PWR, HP(4), (12.18, 3.5), (12.18, 25.23), (13.45, 26.5), (35.4, 26.5), layer='B.Cu'); b.via('+5V', 35.4, 26.5)
 b.seg(BC, SIG, HP(12), (22.34, 3.5), (22.34, 6.3), (56.7, 6.3), (57.9, 7.5), layer='B.Cu'); b.via(BC, 57.9, 7.5)
 b.seg(BC, SIG, (57.9, 7.5), (57.9, 9.275), (57.3, 9.875), R7['1'])
 b.seg(DI, SIG, HP(40), (55.36, 3.5), (55.36, 5.9), (51.385, 9.875), R6['1'])
@@ -148,6 +148,83 @@ b.seg(LR, SIG, HP(35), (51.55, 5.9), (47.575, 9.875), R5['1'])
 b.seg(XS, SIG, HP(29), (43.93, 9.5)); b.via(XS, 43.93, 9.5)                       # hop under the DAC rail to the XSMT via
 b.seg(XS, SIG, (43.93, 9.5), (43.93, 16.97), (43.6, 17.3), layer='B.Cu')
 b.seg('GND', SIG, HP(25), (38.85, 9.0)); b.via('GND', 38.85, 9.0)                  # pad 25's pour sliver is cut off by the BCK run
+
+# ======================================================================================
+# Isolator block: chromatone/isolator rev A geometry rotated 180 deg into the bottom left,
+# R(x, y) = (46 - x, 56 - y), footprint rotations gain 180. Refs are unchanged. The LED island
+# is x < 21.5, y > 31.5 with J2 on the left edge; U1 sits on the vertical 3 mm barrier at
+# x = 23. The old Pi connector (J1) is replaced by feeds from header pins 17/19/23. R3/D1
+# (3V3 LED) and TP2/TP5 move out of the way of those feeds.
+# ======================================================================================
+def R(x, y): return (46.0 - x, 56.0 - y)
+def FI(ref, x, y, rot=0, **kw): return {k: Pt(v) for k, v in b.footprint(ref, *R(x, y), (rot + 180) % 360, **kw).items()}
+def SI(net, w, *pts, layer='F.Cu'): b.seg(net, w, *[p if isinstance(p, Pt) else R(*p) for p in pts], layer=layer)
+def VI(net, x, y): b.via(net, *R(x, y))
+def FN(ref, x, y, rot=0, **kw): return {k: Pt(v) for k, v in b.footprint(ref, x, y, rot, **kw).items()}
+V5L, GL = '+5V_LED', 'GND_LED'
+
+J2 = FI('J2', 41.5, 10.5, 270, ref_pos=(11.5, 0))     # strip: 1 5V (4.5, 45.5) 2 CI 43 3 DI 40.5 4 GND 38
+U1 = FI('U1', 23.0, 16.0, 0, ref_pos=(-4.0, 4.7))     # ISO7720: pins 1-4 (Pi side) at x = 25.475, 5-8 at 20.525
+C1 = FI('C1', 18.5, 13.32, 90, ref_fab=True)          # 100n VCC1
+C2 = FI('C2', 17.0, 9.9, 0, ref_fab=True)             # 10u 3V3
+C3 = FI('C3', 27.5, 13.32, 90, ref_fab=True)          # 100n VCC2
+C4 = FI('C4', 29.0, 9.9, 180, ref_fab=True)           # 10u 5V_LED
+R1 = FI('R1', 31.0, 15.365, 0, ref_fab=True)          # 47 R CLK
+R2 = FI('R2', 31.0, 17.8, 0, ref_fab=True)            # 47 R DATA
+R4 = FI('R4', 32.5, 23.5, 180, ref_fab=True)          # 1k LED B
+D2 = FI('D2', 28.5, 23.5, 0, ref_fab=True)            # blue LED
+R3 = FN('R3', 32.5, 51.5, 0, ref_fab=True)            # 1k LED A (moved below C2): pad1 west 3V3, pad2 east
+D1 = FN('D1', 36.5, 51.5, 180, ref_fab=True)          # green LED: pad1 K east, pad2 A west
+TP = {}
+for ref, x, y, dy in [('TP3', 34.0, 11.0, -2.0), ('TP4', 35.0, 21.5, -2.0), ('TP6', 31.5, 20.0, 2.0)]:
+    TP[ref] = FI(ref, x, y, ref_fab=True, val_pos=(0, dy))['1']
+TP['TP1'] = FN('TP1', 33.5, 46.0, ref_fab=True, val_pos=(0, 2.0))['1']    # SCLK, below the SCLK column end
+TP['TP2'] = FN('TP2', 32.0, 34.0, ref_fab=True, val_pos=(0, -2.0))['1']   # MOSI, on the MOSI column
+TP['TP5'] = FN('TP5', 37.5, 37.0, ref_fab=True, val_pos=(-3.0, 0))['1']   # GND_A
+assert near(U1['1'], (25.475, 41.905)) and near(U1['8'], (20.525, 41.905)) and near(J2['1'], (4.5, 45.5)) and near(C1['1'], R(18.5, 14.095)), (U1, J2, C1)
+assert near(R3['1'], (31.675, 51.5)) and 'D1' in N('D1', '2') and N('D1', '1') == 'GND' and N('R3', '1') == '+3V3', (R3, N('D1', '2'))
+SK, MO = N('U1', '2'), N('U1', '3')
+CK, DA = N('J2', '2'), N('J2', '3')
+# domain A (as before, minus the connector stubs)
+SI('+3V3', PWR, (16.225, 8.0), C2['1'], (16.225, 14.095), U1['1'])
+SI('GND', SIG, C2['2'], (19.2, 9.9)); VI('GND', 19.2, 9.9)
+SI('GND', SIG, C1['2'], (18.5, 11.3)); VI('GND', 18.5, 11.3)
+SI('GND', SIG, U1['4'], (18.75, 17.905)); VI('GND', 18.75, 17.905)
+SI(SK, SIG, (12.0, 13), (14.365, 15.365), U1['2'])
+b.seg(SK, SIG, (34.0, 43.0), (33.5, 43.5), TP['TP1'])
+b.seg('GND', SIG, TP['TP5'], (37.5, 38.5)); b.via('GND', 37.5, 38.5)
+# domain B
+SI(V5L, PWR, J2['1'], (41.5, 8.0), (29.775, 8.0), C4['1'], (29.775, 14.095), U1['8'])
+SI(V5L, PWR, J2['1'], (43.5, 12.5), (43.5, 19.5), (39.5, 23.5), R4['1'])
+SI(GL, SIG, C4['2'], (26.8, 9.9)); VI(GL, 26.8, 9.9)
+SI(GL, SIG, C3['2'], (27.5, 11.3)); VI(GL, 27.5, 11.3)
+SI(GL, SIG, U1['5'], (27.25, 17.905)); VI(GL, 27.25, 17.905)
+SI(GL, SIG, D2['1'], (26.2, 23.5)); VI(GL, 26.2, 23.5)
+SI(GL, SIG, TP['TP6'], (30.0, 20.0)); VI(GL, 30.0, 20.0)
+SI(N('U1', '7'), SIG, U1['7'], R1['1'])
+SI(CK, SIG, R1['2'], (38.5, 15.365), (40.865, 13.0), J2['2'])
+SI(CK, SIG, (34.0, 15.365), TP['TP3'])
+SI(N('U1', '6'), SIG, U1['6'], (28.5, 16.635), (29.665, 17.8), R2['1'])
+SI(DA, SIG, R2['2'], (38.5, 17.8), (40.8, 15.5), J2['3'])
+SI(DA, SIG, (35.0, 17.8), TP['TP4'])
+SI(N('D2', '2'), SIG, D2['2'], R4['2'])
+# 3V3 LED pair below C2, fed from the 3V3 column
+b.seg(N('R3', '2'), SIG, R3['2'], D1['2']); b.seg('GND', SIG, D1['1'], (38.5, 51.5)); b.via('GND', 38.5, 51.5)
+# feeds from the header: MOSI pin 19 (31.23) and SCLK pin 23 (36.31) as columns at x 32 / 34, 3V3 pin 17 (28.69) east of them at x 35.5
+b.seg('+3V3', PWR, HP(17), (28.69, 9.0)); b.via('+3V3', 28.69, 9.0)                       # hop under the MOSI/SCLK columns
+b.seg('+3V3', PWR, (28.69, 9.0), (35.5, 9.0), layer='B.Cu'); b.via('+3V3', 35.5, 9.0)
+b.seg('+3V3', PWR, (35.5, 9.0), (35.5, 19.5), (34.6, 20.4), (34.6, 28.5), (35.5, 29.4), (35.5, 48.0), (29.775, 48.0))   # jog west past the LDO
+b.seg('+3V3', SIG, (31.675, 48.0), (31.675, 51.5))
+b.seg(MO, SIG, HP(19), (31.23, 6.5), (32.0, 7.27), (32.0, 37.5), (30.135, 39.365), U1['3'])
+b.seg(SK, SIG, HP(23), (36.31, 7.0), (34.0, 9.31), (34.0, 43.0))
+# island pour, barrier silk, labels
+b.zone(GL, 'GND_B', 0, 31.5, 21.5, H)
+for layer in ('F.SilkS', 'B.SilkS'):
+    b.gr_line(23.0, 30.0, 23.0, 35.0, layer, 0.15); b.gr_line(23.0, 44.5, 23.0, 52.5, layer, 0.15)
+    b.gr_line(0.5, 30.0, 23.0, 30.0, layer, 0.15)
+b.gr_text('LED  5V', 13.0, 55.0, size=1.0); b.gr_text('ISOLATED', 23.0, 55.0)
+for y, lab in zip((45.5, 43.0, 40.5, 38.0), ('5V', 'CI', 'DI', 'GND')):
+    b.gr_text(lab, 9.0, y, justify=['left'])
 
 # ---- pours: Pi-domain GND everywhere except the LED island (x < 21.5, y > 31.5) ----------
 b.zone('GND', 'GND_A_top', 0, 0, W, 28.5, priority=1)
