@@ -234,6 +234,28 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   every library missing), and `KICAD_SYMBOL_DIR` / `KICAD_FOOTPRINT_DIR` pointing at
   `~/.local/share/flatpak/runtime/org.kicad.KiCad.Library.*/x86_64/stable/active/files/{symbols,footprints}`
   for schgen/pcbgen. Output paths must be under `$HOME` (`/tmp` is not shared).
+- `boardtools.kicadlibs.find()` locates the stock libraries (env var, `/usr/share/kicad`, then the
+  flatpak runtimes' `active` deployment), so `KICAD_SYMBOL_DIR`/`KICAD_FOOTPRINT_DIR` are optional.
+- **Smoke with the flatpak `kicad-cli` needs `TMPDIR` under `$HOME`** (`mktemp -d` picks /tmp,
+  which the flatpak cannot see; the symptom is "Unable to open boards/smoke-a/...").
+- pcbgen (2026-09-21, boards/chromatone/hat): `footprint(side='B')` flips a footprint the way
+  KiCad does (local y of pads/text/graphics negated, F/B layers swapped, text `justify mirror`,
+  pad angle `rot - a`; verified against the KiCad HAT template: socket at (8.37, 4.77) rot 270
+  puts pin 3 at +x). `gr_arc()` and `outline_rect(radius=)`; arc midpoints must be written with
+  >= 5 decimals or DRC reports an open/self-intersecting outline. `Board()` now also drops
+  `gr_arc/gr_circle/gr_poly` from the template (a generator reading its own output accumulated
+  arcs). Library `attr` tokens other than the netlist-driven bom/pos/dnp flags are kept
+  (`allow_soldermask_bridges` on solder jumpers).
+- **Reusing a routed board inside a bigger one works** by transforming every literal through a
+  helper (`T(x, y)`, rotation added to footprints) and tagging pad tuples (a `tuple` subclass)
+  so the segment helper transforms only literals; the pad dicts come back in the new frame.
+  `boards/chromatone/hat/generate/pcb.py` does this for the dac (90 deg) and isolator (180 deg).
+- **HAT header escapes decide the floorplan.** Every north-south corridor from the 40-pin
+  header crosses the I2S/SPI/5V escapes unless blocks sit under their own pins: BCK (pin 12)
+  runs east on the back under the socket, 5V (pin 4) goes down the back, everything else on
+  the front; a header link (pins 1+17) on the back isolates GND pads' pour slivers (solid
+  connect + stub via). A 3.5 mm jack cannot face the Pi's USB end (the USB stack rises ~3 mm
+  above the HAT top).
 - `*.net` is git-ignored: PCB generators need the netlist exported first (command in each
   `generate/README.md`).
 - The DRC loop that worked: a script that regenerates, runs `kicad-cli pcb drc
