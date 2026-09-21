@@ -8,8 +8,8 @@ board's top-left corner, y down); `Board.footprint` returns pad centres in the
 same frame so routes can be drawn pad to pad.
 
 Only what the boards in this repo have needed: SMD/THT footprints with
-rotation, straight segments, vias, rectangular pours, circular keepouts,
-outline lines, graphic lines and text.
+rotation on either side, straight segments, vias, rectangular pours, circular
+keepouts, outlines (optionally with rounded corners), graphic lines, arcs and text.
 """
 
 from __future__ import annotations
@@ -19,10 +19,10 @@ import os
 import re
 import uuid
 
-from . import sexpr
+from . import kicadlibs, sexpr
 
 Q = sexpr.Quoted
-FOOTPRINT_DIR = os.environ.get("KICAD_FOOTPRINT_DIR", "/usr/share/kicad/footprints")
+FOOTPRINT_DIR = kicadlibs.find("footprints")
 REPO_FOOTPRINT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib", "footprints", "boards.pretty")
 SIG, PWR = 0.25, 0.4
 
@@ -123,20 +123,54 @@ class Board:
 
     # ---- footprints -----------------------------------------------------------
     def footprint(self, ref: str, x: float, y: float, rot: float = 0, *, ref_pos=None, ref_fab=False,
-                  val_pos=None, solid_pads=()) -> dict[str, tuple[float, float]]:
+                  val_pos=None, solid_pads=(), side: str = "F") -> dict[str, tuple[float, float]]:
         """Place the footprint the netlist assigns to `ref`; returns {pad: (x, y)} board-local.
 
         ref_pos: (dx, dy) offset of the Reference text on F.SilkS (default: library position);
         ref_fab: put the Reference on F.Fab hidden instead; val_pos: show the Value on F.SilkS
         at this offset. Offsets are in the footprint's own frame (KiCad rotates them with it).
         solid_pads: pad numbers that connect to zones solidly instead of with thermal reliefs.
+        side="B" flips the footprint onto the back the way KiCad does (local y mirrored, F/B
+        layers swapped, text mirrored); pad positions are still returned as seen from the front.
         """
         comp = self.net.comps[ref]
         lib, name = comp["footprint"].split(":")
         lib_dir = REPO_FOOTPRINT_DIR if lib == "boards" else os.path.join(FOOTPRINT_DIR, f"{lib}.pretty")
         with open(os.path.join(lib_dir, f"{name}.kicad_mod"), encoding="utf-8") as f:
             fp = sexpr.parse(f.read())
-        out = ["footprint", Q(f"{lib}:{name}"), ["layer", Q("F.Cu")], ["uuid", _u()],
+        flip = side == "B"
+        ysign = -1.0 if flip else 1.0
+
+        def L(layer: str) -> str:
+            if flip and layer[:2] in ("F.", "B."):
+                return ("B." if layer[0] == "F" else "F.") + layer[2:]
+            return layer
+
+        def flip_geom(el):
+            """Mirror every local y coordinate of a footprint graphic and swap its layers."""
+            for c in el:
+                if not isinstance(c, list):
+                    continue
+                if c[0] in ("start", "end", "mid", "center") and len(c) >= 3:
+                    c[2] = _n(-float(c[2]))
+                elif c[0] == "xy":
+                    c[2] = _n(-float(c[2]))
+                elif c[0] == "pts":
+                    flip_geom(c)
+                elif c[0] == "layer":
+                    c[1] = Q(L(c[1]))
+                elif c[0] == "layers":
+                    c[1:] = [Q(L(v)) for v in c[1:]]
+                elif c[0] == "effects":
+                    j = sexpr.child(c, "justify")
+                    if j is None:
+                        c.append(["justify", "mirror"])
+                    elif "mirror" not in j:
+                        j.append("mirror")
+                    else:
+                        j.remove("mirror")
+
+        out = ["footprint", Q(f"{lib}:{name}"), ["layer", Q(L("F.Cu"))], ["uuid", _u()],
                ["at", _n(self.OX + x), _n(self.OY + y), _n(rot)]]
         props_seen = set()
         has_attr = any(isinstance(el, list) and el[0] == "attr" for el in fp[2:])
@@ -151,6 +185,9 @@ class Board:
             head = el[0]
             if head in ("version", "generator", "generator_version", "tedit", "tstamp", "uuid", "layer"):
                 continue
+            if flip and head in ("fp_text", "fp_line", "fp_rect", "fp_circle", "fp_arc", "fp_poly", "pad", "property"):
+                el = [list(c) if isinstance(c, list) else c for c in el]     # shallow copy before mutating
+                flip_geom(el)
             if head == "attr":      # keep smd/through_hole, add the schematic's dnp / exclude flags
                 el = ["attr"] + [a for a in el[1:] if a in ("smd", "through_hole")] + sorted(comp["flags"])
             if head == "property":
@@ -163,16 +200,19 @@ class Board:
                     el = [c for c in el if not (isinstance(c, list) and c[0] in ("hide", "at", "layer", "effects"))]
                     pos = ref_pos if k == "Reference" else val_pos
                     on_silk = (k == "Reference" and not ref_fab) or (k == "Value" and val_pos is not None)
-                    el.append(["at", _n(pos[0]) if pos else "0", _n(pos[1]) if pos else "0", "0"])
-                    el.append(["layer", Q("F.SilkS" if on_silk else "F.Fab")])
+                    el.append(["at", _n(pos[0]) if pos else "0", _n(ysign * pos[1]) if pos else "0", "0"])
+                    el.append(["layer", Q(L("F.SilkS" if on_silk else "F.Fab"))])
                     if not on_silk and not (k == "Reference" and not ref_fab):
                         el.append(["hide", "yes"])
-                    el.append(["effects", ["font", ["size", "0.8", "0.8"], ["thickness", "0.15"]]])
+                    eff = ["effects", ["font", ["size", "0.8", "0.8"], ["thickness", "0.15"]]]
+                    if flip:
+                        eff.append(["justify", "mirror"])
+                    el.append(eff)
             if head in ("fp_text", "pad"):
                 at = sexpr.child(el, "at")
                 if at is not None:
                     a = float(at[3]) if len(at) > 3 else 0.0
-                    at[:] = ["at", at[1], at[2], _n((a + rot) % 360)]
+                    at[:] = ["at", at[1], at[2], _n((rot - a if flip else a + rot) % 360)]
                 if head == "pad":
                     nname = self.net.node_net.get((ref, el[1]))
                     el = [c for c in el if not (isinstance(c, list) and c[0] in ("net", "zone_connect"))]
@@ -190,11 +230,11 @@ class Board:
             out.append(el)
         for k, v in [("Footprint", comp["footprint"]), ("Datasheet", comp["datasheet"]), ("Description", comp["description"])]:
             if k not in props_seen:
-                out.append(["property", Q(k), Q(v), ["at", "0", "0", _n(rot)], ["layer", Q("F.Fab")], ["hide", "yes"], ["uuid", _u()],
+                out.append(["property", Q(k), Q(v), ["at", "0", "0", _n(rot)], ["layer", Q(L("F.Fab"))], ["hide", "yes"], ["uuid", _u()],
                             ["effects", ["font", ["size", "1", "1"], ["thickness", "0.15"]]]])
         for k, v in comp["fields"].items():
             if k in ("MPN", "Manufacturer", "LCSC"):
-                out.append(["property", Q(k), Q(v), ["at", "0", "0", _n(rot)], ["layer", Q("F.Fab")], ["hide", "yes"], ["uuid", _u()],
+                out.append(["property", Q(k), Q(v), ["at", "0", "0", _n(rot)], ["layer", Q(L("F.Fab"))], ["hide", "yes"], ["uuid", _u()],
                             ["effects", ["font", ["size", "1", "1"], ["thickness", "0.15"]]]])
         out.append(["path", Q("/" + comp["uuid"])])
         out.append(["sheetname", Q("/")])
@@ -240,10 +280,24 @@ class Board:
         self.items.append(["gr_line", ["start", _n(X1), _n(Y1)], ["end", _n(X2), _n(Y2)],
                            ["stroke", ["width", _n(width)], ["type", "default"]], ["layer", Q(layer)], ["uuid", _u()]])
 
-    def outline_rect(self):
-        W, H = self.W, self.H
-        for (x1, y1, x2, y2) in [(0, 0, W, 0), (W, 0, W, H), (W, H, 0, H), (0, H, 0, 0)]:
-            self.gr_line(x1, y1, x2, y2, "Edge.Cuts", 0.1)
+    def gr_arc(self, x1, y1, xm, ym, x2, y2, layer: str, width: float):
+        """Three-point arc (start, mid, end), like KiCad's own `gr_arc`."""
+        (X1, Y1), (XM, YM), (X2, Y2) = self.P(x1, y1), self.P(xm, ym), self.P(x2, y2)
+        self.items.append(["gr_arc", ["start", _n(X1), _n(Y1)], ["mid", _n(XM), _n(YM)], ["end", _n(X2), _n(Y2)],
+                           ["stroke", ["width", _n(width)], ["type", "default"]], ["layer", Q(layer)], ["uuid", _u()]])
+
+    def outline_rect(self, radius: float = 0.0):
+        """Board edge: a rectangle, with quarter-circle corners when `radius` > 0."""
+        W, H, r = self.W, self.H, radius
+        if r <= 0:
+            for (x1, y1, x2, y2) in [(0, 0, W, 0), (W, 0, W, H), (W, H, 0, H), (0, H, 0, 0)]:
+                self.gr_line(x1, y1, x2, y2, "Edge.Cuts", 0.1)
+            return
+        k = r * (1 - math.sqrt(0.5))
+        self.gr_line(r, 0, W - r, 0, "Edge.Cuts", 0.1); self.gr_arc(W - r, 0, W - k, k, W, r, "Edge.Cuts", 0.1)
+        self.gr_line(W, r, W, H - r, "Edge.Cuts", 0.1); self.gr_arc(W, H - r, W - k, H - k, W - r, H, "Edge.Cuts", 0.1)
+        self.gr_line(W - r, H, r, H, "Edge.Cuts", 0.1); self.gr_arc(r, H, k, H - k, 0, H - r, "Edge.Cuts", 0.1)
+        self.gr_line(0, H - r, 0, r, "Edge.Cuts", 0.1); self.gr_arc(0, r, k, k, r, 0, "Edge.Cuts", 0.1)
 
     def gr_text(self, s: str, x: float, y: float, layer: str = "F.SilkS", size: float = 0.8, rot: float = 0, justify=None):
         X, Y = self.P(x, y)

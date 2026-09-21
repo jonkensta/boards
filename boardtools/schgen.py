@@ -16,11 +16,11 @@ from __future__ import annotations
 import os
 import uuid
 
-from . import sexpr
+from . import kicadlibs, sexpr
 
 Q = sexpr.Quoted
 G = 1.27
-SYMBOL_DIR = os.environ.get("KICAD_SYMBOL_DIR", "/usr/share/kicad/symbols")
+SYMBOL_DIR = kicadlibs.find("symbols")
 
 
 def g(k: float) -> float:
