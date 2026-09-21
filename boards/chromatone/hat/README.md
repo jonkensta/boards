@@ -7,15 +7,14 @@ boards stay in the repo as history; this is the board to order.
 
 ## Status (2026-09-21)
 
-- Schematic generated, ERC clean (`generate/schematic.py`). Netlist exported.
-- **PCB not started**: `hat.kicad_pcb` is still the scaffold. `make check` passes only because
-  parity DRC on an empty board reports nothing.
-- Decisions taken: full HAT outline (holes 58 x 49 mm, header on the back at HAT-spec
+- Schematic and PCB generated (`generate/`), ERC and DRC clean including schematic parity.
+  Not yet ordered; the JLCPCB BOM step below still applies.
+- Decisions taken: full HAT outline (holes 58 x 49 mm, socket on the back at the HAT-spec
   position: pin 1 at (8.37, 4.77) from the top-left corner, pins along the top edge); ID EEPROM
-  footprint present but DNP; camera/display slots omitted (not used on the bike).
+  footprints present but DNP; camera/display slots omitted (not used on the bike).
 - Open question: with a Pi 4B in hand, try its onboard 3.5 mm jack into the speaker first. If
   it is good enough the DAC half (U2, U3, J3, C5..C16, R5..R11, D3, TP7..TP9) can be left
-  unpopulated or dropped, and the board shrinks to isolator + header.
+  unpopulated, and a rev B could drop it.
 
 ## Pi pins used
 
@@ -36,26 +35,30 @@ The LED domain (+5V_LED, GND_LED, J2 to pixel 0) touches nothing on the Pi. Ever
 `chromatone/README.md` about strip wiring, the VDD2 tap at pixel 0, 8 MHz SPI and probing
 one domain at a time still applies.
 
-## Layout plan (for the PCB pass)
+## Layout (rev A, 65 x 56.5 mm, 2 layers)
 
-- Header strip y < 7 mm (socket on the back; nothing else on the back). Route between header
-  pads: 0.84 mm gaps take a 0.25 mm trace (0.4 mm just fits at 0.2 mm clearance).
-- DAC block translated from `chromatone/dac` (jack on the left edge at x = 9, block at y 12..38);
-  the old J1 traces become header escapes (BCK pin 12 at x = 21.07, LRCK pin 35 at 51.55,
-  DIN pin 40 at 56.63, 5V pin 2 at 8.37, XSMT pin 29 at 43.93; odd pins y = 4.77, even 2.23).
-- Isolator at the bottom right: U1 on a vertical 3 mm barrier at x ~ 46, LED island
-  x > 47.5, y > 33 with J2 near (61, 36..44) and hole H4 inside it (keepout, nylon standoff).
-  The GND pour is two overlapping rectangles that leave the island and the barrier out.
-- EEPROM block top right (x 50..62, y 12..26), beside pins 27/28.
-- Pi 4B PoE header sits under x 54..63, y 6..14: no back-side parts there (the socket is the
-  only back-side part anyway). No component over the SoC on the back either.
-- `pcbgen.Board.footprint(..., side='B')` places the socket the way the KiCad HAT template
-  does; `outline_rect(radius=3.0)` draws the HAT corners.
+- Header along the top edge, socket on the back (the only back-side part). 5V and BCK leave
+  their pads on the back (5V down the west side, BCK east under the socket); everything else
+  escapes on the front. Pin 25 (GND) needs a stub and via because the BCK run isolates its
+  pour sliver.
+- DAC block: the `chromatone/dac` layout rotated 90 deg onto the right half, jack on the bottom
+  edge at x = 53 (the right edge is out: the Pi's USB stack rises above the HAT there),
+  PCM5102A at (48, 19.5), the 33 R I2S resistors in a row under the header, LDO at (37, 23.5).
+- Isolator block: the `chromatone/isolator` layout rotated 180 deg into the bottom left. J2 on
+  the left edge, U1 on a vertical 3 mm barrier at x = 23, LED island x < 21.5 / y > 31.5 with
+  its own pour; hole H3 sits inside it (copper keepout; use a nylon standoff there).
+- SPI feeds (MOSI, SCLK) run down the middle as columns at x = 32 / 34; 3V3 hops under them on
+  the back and runs down x = 35.5. ID EEPROM (DNP) in the left-centre with ID_SD/ID_SC on the
+  back under the columns.
+- Test points: SCLK, MOSI, GND_A (Pi domain), CLK, DATA, GND_B (LED domain), LRCK, BCK, GND
+  (DAC). Probe one domain at a time.
+- Pi 4B PoE header sits under x 54..63, y 6..14; nothing on the back there.
+- `generate/drc.sh` regenerates and prints DRC findings in board-local mm.
 
 ## Files
 
 - `hat.kicad_pro` / `.kicad_sch` / `.kicad_pcb` — KiCad project
-- `generate/` — schematic generator (see its README); `pcb.py` to be written
+- `generate/` — schematic and board generators (see its README)
 - `sym-lib-table` / `fp-lib-table` — project library tables pointing at the shared `lib/`
 
 ## Build

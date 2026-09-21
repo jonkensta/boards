@@ -3,8 +3,10 @@
 `schematic.py` writes `hat.kicad_sch` from the stock symbol libraries using
 `boardtools.schgen`; the isolator and DAC blocks are the `chromatone/isolator` and
 `chromatone/dac` schematics with grid-unit offsets and their Pi-side connectors replaced by
-net labels on a `Connector:Raspberry_Pi_4` header symbol. `pcb.py` (not written yet) will do
-the board the same way with `boardtools.pcbgen`.
+net labels on a `Connector:Raspberry_Pi_4` header symbol. `pcb.py` does the board the same way with
+`boardtools.pcbgen`: the DAC and isolator blocks are the two source boards' placement and
+routing under a coordinate transform (rotated 90 / 180 deg), with the old Pi connectors replaced
+by header escapes. `drc.sh` regenerates, runs DRC with parity and prints findings in board mm.
 
 ```sh
 python3 boards/chromatone/hat/generate/schematic.py

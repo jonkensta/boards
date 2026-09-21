@@ -10,7 +10,7 @@ in adversarial Codex loops, and are ERC/DRC clean with schematic parity.
 | --- | --- | --- | --- |
 | [`isolator/`](isolator/README.md) | ISO7720 galvanic isolator + level shifter: Pi SPI (3.3 V) -> SK9822 strip (5 V) | 46 x 30 mm | Rev A layout done. Isolator and connectors numbered; pick basic-part passives in JLCPCB's BOM tool. |
 | [`dac/`](dac/README.md) | PCM5102A I2S line-out DAC (experiment, alternative to the USB audio dongle) | 56 x 36 mm | Rev A layout done. Every part has a verified JLCPCB number. |
-| [`hat/`](hat/README.md) | **Supersedes both:** isolator + DAC + ID EEPROM (DNP) as one Pi 4B HAT | 65 x 56.5 mm | Schematic done, ERC clean. PCB not started. |
+| [`hat/`](hat/README.md) | **Supersedes both:** isolator + DAC + ID EEPROM (DNP) as one Pi 4B HAT | 65 x 56.5 mm | Rev A layout done, ERC/DRC clean. Pick 47 R, blue LED and the 2x20 socket in JLCPCB's BOM tool. |
 
 The two small boards are kept as history; `hat/` is the one to order. Build any of them from the repo root: `make check|fab|jlcpcb BOARD=chromatone/<board>`.
 

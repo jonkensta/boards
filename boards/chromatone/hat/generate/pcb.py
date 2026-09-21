@@ -226,6 +226,46 @@ b.gr_text('LED  5V', 13.0, 55.0, size=1.0); b.gr_text('ISOLATED', 23.0, 55.0)
 for y, lab in zip((45.5, 43.0, 40.5, 38.0), ('5V', 'CI', 'DI', 'GND')):
     b.gr_text(lab, 9.0, y, justify=['left'])
 
+# ======================================================================================
+# HAT ID EEPROM (all DNP) in the left-centre. 3V3 rail at y = 12 tapped off the pin 1/17 link;
+# ID_SD/ID_SC drop from pins 27/28 to vias, run west on the back under the SPI columns, come up
+# beside U4 with their pull-ups on the run; WP has its pull-up and the solder jumper to GND.
+# SOIC-8: left pins 1-4 top-down (A0 A1 A2 GND), right pins 8-5 top-down (VCC WP SCL SDA).
+# ======================================================================================
+U4 = FN('U4', 18.0, 17.0, 0, ref_pos=(0, 4.0))
+C17 = FN('C17', 13.2, 13.0, 270, ref_fab=True)         # pad1 top on the rail, pad2 bottom to the GND join
+R12 = FN('R12', 25.5, 18.905, 180, ref_fab=True)       # 3.9k: pad2 west = SDA, pad1 east = 3V3
+R13 = FN('R13', 28.5, 17.635, 180, ref_fab=True)       # 3.9k: pad2 west = SCL, pad1 east = 3V3 (east of R12/R14)
+R14 = FN('R14', 25.5, 16.365, 0, ref_fab=True)         # 10k: pad1 west = WP, pad2 east = 3V3
+JP1 = FN('JP1', 23.8, 13.6, 0, ref_fab=True)
+if JP1['1'][0] > JP1['2'][0]:                           # want the GND pad (A) on the west
+    b.items.pop(); JP1 = FN('JP1', 23.8, 13.6, 180, ref_fab=True)
+SD_, SC_, WP_ = N('U4', '5'), N('U4', '6'), N('U4', '7')
+assert near(U4['8'], (20.475, 15.095)) and near(U4['5'], (20.475, 18.905)) and near(U4['4'], (15.525, 18.905)), U4
+assert N('R12', '2') == SD_ and N('R13', '2') == SC_ and N('R14', '1') == WP_ and N('JP1', '2') == WP_ and N('C17', '1') == '+3V3', (SD_, SC_, WP_)
+assert near(R12['1'], (26.325, 18.905)) and near(R14['1'], (24.675, 16.365)) and near(R13['2'], (27.675, 17.635)) and near(C17['1'], (13.2, 12.225)), (R12, R14, R13, C17)
+jpb, jpa = JP1['2'], JP1['1']
+# 3V3 rail and the pull-up column
+b.seg('+3V3', SIG, (13.0, 6.4), (13.0, 12.0), (29.325, 12.0), R13['1'])
+b.seg('+3V3', SIG, R14['2'], (26.325, 12.0)); b.seg('+3V3', SIG, R12['1'], (29.325, 18.905), (29.325, 17.635))
+b.seg('+3V3', SIG, U4['8'], (20.475, 12.0))
+# grounds: A0-A2 + GND pin joined at x = 14.6, C17 onto that join, one via
+for pin in ('1', '2', '3', '4'):
+    b.seg('GND', SIG, U4[pin], (14.6, U4[pin][1]))
+b.seg('GND', SIG, (14.6, 15.095), (14.6, 18.905)); b.seg('GND', SIG, (14.6, 17.0), (14.0, 17.0)); b.via('GND', 14.0, 17.0)
+b.seg('GND', SIG, C17['2'], (13.2, 14.4), (13.895, 15.095), (14.6, 15.095))
+# WP: pin 7 east through the jumper tap to R14
+b.seg(WP_, SIG, U4['7'], R14['1']); b.seg(WP_, SIG, jpb, (jpb[0], 16.365))
+b.seg('GND', SIG, jpa, (jpa[0], 12.9)); b.via('GND', jpa[0], 12.9)
+# ID_SD (pin 27) and ID_SC (pin 28)
+b.seg(SD_, SIG, HP(27), (41.39, 7.6)); b.via(SD_, 41.39, 7.6)
+b.seg(SD_, SIG, (41.39, 7.6), (41.39, 11.0), (24.4, 11.0), (24.4, 18.905), layer='B.Cu'); b.via(SD_, 24.4, 18.905)
+b.seg(SD_, SIG, U4['5'], (24.4, 18.905), R12['2'])
+b.seg(SC_, SIG, HP(28), (40.12, 3.5), (40.12, 7.2)); b.via(SC_, 40.12, 7.2)
+b.seg(SC_, SIG, (40.12, 7.2), (40.12, 10.3), (22.3, 10.3), (22.3, 17.635), layer='B.Cu'); b.via(SC_, 22.3, 17.635)
+b.seg(SC_, SIG, U4['6'], (22.3, 17.635), R13['2'])
+b.gr_text('ID EEPROM (DNP)', 18.0, 23.5)
+
 # ---- pours: Pi-domain GND everywhere except the LED island (x < 21.5, y > 31.5) ----------
 b.zone('GND', 'GND_A_top', 0, 0, W, 28.5, priority=1)
 b.zone('GND', 'GND_A_right', 24.5, 0, W, H)

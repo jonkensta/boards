@@ -189,7 +189,7 @@ class Board:
                 el = [list(c) if isinstance(c, list) else c for c in el]     # shallow copy before mutating
                 flip_geom(el)
             if head == "attr":      # keep smd/through_hole, add the schematic's dnp / exclude flags
-                el = ["attr"] + [a for a in el[1:] if a in ("smd", "through_hole")] + sorted(comp["flags"])
+                el = ["attr"] + [a for a in el[1:] if a not in ("exclude_from_bom", "exclude_from_pos_files", "dnp")] + sorted(comp["flags"])
             if head == "property":
                 k = el[1]
                 props_seen.add(k)
