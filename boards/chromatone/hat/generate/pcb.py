@@ -21,15 +21,13 @@ N = lambda ref, pin: b.net.node_net[(ref, pin)]     # net of a pin, from the sch
 # ---- HAT mechanics: holes (58 x 49), 2x20 socket on the back, pin 1 at (8.37, 4.77) ----
 for i, (hx, hy) in enumerate([(3.5, 3.5), (61.5, 3.5), (3.5, 52.5), (61.5, 52.5)]):
     b.footprint(f'H{i+1}', hx, hy, ref_fab=True); b.keepout(hx, hy)
-J1 = b.footprint('J1', 8.37, 4.77, 270, ref_fab=True, side='B', solid_pads=('6', '9', '14'))   # pads on the pour slivers cut off by the 3V3 link
+J1 = b.footprint('J1', 8.37, 4.77, 270, ref_fab=True, side='B', solid_pads=('25',))   # its pour sliver is an island (BCK run)
 assert J1['1'] == (8.37, 4.77) and J1['2'] == (8.37, 2.23) and J1['3'] == (10.91, 4.77) and J1['40'] == (56.63, 2.23), J1
 HP = lambda n: J1[str(n)]                            # header pin -> board position
 
-# header power: 5V pins 2+4 joined on the front; 3V3 pins 1+17 joined on the back under the socket
+# header power: 5V pins 2+4 joined; 3V3 pins 1+17 linked on the front just under the pad row
 b.seg('+5V', PWR, HP(2), HP(4))
-b.seg('+3V3', PWR, HP(1), (8.37, 7.0), (28.69, 7.0), HP(17), layer='B.Cu')
-# that back-side link isolates the pour slivers around pads 6/9/14; pad 9 (GND) gets a front stub to a via
-b.seg('GND', SIG, HP(9), (18.53, 9.0)); b.via('GND', 18.53, 9.0)
+b.seg('+3V3', PWR, HP(1), (8.37, 6.4), (28.69, 6.4), HP(17))
 
 # ======================================================================================
 # DAC block: chromatone/dac rev A geometry rotated 90 deg CCW onto the right half, jack on
@@ -70,7 +68,7 @@ R8 = FD('R8', 17.8, 17.325, 180, ref_fab=True)        # 470 L
 R9 = FD('R9', 18.8, 22.4, 180, ref_fab=True)          # 470 R
 R11 = FD('R11', 23.0, 8.0, 0, ref_fab=True)           # 1k LED
 D3 = FD('D3', 26.0, 8.0, 180, ref_fab=True)           # LED: 1 K, 2 A
-TP7 = b.footprint('TP7', 43.4, 11.3, ref_fab=True, val_pos=(0, -2.0))['1']     # LRCK, west of R5
+TP7 = b.footprint('TP7', 42.5, 11.3, ref_fab=True, val_pos=(0, -2.0))['1']     # LRCK, west of R5
 TP8 = b.footprint('TP8', 55.0, 11.3, ref_fab=True, val_pos=(0, -2.0))['1']     # BCK, east of R7
 TP9 = FD('TP9', 20.0, 28.0, ref_fab=True, val_pos=(2.0, 0))['1']   # Pt               # GND
 def near(a, b): return abs(a[0] - b[0]) < 1e-3 and abs(a[1] - b[1]) < 1e-3
@@ -137,6 +135,19 @@ SD('GND', SIG, J3['S'], (13.925, 26.6)); VD('GND', 13.925, 26.6)
 SD('GND', SIG, J3['R2'], (5.825, 17.2)); VD('GND', 5.825, 17.2)
 SD('GND', SIG, TP9, (21.2, 28.0)); VD('GND', 21.2, 28.0)
 b.gr_text('LINE OUT', *T(7.0, 29.0), size=1.0)
+
+# ======================================================================================
+# Header escapes for the DAC. 5V and BCK leave their THT pads on the back (5V down the west
+# side, BCK east along y = 6.3 under the socket); LRCK/DIN/XSMT on the front.
+# ======================================================================================
+b.seg('+5V', PWR, HP(4), (12.18, 3.5), (12.18, 25.23), (13.45, 26.5), (35.0, 26.5), layer='B.Cu'); b.via('+5V', 35.0, 26.5)
+b.seg(BC, SIG, HP(12), (22.34, 3.5), (22.34, 6.3), (56.7, 6.3), (57.9, 7.5), layer='B.Cu'); b.via(BC, 57.9, 7.5)
+b.seg(BC, SIG, (57.9, 7.5), (57.9, 9.275), (57.3, 9.875), R7['1'])
+b.seg(DI, SIG, HP(40), (55.36, 3.5), (55.36, 5.9), (51.385, 9.875), R6['1'])
+b.seg(LR, SIG, HP(35), (51.55, 5.9), (47.575, 9.875), R5['1'])
+b.seg(XS, SIG, HP(29), (43.93, 9.5)); b.via(XS, 43.93, 9.5)                       # hop under the DAC rail to the XSMT via
+b.seg(XS, SIG, (43.93, 9.5), (43.93, 16.97), (43.6, 17.3), layer='B.Cu')
+b.seg('GND', SIG, HP(25), (38.85, 9.0)); b.via('GND', 38.85, 9.0)                  # pad 25's pour sliver is cut off by the BCK run
 
 # ---- pours: Pi-domain GND everywhere except the LED island (x < 21.5, y > 31.5) ----------
 b.zone('GND', 'GND_A_top', 0, 0, W, 28.5, priority=1)
