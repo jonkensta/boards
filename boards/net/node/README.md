@@ -202,7 +202,8 @@ carries ratings (X7R 16 V, C0G, etc.) into the JLCPCB Comment column.
 
 Rough per-node parts cost at 50 to 100 pieces: about $1.50 for the RP2040, flash, crystal and
 LDO; $0.50 for connectors, LED and passives; the VL53L0X adds about $1.50, the
-spring switch a few cents. Add PCB (small 2-layer, cheap) and assembly (the RP2040 and the
+spring switch a few cents. Add PCB (48 mm square, 4-layer, roughly $1 more than 2-layer at
+JLCPCB) and assembly (the RP2040 and the
 VL53L0X are reflow-only; everything THT is hand-solderable). The ToF variant is the expensive
 one; the bare variant plus a $1 PIR module on J5 is the cheapest way to get a working net.
 Cables are a real line item: one 3-wire XH cable per link, roughly two per node in a grid.

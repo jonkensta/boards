@@ -220,6 +220,9 @@ class PcbgenTests(unittest.TestCase):
     def test_variants_emitted_board_and_footprint(self):
         _, root = self.build(2)
         self.assertEqual(sexpr.child(root, "variants"), ["variants", ["variant", ["name", "vib"]]])
+        # regenerating from the output must not accumulate registries
+        _, again = self.build(2, template=os.path.join(self.tmp.name, "out2.kicad_pcb"))
+        self.assertEqual(list(sexpr.children(again, "variants")), [["variants", ["variant", ["name", "vib"]]]])
         fps = self.fps(root)
         self.assertEqual(list(sexpr.children(fps["C1"], "variant")), [["variant", ["name", "vib"], ["dnp", "no"]]])
         self.assertEqual(list(sexpr.children(fps["TP1"], "variant")), [])

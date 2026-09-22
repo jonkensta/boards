@@ -97,7 +97,7 @@ class Board:
         self.OX, self.OY = origin
         with open(template_pcb, encoding="utf-8") as f:
             board = sexpr.parse(f.read())
-        drop = ("gr_line", "gr_rect", "footprint", "segment", "via", "zone", "gr_text", "net")
+        drop = ("gr_line", "gr_rect", "footprint", "segment", "via", "zone", "gr_text", "net", "variants")
         self.board = [x for x in board if not (isinstance(x, list) and x[0] in drop)]
         # Inner copper layers, KiCad 9+ numbering (In1.Cu = 4, In2.Cu = 6, ...). Existing InN.Cu
         # entries are dropped first so a generator that reads its own output stays idempotent.
