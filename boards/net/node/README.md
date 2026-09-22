@@ -264,9 +264,11 @@ bottom, W left; pin 1 = +5V is the clockwise-first pin); M2 holes 3.5 mm in from
 with 3.2 mm keepouts on all copper layers; **U1 rot 180 at (14, 13)** so GPIO0..GPIO11 face the
 centre on its right edge, crystal/SWD/RUN on its top edge, QSPI/USB/core power on its bottom
 edge; U2 flash rot 90 directly below U1 (near row SD3/SCLK/SD0 straight down, far row
-SS/SD1/SD2 around the right side and back under the far row); crystal cluster above U1's right
-half with XIN straight up into Y1 and XOUT going up-left with the SWD fan to R1, the crystal
-node returning over the top at y 1.9; J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
+SS/SD1/SD2 around the right side and back under the far row); crystal cluster above U1 with XIN
+straight up into Y1 (rot 90 at (13.8, 3.3)), XOUT going up-left with the SWD fan onto the top
+row, which ends in R1 standing on the row end at (9.0, 1.7); the crystal node runs along y 0.875
+back to Y1's node pad, C2 hangs off it to the west (loop about 17 mm, of which the 8.8 mm XOUT
+diagonal is forced by the fan); J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
 SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd row y 40.5 = USB_DM/USB_DP/GND/+5V,
 columns 2.54 mm apart, rows 5.05 mm apart); D2 at (29, 24) with D4 chained below it; D1/C19 to
 their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5 in a row; U3 rot

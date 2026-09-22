@@ -54,10 +54,10 @@ UX = 14.0
 U1 = b.footprint('U1', UX, 13.0, 180, ref_pos=(0, 5.6))
 U2 = b.footprint('U2', 15.6, 27.4, 90, ref_pos=(-5.4, 0))       # W25Q16: near row y 23.81 (8 VCC 13.7, 7 SD3 14.97, 6 SCLK 16.24, 5 SD0 17.5), far row y 30.99 (1 SS, 2 SD1, 3 SD2, 4 GND)
 # crystal above the top edge; XIN straight up, XOUT via the up-left fan to R1, node back over the top
-Y1 = b.footprint('Y1', 15.7, 4.1, 0, ref_fab=True)              # 1 XIN (14.6,4.95) 2 GND (16.8,4.95) 3 node (16.8,3.25) 4 GND (14.6,3.25)
-R1 = b.footprint('R1', 9.0, 2.7, 0, ref_fab=True)               # 1 node (8.225,2.7) 2 XOUT (9.775,2.7)
-C1 = b.footprint('C1', 12.85, 3.8, 270, ref_fab=True)           # 27p XIN: 1 GND (12.85,3.025) 2 XIN (12.85,4.575)
-C2 = b.footprint('C2', 17.0, 1.5, 180, ref_fab=True)            # 27p node: 2 node (16.225,1.5) 1 GND (17.775,1.5)
+Y1 = b.footprint('Y1', 13.8, 3.3, 90, ref_fab=True)             # 1 XIN (14.65,4.4) 2 GND (14.65,2.2) 3 node (12.95,2.2) 4 GND (12.95,4.4)
+R1 = b.footprint('R1', 9.0, 1.7, 270, ref_fab=True)             # vertical on the row end: 2 XOUT (9.0,2.525) bottom, 1 node (9.0,0.875) top
+C1 = b.footprint('C1', 16.4, 4.4, 270, ref_fab=True)            # 27p XIN: 1 GND (16.4,3.625) 2 XIN (16.4,5.175)
+C2 = b.footprint('C2', 7.05, 2.85, 90, ref_fab=True)            # 27p node: 2 node (7.05,2.075) 1 GND (7.05,3.625), west of R1
 # up-left fan from pins 26..21 turns west onto rows y 8.7 / 7.5 / 6.3 / 5.1 / 3.9 / 2.7 (1.2 pitch: vias fit between)
 C14 = b.footprint('C14', 8.6, 5.1, 180, ref_fab=True)           # DVDD 23: 1 DVDD (9.375,5.1) 2 GND (7.825,5.1)
 R2 = b.footprint('R2', 7.6, 9.7, 90, ref_fab=True)              # RUN pull-up: 2 RUN (7.6,8.925) on the RUN row, 1 3V3 (7.6,10.475)
@@ -145,7 +145,7 @@ T(BB, (16.2, 9.125), (16.2, 8.9), (18.9, 6.2), (29.7, 6.2), (30.175, 6.675))   #
 T(BA, (16.6, 9.125), (16.6, 9.1), (18.7, 7.0), (28.9, 7.0), (30.0, 8.1), (30.175, 8.3))
 T(N('R18', '2'), (31.825, 6.7), (33.0, 7.875), (33.0, 9.5), BZ1['2'])
 T(N('R17', '2'), (31.825, 8.3), (31.825, 8.9), (28.9, 11.825), (28.7, 12.025), (28.7, 18.75), BZ1['1'])
-T(XIN, (14.6, 9.125), (14.6, 5.55))                                                            # 20 straight up into Y1.1
+T(XIN, (14.6, 9.125), (14.6, 4.4))                                                             # 20 straight up into Y1.1
 # up-left fan: pin k (26 = 0 .. 21 = 5) goes straight to y 8.9 - 0.2k, then 45 deg up-left, then west along its row
 ROWS = [8.7, 7.5, 6.3, 5.1, 3.9, 2.7]
 ROWX = []
@@ -158,15 +158,16 @@ T(RUN, (ROWX[0], 8.7), (6.9, 8.7)); V(RUN, 6.9, 8.7)                            
 T(SWDIO, (ROWX[1], 7.5), (5.7, 7.5)); V(SWDIO, 5.7, 7.5)                                       # row 1
 T(SWCLK, (ROWX[2], 6.3), (6.3, 6.3)); V(SWCLK, 6.3, 6.3)                                       # row 2
 T(DVDD, (ROWX[3], 5.1), (9.375, 5.1)); T(DVDD, (10.1, 5.1), (10.4, 5.4), (10.4, 5.7)); V(DVDD, 10.4, 5.7)   # row 3 -> C14.1, via between rows
-T(V3, (ROWX[4], 3.9), (8.0, 3.9)); V(V3, 8.0, 3.9)                                             # row 4 -> via (IOVDD 22)
-T(XOUT, (ROWX[5], 2.7), (9.775, 2.7))                                                          # row 5 -> R1.2
+T(V3, (ROWX[4], 3.9), (8.4, 3.9)); V(V3, 8.4, 3.9)                                             # row 4 -> via (IOVDD 22)
+T(XOUT, (ROWX[5], 2.7), (9.0, 2.525))                                                          # row 5 ends in R1.2
 pad_via(V3, 7.6, 10.475, 8.5, 10.475)                                                          # R2.1
 pad_via(G, 7.825, 5.1, 7.0, 5.1)                                                               # C14.2
 # crystal: R1.1 -> over the top -> Y1.3 (through C2.2); C1 on XIN; GND vias
-T(XNODE, (8.225, 2.7), (8.225, 1.9), (16.8, 1.9), (16.8, 3.25)); pad_via(G, 17.775, 1.5, 18.2, 2.6)
-T(XIN, (13.9, 4.6), (13.325, 4.6))                                                            # Y1.1 -> C1.2
-T(G, (12.85, 3.025), (13.6, 2.6)); T(G, (14.6, 3.25), (13.9, 2.9), (13.6, 2.6)); V(G, 13.6, 2.6)   # C1.1 + Y1.4
-pad_via(G, 16.8, 4.95, 16.8, 6.4)                                                             # Y1.2
+T(XNODE, (9.0, 0.875), (12.35, 0.875), (12.95, 1.475), (12.95, 2.2))                          # R1.1 -> Y1.3 along the top
+T(XNODE, (9.0, 0.875), (7.5, 0.875), (7.05, 1.325), (7.05, 2.075))                           # -> C2.2
+pad_via(G, 7.05, 3.625, 7.05, 4.5); T(G, (12.95, 4.4), (12.95, 5.55), (13.3, 5.9)); V(G, 13.3, 5.9)   # C2.1, Y1.4 (via below the pad, clear of the diagonals)
+T(XIN, (14.65, 4.4), (15.1, 4.85), (15.6, 5.175), (16.4, 5.175))                                # Y1.1 -> C1.2
+T(G, (14.65, 2.2), (15.5, 2.6)); T(G, (16.4, 3.625), (15.9, 3.1), (15.5, 2.6)); V(G, 15.5, 2.6)   # Y1.2 + C1.1
 
 # ---- U1 left edge: 33 -> C6, 42 -> C7, 38 SENS_AIN west on F.Cu to the west B.Cu lane -------
 T(V3, (10.125, 12.0), (9.125, 12.0)); pad_via(V3, 9.125, 12.0, 9.125, 13.2); pad_via(G, 7.575, 12.0, 7.575, 13.4)
