@@ -265,9 +265,11 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
 
 ## Review history
 
-Five Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+Six Codex critique loops so far (five rounds on the original scaffold, three on the jobset
 restructure, one on the net/node placement and pcbgen changes (findings in
-`boards/net/node/README.md`, Resume path), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
+`boards/net/node/README.md`, Resume path), two rounds on chromatone/hat (no electrical or
+layout finding; holes/test points needed `in_pos_files=False` to stay out of the CPL, socket is
+the only back-side THT part so JLCPCB Standard assembly or hand-soldering), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
 loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export
 (ordered under `-j`); zone refill; strict severity flags; whitespace/quote-proof layer parsing;
 every copper layer in the fab zip (the In1..In4 cap bit an 8-layer board); warnings reports
