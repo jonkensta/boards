@@ -269,7 +269,7 @@ half with XIN straight up into Y1 and XOUT going up-left with the SWD fan to R1,
 node returning over the top at y 1.9; J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
 SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd row y 40.5 = USB_DM/USB_DP/GND/+5V,
 columns 2.54 mm apart, rows 5.05 mm apart); D2 at (29, 24) with D4 chained below it; D1/C19 to
-their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5/C11 in a row; U3 rot
+their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5 in a row; U3 rot
 180 at (30, 34.6) with C20/C21 to its right; J5 rot 90 with pin 1 at (20.73, 38.6); SW1/C22
 bottom-right; BZ1 piezo rot 90 at (34, 14.4) with R17/R18 between it and U4.
 
@@ -278,7 +278,8 @@ Routing plan, in the order pcb.py writes it:
 - **U1 escapes.** Top edge: 19 GND to a via, 20 XIN straight up, 21..26 fan up-left and turn
   west onto rows 1.2 mm apart (RUN 8.7, SWDIO 7.5, SWCLK 6.3, DVDD 5.1, 3V3 3.9, XOUT 2.7).
   Left edge: 33/42 to C6/C7, 38 SENS_AIN west on F.Cu to a via at (4.6, 14). Bottom edge:
-  43+44 and 48+49 joined at the pad tips (same net), 45 down to C13/C15, 46/47 USB straight
+  43+44 and 48+49 joined at the pad tips (same net) with C10 (100 nF) and C11 (1 uF, VREG_VIN)
+  stacked under pin 44, 45 down to C13/C15, 46/47 USB straight
   down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
   GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
   turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east; 15/16 BUZZ_A/B up-right
