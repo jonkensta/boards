@@ -281,7 +281,10 @@ Routing plan, in the order pcb.py writes it:
   west onto rows 1.2 mm apart (RUN 8.7, SWDIO 7.5, SWCLK 6.3, DVDD 5.1, 3V3 3.9, XOUT 2.7).
   Left edge: 33/42 to C6/C7, 38 SENS_AIN west on F.Cu to a via at (4.6, 14). Bottom edge:
   43+44 and 48+49 joined at the pad tips (same net) with C10 (100 nF) and C11 (1 uF, VREG_VIN)
-  stacked under pin 44, 45 down to C13/C15, 46/47 USB straight
+  stacked under pin 44, 45 down to C13/C15, 46/47 USB straight down to R15/R16 stacked in the
+  one 0603 column that fits between the DVDD track and the flash (4 and 7 mm from the pins;
+  DP passes R15 on its right, DM passes R16 on its left, then the pair runs 0.8 mm apart to J6;
+  full-speed USB, so this is a tidiness point, not a signal-integrity one), USB straight
   down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
   GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
   turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east; 15/16 BUZZ_A/B up-right
