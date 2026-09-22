@@ -180,7 +180,7 @@ for i, (name, x) in enumerate(zip(['LINK_N', 'LINK_E', 'LINK_S', 'LINK_W'], [150
 JX, JY = 290, 44
 s.text('J6: 2x4 pogo pads (2.54 mm), nothing fitted. SWD, or USB via 27R with BOOT grounding QSPI_SS.', g(248), g(22))
 J6 = s.place('Connector_Generic', 'Conn_02x04_Odd_Even', 'J6', g(JX), g(JY), rot=90, value='PROG',
-             footprint='Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Vertical_SMD', in_bom=False, in_pos_files=False,
+             footprint='boards:PogoPads_2x04_P2.54mm', in_bom=False, in_pos_files=False,   # stock 2x4 SMD header pads minus the paste layer
              description='Pogo-pin programming pads, 2x4, 2.54 mm', prop_pos={'Reference': (-9.0, -1.27), 'Value': (-9.0, 1.27)})
 assert J6['1'] == (g(JX - 2), g(JY + 4)) and J6['2'] == (g(JX - 2), g(JY - 6)) and J6['8'] == (g(JX + 4), g(JY - 6))
 for pin, name in {'2': 'SWDIO', '4': 'SWCLK', '6': 'RUN', '8': 'QSPI_SS'}.items():

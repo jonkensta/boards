@@ -81,7 +81,7 @@ C3 = b.footprint('C3', 23.2, 12.0, 0, ref_fab=True)             # 1 3V3 (22.425)
 # USB series resistors on the way down to J6
 R15 = b.footprint('R15', 11.7, 21.4, 90, ref_fab=True)          # 27R DM: 2 DM (11.7,20.575) 1 J6.1 (11.7,22.225)
 R16 = b.footprint('R16', 11.7, 24.8, 90, ref_fab=True)          # 27R DP: 2 DP (11.7,23.975) 1 J6.3 (11.7,25.625); only one 0603 column fits between the DVDD track and U2
-J6 = b.footprint('J6', 12.5, 38.0, 90, ref_pos=(0, -7.0))       # even row y 35.475: 2 SWDIO 8.69, 4 SWCLK 11.23, 6 RUN 13.77, 8 BOOT 16.31; odd row y 40.525: 1 DM, 3 DP, 5 GND, 7 +5V
+J6 = b.footprint('J6', 12.5, 38.0, 90, ref_pos=(0, -7.0))       # boards:PogoPads (no paste layer)       # even row y 35.475: 2 SWDIO 8.69, 4 SWCLK 11.23, 6 RUN 13.77, 8 BOOT 16.31; odd row y 40.525: 1 DM, 3 DP, 5 GND, 7 +5V
 # LEDs right of centre (rot 90: 3 DIN top-right, 2 GND bottom-right, 1 DOUT bottom-left, 4 VDD top-left)
 D2 = b.footprint('D2', 29.0, 24.0, 90, ref_fab=True)
 D4 = b.footprint('D4', 29.0, 27.6, 90, ref_fab=True)            # chained below D2 (DNP)

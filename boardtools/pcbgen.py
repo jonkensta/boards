@@ -123,13 +123,14 @@ class Board:
 
     # ---- footprints -----------------------------------------------------------
     def footprint(self, ref: str, x: float, y: float, rot: float = 0, *, ref_pos=None, ref_fab=False,
-                  val_pos=None, solid_pads=()) -> dict[str, tuple[float, float]]:
+                  val_pos=None, solid_pads=(), no_paste=False) -> dict[str, tuple[float, float]]:
         """Place the footprint the netlist assigns to `ref`; returns {pad: (x, y)} board-local.
 
         ref_pos: (dx, dy) offset of the Reference text on F.SilkS (default: library position);
         ref_fab: put the Reference on F.Fab hidden instead; val_pos: show the Value on F.SilkS
         at this offset. Offsets are in the footprint's own frame (KiCad rotates them with it).
         solid_pads: pad numbers that connect to zones solidly instead of with thermal reliefs.
+        no_paste: drop the paste layers from every pad (bare contact pads for pogo pins / test points).
         """
         comp = self.net.comps[ref]
         lib, name = comp["footprint"].split(":")
@@ -180,6 +181,10 @@ class Board:
                         el.append(["net", str(self.net.codes[nname]), Q(nname)])
                     if el[1] in solid_pads:
                         el.append(["zone_connect", "2"])
+                    if no_paste:
+                        for c in el:
+                            if isinstance(c, list) and c[0] == "layers":
+                                c[1:] = [l for l in c[1:] if not str(l).endswith(".Paste")]
                     if el[1]:
                         dx, dy = rot_pt(float(at[1]), float(at[2]), rot)
                         pads[el[1]] = (round(x + dx, 4), round(y + dy, 4))

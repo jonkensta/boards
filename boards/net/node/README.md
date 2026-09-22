@@ -59,7 +59,8 @@ moved (see Decisions), J6 USB pins swapped. **No firmware, nothing ordered, no j
   20 mA for the VL53L0X. A dozen nodes on 5 V is fine; bus voltage and bucks come later if the
   LED gets serious (see Decisions for the first batch).
 - **No USB connector.** J6 is a bare 2x4 SMD pad array on 2.54 mm pitch (footprint
-  `PinHeader_2x04_P2.54mm_Vertical_SMD`, nothing fitted, excluded from BOM and position files)
+  `boards:PogoPads_2x04_P2.54mm`, the stock 2x4 SMD header pads without the paste layer so the
+  stencil leaves them bare; nothing fitted, excluded from BOM and position files)
   for a pogo-pin jig carrying SWD, USB D+/D- (27 R series on the board), RUN, BOOT and 5 V. A
   virgin RP2040 (blank flash) boots straight into the ROM USB bootloader, so the first flash
   needs only a USB cable on the jig; SWD is there for debugging and for re-flashing without

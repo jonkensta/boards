@@ -151,8 +151,8 @@ PCBGEN_FOOTPRINTS = {
     "cap": '''(footprint "cap" (version 20240108) (generator "x") (layer "F.Cu") (attr smd)
   (property "Reference" "REF**" (at 0 0 0) (layer "F.SilkS") (effects (font (size 1 1))))
   (property "Value" "V" (at 0 0 0) (layer "F.Fab") (effects (font (size 1 1))))
-  (pad "1" smd rect (at -1 0) (size 0.5 0.5) (layers "F.Cu"))
-  (pad "2" smd rect (at 1 0) (size 0.5 0.5) (layers "F.Cu")))
+  (pad "1" smd rect (at -1 0) (size 0.5 0.5) (layers "F.Cu" "F.Paste"))
+  (pad "2" smd rect (at 1 0) (size 0.5 0.5) (layers "F.Cu" "F.Paste")))
 ''',
     "noattr": '''(footprint "noattr" (version 20240108) (generator "x") (layer "F.Cu")
   (property "Reference" "REF**" (at 0 0 0) (layer "F.SilkS") (effects (font (size 1 1))))
@@ -223,6 +223,16 @@ class PcbgenTests(unittest.TestCase):
         fps = self.fps(root)
         self.assertEqual(list(sexpr.children(fps["C1"], "variant")), [["variant", ["name", "vib"], ["dnp", "no"]]])
         self.assertEqual(list(sexpr.children(fps["TP1"], "variant")), [])
+
+    def test_solid_pads_and_no_paste(self):
+        b = pcbgen.Board(self.template, pcbgen.Netlist(self.netlist), "x.kicad_sch", 10, 10, origin=(0, 0))
+        b.footprint("C1", 2, 3, solid_pads=("2",), no_paste=True)
+        out = os.path.join(self.tmp.name, "np.kicad_pcb")
+        b.write(out)
+        pads = {p[1]: p for p in sexpr.children(self.fps(sexpr.parse(open(out).read()))["C1"], "pad")}
+        self.assertEqual(sexpr.child(pads["1"], "layers")[1:], ["F.Cu"])          # F.Paste dropped
+        self.assertIsNone(sexpr.child(pads["1"], "zone_connect"))
+        self.assertEqual(sexpr.child(pads["2"], "zone_connect"), ["zone_connect", "2"])
 
     def test_pads_rotated_and_netted(self):
         c1, root = self.build(2)
