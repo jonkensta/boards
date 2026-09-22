@@ -41,9 +41,9 @@ s = Schematic('hat', root_uuid_of(OUT), 'Chromatone Pi HAT', rev='A', date='2026
               comment='Pi 4B HAT: SPI (3.3 V) -> ISO7720 -> SK9822 strip (5 V, isolated); I2S -> PCM5102A line out; ID EEPROM (DNP)')
 
 def TPT(ref, x, y, name):   # test point, body above
-    s.place('Connector', 'TestPoint', ref, x, y, value=name, footprint=TP_FP, in_bom=False, prop_pos={'Reference': (-2.0, -5.5), 'Value': (-2.0, -3.6)})
+    s.place('Connector', 'TestPoint', ref, x, y, value=name, footprint=TP_FP, in_bom=False, in_pos_files=False, prop_pos={'Reference': (-2.0, -5.5), 'Value': (-2.0, -3.6)})
 def TPB(ref, x, y, name):   # body below
-    s.place('Connector', 'TestPoint', ref, x, y, rot=180, value=name, footprint=TP_FP, in_bom=False, prop_pos={'Reference': (-2.0, 6.7), 'Value': (-2.0, 4.8)})
+    s.place('Connector', 'TestPoint', ref, x, y, rot=180, value=name, footprint=TP_FP, in_bom=False, in_pos_files=False, prop_pos={'Reference': (-2.0, 6.7), 'Value': (-2.0, 4.8)})
 def R(ref, x, y, val, rot=0, pp=None, **kw):
     return s.place('Device', 'R', ref, x, y, rot=rot, value=val, footprint=R_FP, fields=PARTS[val],
                    prop_pos=pp or {'Reference': (1.5, -1.27), 'Value': (1.5, 1.27)}, **kw)
@@ -254,8 +254,8 @@ s.text('HAT ID EEPROM (DNP): 24LC32 on ID_SD/ID_SC, 3.9k pull-ups, WP high; shor
 s.text('Populate U4, C17, R12-R14 and program with eepflash.sh (hats/eepromutils) to have the Pi enable SPI and load hifiberry-dac by itself.', g(4), g(130))
 
 for i in range(4):
-    s.place('Mechanical', 'MountingHole', f'H{i+1}', g(8 + i * 10), g(142), value='M2.5', footprint=HOLE_FP, in_bom=False,
+    s.place('Mechanical', 'MountingHole', f'H{i+1}', g(8 + i * 10), g(142), value='M2.5', footprint=HOLE_FP, in_bom=False, in_pos_files=False,
             prop_pos={'Reference': (-2.0, -3.0), 'Value': (-2.0, -1.0)})
-s.text('H1-H4: HAT holes (58 x 49 mm). H4 sits in the LED domain: copper keepout, nylon standoff.', g(4), g(150))
+s.text('H1-H4: HAT holes (58 x 49 mm). H3 (bottom left) sits in the LED domain: copper keepout, nylon standoff.', g(4), g(150))
 s.write(OUT)
 print('wrote', OUT)

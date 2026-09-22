@@ -9,6 +9,10 @@ boards stay in the repo as history; this is the board to order.
 
 - Schematic and PCB generated (`generate/`), ERC and DRC clean including schematic parity.
   Not yet ordered; the JLCPCB BOM step below still applies.
+- Codex review (2026-09-21): no electrical or layout blocker. Ordering notes: D2 (blue LED),
+  J1 (2x20 socket) and R1/R2 (47 R) have no LCSC number yet; J1 is the only back-side part and
+  is THT, so either choose JLCPCB Standard assembly (both sides) or hand-solder the socket
+  (Economic assembly is single-sided). Keep the 8.5 mm body height if substituting.
 - Decisions taken: full HAT outline (holes 58 x 49 mm, socket on the back at the HAT-spec
   position: pin 1 at (8.37, 4.77) from the top-left corner, pins along the top edge); ID EEPROM
   footprints present but DNP; camera/display slots omitted (not used on the bike).
