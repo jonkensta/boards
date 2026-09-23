@@ -97,7 +97,7 @@ class Board:
         self.OX, self.OY = origin
         with open(template_pcb, encoding="utf-8") as f:
             board = sexpr.parse(f.read())
-        drop = ("gr_line", "gr_rect", "gr_arc", "gr_circle", "gr_poly", "footprint", "segment", "via", "zone", "gr_text", "net")
+        drop = ("gr_line", "gr_rect", "gr_arc", "gr_circle", "gr_poly", "footprint", "segment", "via", "zone", "gr_text", "net", "variants")
         self.board = [x for x in board if not (isinstance(x, list) and x[0] in drop)]
         # Inner copper layers, KiCad 9+ numbering (In1.Cu = 4, In2.Cu = 6, ...). Existing InN.Cu
         # entries are dropped first so a generator that reads its own output stays idempotent.
@@ -123,13 +123,14 @@ class Board:
 
     # ---- footprints -----------------------------------------------------------
     def footprint(self, ref: str, x: float, y: float, rot: float = 0, *, ref_pos=None, ref_fab=False,
-                  val_pos=None, solid_pads=(), side: str = "F") -> dict[str, tuple[float, float]]:
+                  val_pos=None, solid_pads=(), no_paste=False, side: str = "F") -> dict[str, tuple[float, float]]:
         """Place the footprint the netlist assigns to `ref`; returns {pad: (x, y)} board-local.
 
         ref_pos: (dx, dy) offset of the Reference text on F.SilkS (default: library position);
         ref_fab: put the Reference on F.Fab hidden instead; val_pos: show the Value on F.SilkS
         at this offset. Offsets are in the footprint's own frame (KiCad rotates them with it).
         solid_pads: pad numbers that connect to zones solidly instead of with thermal reliefs.
+        no_paste: drop the paste layers from every pad (bare contact pads for pogo pins / test points).
         side="B" flips the footprint onto the back the way KiCad does (local y mirrored, F/B
         layers swapped, text mirrored); pad positions are still returned as seen from the front.
         """
@@ -220,6 +221,10 @@ class Board:
                         el.append(["net", str(self.net.codes[nname]), Q(nname)])
                     if el[1] in solid_pads:
                         el.append(["zone_connect", "2"])
+                    if no_paste:
+                        for c in el:
+                            if isinstance(c, list) and c[0] == "layers":
+                                c[1:] = [l for l in c[1:] if not str(l).endswith(".Paste")]
                     if el[1]:
                         dx, dy = rot_pt(float(at[1]), float(at[2]), rot)
                         pads[el[1]] = (round(x + dx, 4), round(y + dy, 4))

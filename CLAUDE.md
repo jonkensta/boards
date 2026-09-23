@@ -190,8 +190,9 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   (`${VARIANT}` in `-o` for several at once). The jobset exports the default variant only.
 - `kicad-cli pcb drc --schematic-parity` on a PCB with no footprints reports zero parity issues,
   so `make check` passes for a board whose layout has not started.
-- **QFN-56 0.4 mm pitch with 0.2/0.2 rules and 0.6 mm vias (boards/net/node):** a via needs a
-  1.0 mm lane, so only every third pin can via near the chip and adjacent pins must escape
+- **QFN-56 0.4 mm pitch with 0.2/0.2 rules and 0.6 mm vias (boards/net/node):** a via between
+  two tracks needs their centres 1.2 mm apart (0.6 mm to each), so only a pin whose neighbours
+  are unrouted can via near the chip and adjacent pins must escape
   straight on the front first; parallel 45 deg escapes from adjacent pins are only 0.28 mm apart
   (violation), so stagger them (one straight, one diagonal). Adjacent same-net pins (RP2040
   43+44, 48+49) can be joined at the pad tips to free a lane. A 0603 in line with a 0.4 mm pin
@@ -205,16 +206,18 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   (dnp yes) ...)` on the footprint (parsed from the netlist's `(variants ...)` per component; the
   board-side syntax came from `pcb_io_kicad_sexpr_parser.cpp`), `solid_pads=` for pads that must
   connect to pours without thermal spokes, and empty fields (`(field (name "LCSC"))` with no
-  value) emitted as empty properties so schematic parity passes. `sch export bom --exclude-dnp
-  --variant x` still filters on the *base* dnp; filter on the `${DNP}` column instead.
-- **Routing at 0.4 mm pitch, learned on boards/net/node (all DRC-verified):** an escape must
-  leave its pad straight for >= 0.2 mm before bending or it clips the neighbouring pad; two
+  value) emitted as empty properties so schematic parity passes; the board-level `(variants ...)`
+  registry is rebuilt each run like the inner layers. `sch export bom --exclude-dnp --variant x`
+  honours the variant (verified 2026-09-21: `vib` keeps SW1/C22, drops U3/C20/C21).
+- **Routing at 0.4 mm pitch, learned on boards/net/node (DRC-verified on that board):** an
+  escape that bends *towards* a routed neighbour must first run straight for >= 0.2 mm or it
+  clips that neighbour's pad (bending away, or beside an unrouted pad, needs nothing); two
   neighbours bending 45 deg the same way need bend points offset >= 0.17 mm along the row (the
   pin nearer the bend direction bends first) or >= 0.97 mm the other way (parallel 45 deg lines
   offset (a, b) are |a - b| / sqrt 2 apart); a via needs 0.6 mm from every other track centre
   and 0.8 mm from other vias, so rows of parallel tracks must be >= 1.2 mm apart for a via to
-  sit between them; a via never "touches" a pad unless a track joins them (leave no 0.3 mm
-  gap); the U1 pin whose two neighbours are unrouted is the only one that can via straight out,
+  sit between them; a via connects to a pad only if their copper overlaps or a track joins them
+  (a 0.3 mm gap is an open, a via inside a bare pogo pad is fine); the U1 pin whose two neighbours are unrouted is the only one that can via straight out,
   which is why GPIO7..9 are unused on the node. `R_0603` pads sit at +-0.825 mm, `C_0603` at
   +-0.775, both 0.95 across the short axis; rot 180 puts pad 1 on the right, rot 90 puts it at
   +y (below), rot 270 above. `ref_pos`/`val_pos` offsets rotate with the footprint. Vias may sit
@@ -236,8 +239,8 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   for schgen/pcbgen. Output paths must be under `$HOME` (`/tmp` is not shared).
 - `boardtools.kicadlibs.find()` locates the stock libraries (env var, `/usr/share/kicad`, then the
   flatpak runtimes' `active` deployment), so `KICAD_SYMBOL_DIR`/`KICAD_FOOTPRINT_DIR` are optional.
-- **Smoke with the flatpak `kicad-cli` needs `TMPDIR` under `$HOME`** (`mktemp -d` picks /tmp,
-  which the flatpak cannot see; the symptom is "Unable to open boards/smoke-a/...").
+- `scripts/smoke.sh` makes its temp copy under `$HOME` (`${TMPDIR:-$HOME/.cache}`) so the flatpak
+  `kicad-cli` can read it; an older `mktemp -d` in /tmp failed with "Unable to open boards/smoke-a/...".
 - pcbgen (2026-09-21, boards/chromatone/hat): `footprint(side='B')` flips a footprint the way
   KiCad does (local y of pads/text/graphics negated, F/B layers swapped, text `justify mirror`,
   pad angle `rot - a`; verified against the KiCad HAT template: socket at (8.37, 4.77) rot 270
@@ -265,11 +268,13 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
 
 ## Review history
 
-Six Codex critique loops so far (five rounds on the original scaffold, three on the jobset
-restructure, one on the net/node placement and pcbgen changes (findings in
-`boards/net/node/README.md`, Resume path), two rounds on chromatone/hat (no electrical or
-layout finding; holes/test points needed `in_pos_files=False` to stay out of the CPL, socket is
-the only back-side THT part so JLCPCB Standard assembly or hand-soldering), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
+Seven Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+restructure, one on the net/node placement and pcbgen changes, one on the routed net/node board
+(C11 away from its pin, crystal loop length, USB series R placement, paste on pogo pads,
+variants registry not idempotent, overstated escape rules; all addressed, re-check round still
+owed), two rounds on chromatone/hat (no electrical or layout finding; holes/test points needed
+`in_pos_files=False` to stay out of the CPL, socket is the only back-side THT part so JLCPCB
+Standard assembly or hand-soldering), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
 loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export
 (ordered under `-j`); zone refill; strict severity flags; whitespace/quote-proof layer parsing;
 every copper layer in the fab zip (the In1..In4 cap bit an 8-layer board); warnings reports

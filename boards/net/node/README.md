@@ -5,14 +5,17 @@ neighbour links. A node that detects something lights up and tells its neighbour
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-## Status: PCB placed and routed, DRC clean (2026-09-20)
+## Status: PCB placed and routed, DRC clean, Codex review addressed (2026-09-23)
 
 Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
 board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
 0 unconnected items and 0 schematic-parity issues (two `track_dangling` warnings are the open
-corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo (BZ1/R17/R18, schematic only so far, not yet
-placed), sensor GPIOs moved (see Decisions), J6 USB pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
-`make jlcpcb BOARD=net/node`, order-page check, jig.
+corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo
+(BZ1/R17/R18), sensor GPIOs moved (see Decisions), J6 USB pins swapped. The Codex review of
+the routed board (findings: C11 far from VREG_VIN, long crystal loop, USB series R far from
+the pins, paste on the pogo pads, plus nits) has been worked through; what remains of it is
+recorded under Resume path. **No firmware, nothing ordered, no jig built; LCSC numbers
+unverified.** Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Concept and first-iteration scope
 
@@ -59,7 +62,8 @@ placed), sensor GPIOs moved (see Decisions), J6 USB pins swapped. **No firmware,
   20 mA for the VL53L0X. A dozen nodes on 5 V is fine; bus voltage and bucks come later if the
   LED gets serious (see Decisions for the first batch).
 - **No USB connector.** J6 is a bare 2x4 SMD pad array on 2.54 mm pitch (footprint
-  `PinHeader_2x04_P2.54mm_Vertical_SMD`, nothing fitted, excluded from BOM and position files)
+  `boards:PogoPads_2x04_P2.54mm`, the stock 2x4 SMD header pads without the paste layer so the
+  stencil leaves them bare; nothing fitted, excluded from BOM and position files)
   for a pogo-pin jig carrying SWD, USB D+/D- (27 R series on the board), RUN, BOOT and 5 V. A
   virgin RP2040 (blank flash) boots straight into the ROM USB bootloader, so the first flash
   needs only a USB cable on the jig; SWD is there for debugging and for re-flashing without
@@ -201,7 +205,8 @@ carries ratings (X7R 16 V, C0G, etc.) into the JLCPCB Comment column.
 
 Rough per-node parts cost at 50 to 100 pieces: about $1.50 for the RP2040, flash, crystal and
 LDO; $0.50 for connectors, LED and passives; the VL53L0X adds about $1.50, the
-spring switch a few cents. Add PCB (small 2-layer, cheap) and assembly (the RP2040 and the
+spring switch a few cents. Add PCB (48 mm square, 4-layer, roughly $1 more than 2-layer at
+JLCPCB) and assembly (the RP2040 and the
 VL53L0X are reflow-only; everything THT is hand-solderable). The ToF variant is the expensive
 one; the bare variant plus a $1 PIR module on J5 is the cheapest way to get a working net.
 Cables are a real line item: one 3-wire XH cable per link, roughly two per node in a grid.
@@ -264,24 +269,32 @@ bottom, W left; pin 1 = +5V is the clockwise-first pin); M2 holes 3.5 mm in from
 with 3.2 mm keepouts on all copper layers; **U1 rot 180 at (14, 13)** so GPIO0..GPIO11 face the
 centre on its right edge, crystal/SWD/RUN on its top edge, QSPI/USB/core power on its bottom
 edge; U2 flash rot 90 directly below U1 (near row SD3/SCLK/SD0 straight down, far row
-SS/SD1/SD2 around the right side and back under the far row); crystal cluster above U1's right
-half with XIN straight up into Y1 and XOUT going up-left with the SWD fan to R1, the crystal
-node returning over the top at y 1.9; J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
+SS/SD1/SD2 around the right side and back under the far row); crystal cluster above U1 with XIN
+straight up into Y1 (rot 90 at (13.8, 3.3)), XOUT going up-left with the SWD fan onto the top
+row, which ends in R1 standing on the row end at (9.0, 1.7); the crystal node runs along y 0.875
+back to Y1's node pad, C2 hangs off it to the west (loop about 17 mm, of which the 8.8 mm XOUT
+diagonal is forced by the fan); J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
 SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd row y 40.5 = USB_DM/USB_DP/GND/+5V,
 columns 2.54 mm apart, rows 5.05 mm apart); D2 at (29, 24) with D4 chained below it; D1/C19 to
-their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5/C11 in a row; U3 rot
+their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5 in a row; U3 rot
 180 at (30, 34.6) with C20/C21 to its right; J5 rot 90 with pin 1 at (20.73, 38.6); SW1/C22
-bottom-right.
+bottom-right; BZ1 piezo rot 90 at (34, 14.4) with R17/R18 between it and U4.
 
 Routing plan, in the order pcb.py writes it:
 
 - **U1 escapes.** Top edge: 19 GND to a via, 20 XIN straight up, 21..26 fan up-left and turn
   west onto rows 1.2 mm apart (RUN 8.7, SWDIO 7.5, SWCLK 6.3, DVDD 5.1, 3V3 3.9, XOUT 2.7).
   Left edge: 33/42 to C6/C7, 38 SENS_AIN west on F.Cu to a via at (4.6, 14). Bottom edge:
-  43+44 and 48+49 joined at the pad tips (same net), 45 down to C13/C15, 46/47 USB straight
+  43+44 and 48+49 joined at the pad tips (same net) with C10 (100 nF) and C11 (1 uF, VREG_VIN)
+  stacked under pin 44, 45 down to C13/C15, 46/47 USB straight down to R15/R16 stacked in the
+  one 0603 column that fits between the DVDD track and the flash (4 and 7 mm from the pins;
+  DP passes R15 on its right, DM passes R16 on its left, then the pair runs 0.8 mm apart to J6;
+  full-speed USB, so this is a tidiness point, not a signal-integrity one), USB straight
   down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
   GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
-  turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east.
+  turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east; 15/16 BUZZ_A/B up-right
+  onto rows y 7.0 / 6.2 (the right pin bends first) east to R17/R18, R7's J1 leg drops to B.Cu
+  to pass under them.
 - **B.Cu lanes.** West side x 5.2/5.7/6.3/6.9 = SENS_AIN/SWDIO/SWCLK/RUN, ending in vias
   *inside* the J6 pogo pads (nothing is soldered there). LINK_N north on x 20.5, LINK_E north on
   x 22.2 then east on y 15.4, LINK_W south then west on y 25.6 (east of the west lanes, into a
@@ -303,17 +316,26 @@ committed board carries the zone fills.
 ## Resume path
 
 1. Re-read this file, `generate/README.md` and the CLAUDE.md sections on generating KiCad files
-   (the 0.4 mm-pitch escape rules and the flatpak KiCad setup are recorded there).
-   `generate/sch-1.png` is the rendered sheet. Regenerate the schematic only if the design
-   changes; regeneration replaces every UUID. Regenerate the PCB with the commands in
-   `generate/README.md`, then `make check BOARD=net/node`.
-2. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
+   (the 0.4 mm-pitch escape rules, the flatpak KiCad setup and the session-bounding rules are
+   recorded there). `generate/sch-1.png` is the rendered sheet. Regenerate the schematic only if
+   the design changes; regeneration replaces every UUID. Regenerate the PCB with the commands in
+   `generate/README.md`, then `make check BOARD=net/node`. Helper scripts that make a routing
+   pass cheap (regenerate + DRC with board-mm locations, courtyard overlap check, F.Cu segment
+   dump in a box) are described in CLAUDE.md; they lived in `out/` and are not committed.
+2. Known compromises, deliberately left: the crystal loop is about 17 mm (the 8.8 mm XOUT
+   diagonal is the top-edge fan itself; shortening it means redesigning that fan); R16 (USB DP
+   series R) is 7 mm from the pin because only one 0603 column fits between the DVDD track and
+   the flash; the 5 V ring is open at the top-left corner (two dangling-end warnings).
+   All fine for a proof of concept at full-speed USB and 12 MHz.
+3. One Codex re-check round on the review fixes has not been run; do it before ordering
+   (`\codex --profile shared exec ...` per CLAUDE.md, ask it to reproduce `make check`).
+4. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
    XSHUT track, vias inside the J6 pads). Silk is minimal: connector refs sit inside the
    housings, passives have no silk reference.
-3. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
+5. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
    check LED/connector orientation in the JLCPCB preview. Cables: JST-XH 3-pin pre-made,
    one length; XH has no strain relief, so a bush deployment needs a printed clip or tie.
-4. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, UART bootloader;
-   then rev B (LED power, bus voltage, maybe a small SMD buzzer).
+6. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, piezo driver
+   (PWM/PIO, antiphase pair), UART bootloader; then rev B (LED power, bus voltage).
 
 `generate/` holds the scripts that produced the schematic and the board (see its README).
