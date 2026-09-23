@@ -65,7 +65,7 @@ for b in $A $B; do
   leaf=$(basename "$b"); out=boards/$b/out
   make --no-print-directory -j4 jlcpcb BOARD=$b >"$tmp/fab-$leaf.log" 2>&1 || { cat "$tmp/fab-$leaf.log"; fail "make jlcpcb BOARD=$b"; }
   grep -q 'erc-warnings.rpt' "$tmp/fab-$leaf.log" || fail "$b: Makefile checks did not run before the jobset"
-  for f in erc.rpt drc.rpt erc-warnings.rpt drc-warnings.rpt $leaf-gerbers.zip $leaf-all-pos.csv $leaf-bom.csv $leaf-schematic.pdf $leaf.step \
+  for f in erc.rpt drc.rpt erc-warnings.rpt drc-warnings.rpt offgrid.rpt $leaf-gerbers.zip $leaf-all-pos.csv $leaf-bom.csv $leaf-schematic.pdf $leaf.step \
            $leaf-job.gbrjob $leaf-Edge_Cuts.gm1 drill/$leaf-PTH.drl drill/$leaf-NPTH.drl drill/$leaf-PTH-drl_map.gbr \
            jlcpcb/$leaf-cpl.csv jlcpcb/$leaf-bom.csv; do
     [ -s "$out/$f" ] || fail "$b: missing or empty $out/$f"
@@ -103,6 +103,27 @@ make --no-print-directory parts BOARD=$A PARTS_ARGS="$parts_db" >/dev/null 2>&1 
 mv boards/$A/smoke-a.kicad_sch "$tmp/"
 make --no-print-directory parts BOARD=$A PARTS_ARGS="$parts_db" >/dev/null 2>&1 && fail "make parts passed without a schematic"
 mv "$tmp/smoke-a.kicad_sch" boards/$A/
+
+# --- off-grid lint: follows child sheets and gates erc/ by itself, while ERC still runs and
+# rewrites its reports. A lone no-connect 0.5 mm off the grid in a child sheet is only an ERC
+# warning, so ERC passes and the failure must come from the lint.
+python3 - boards/$A/smoke-a.kicad_sch <<'PY'
+import os, sys
+p = sys.argv[1]; s = open(p).read().rstrip()
+sheet = ('  (sheet (at 50.8 50.8) (size 12.7 10.16) (uuid "00000000-0000-4000-8000-00000000c0de")\n'
+         '    (property "Sheetname" "child" (at 50.8 50.038 0) (effects (font (size 1.27 1.27)) (justify left bottom)))\n'
+         '    (property "Sheetfile" "child.kicad_sch" (at 50.8 61.5 0) (effects (font (size 1.27 1.27)) (justify left top))))\n')
+open(p, "w").write(s[:-1] + sheet + ")\n")
+open(os.path.join(os.path.dirname(p), "child.kicad_sch"), "w").write(
+    '(kicad_sch (version 20250114) (generator "eeschema") (uuid "00000000-0000-4000-8000-00000000c0df") (paper "A4")\n'
+    '  (lib_symbols) (no_connect (at 25.4 25.9) (uuid "00000000-0000-4000-8000-00000000c0e0")))\n')
+PY
+echo STALE >boards/$A/out/erc.rpt
+if make --no-print-directory erc/$A >"$tmp/offgrid.log" 2>&1; then fail "erc passed with an off-grid no-connect in a child sheet"; fi
+grep -q 'child.kicad_sch: no_connect .* at (25.4, 25.9)  nearest (25.4, 25.4)' "$tmp/offgrid.log" || { cat "$tmp/offgrid.log"; fail "off-grid no-connect in child sheet not reported"; }
+grep -q 'child.kicad_sch: no_connect' boards/$A/out/offgrid.rpt || fail "offgrid.rpt does not name the child sheet"
+grep -q '^Found 0 violations' "$tmp/offgrid.log" || fail "precondition: ERC itself should pass on the child-sheet fixture"
+head -1 boards/$A/out/erc.rpt | grep -q '^ERC report' || fail "erc.rpt not rewritten after an off-grid failure"
 
 # --- gating: after a good build, a DRC failure must stop fab before the jobset runs
 # and must not leave the previous zip looking current

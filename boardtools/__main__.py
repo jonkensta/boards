@@ -7,13 +7,15 @@ Commands:
   parts  <bom.csv> [--db PATH] [--boards N] [--strict]
                                       check BOM LCSC numbers against JLCPCB's live parts
                                       search (or an offline SQLite snapshot); exit 1 on errors
+  offgrid <sch.kicad_sch> [--grid MM] list connection points off the grid (default 1.27 mm);
+                                      exit 1 if any
 """
 
 from __future__ import annotations
 
 import sys
 
-from . import jlcpcb, parts, pcb
+from . import jlcpcb, offgrid, parts, pcb
 
 
 def main(argv: list[str]) -> int:
@@ -39,6 +41,8 @@ def main(argv: list[str]) -> int:
             return jlcpcb.main(argv[1:])
         if cmd == "parts":
             return parts.main(argv[1:])
+        if cmd == "offgrid":
+            return offgrid.main(argv[1:])
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

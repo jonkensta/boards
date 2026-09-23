@@ -38,7 +38,7 @@ make new NAME=blinky        # scaffold boards/blinky (fresh UUIDs, 50×50 mm out
 make new NAME=proj/rev2     # nested ids work too: boards/proj/rev2/rev2.kicad_pro
 kicad boards/blinky/blinky.kicad_pro
 
-make check  BOARD=blinky    # ERC + DRC (schematic parity, zones refilled); fails on errors (STRICT=1: also warnings)
+make check  BOARD=blinky    # off-grid lint + ERC + DRC (schematic parity, zones refilled); fails on errors (STRICT=1: also warnings)
 make fab    BOARD=blinky    # check, then run jobsets/fab.kicad_jobset -> boards/blinky/out/
 make jlcpcb BOARD=blinky    # fab, then JLCPCB-format BOM + CPL -> boards/blinky/out/jlcpcb/
 make parts  BOARD=blinky    # after fab: check every LCSC number in the BOM against JLCPCB's catalog
@@ -51,6 +51,7 @@ make fab                    # all boards
 | Output | Path |
 | --- | --- |
 | ERC/DRC reports (gating violations, plus a separate warnings report) | `{erc,drc}.rpt`, `{erc,drc}-warnings.rpt` |
+| Off-grid connection points (gating; see `boardtools offgrid`) | `offgrid.rpt` |
 | Gerbers (all copper layers up to In30, paste, silk, mask, edge) + `.gbrjob` | `./` |
 | Excellon drill (PTH/NPTH split) + Gerber X2 maps | `drill/` |
 | Gerbers + drill zipped for fab upload (no drill maps) | `<leaf>-gerbers.zip` |
@@ -65,7 +66,8 @@ The same jobset runs from the KiCad project manager: Jobsets → open `jobsets/f
 
 Other targets: `make parts` (see boardtools below), `make export` (jobset without the Makefile checks), `make erc|drc`, `make test`
 (boardtools unit tests), `make smoke` (scaffolds throwaway 2- and 8-layer boards in a temp dir
-and runs the whole pipeline, including a deliberate DRC failure), `make list`, `make clean`.
+and runs the whole pipeline, including a deliberate DRC failure and an off-grid child-sheet item), `make list`,
+`make clean`.
 
 KiCad 10 **design variants** (per-symbol DNP/field overrides, used by `net/node`) are honoured
 by `kicad-cli sch export bom --variant <name>` and `pcb export pos --variant <name>`; the
@@ -79,6 +81,7 @@ python3 -m boardtools info   boards/blinky/blinky.kicad_pcb   # title block + la
 python3 -m boardtools jlcpcb pos <kicad-pos.csv> <cpl.csv>
 python3 -m boardtools jlcpcb bom <kicad-bom.csv> <jlc-bom.csv>   # warns on lines without LCSC
 python3 -m boardtools parts <kicad-bom.csv> [--db PATH] [--boards N] [--strict]
+python3 -m boardtools offgrid boards/blinky/blinky.kicad_sch [--grid 1.27]
 ```
 
 `parts` (and `make parts`, which checks the BOM `make fab` left in `out/` and refuses if it
@@ -98,6 +101,14 @@ BOM line with basic/preferred/extended, live stock, and any problems:
 
 Exit 1 on errors (`--strict` or `make parts STRICT=1`: also warnings), 2 if every lookup
 failed or `--db` is unusable. Extra options go through `PARTS_ARGS`, e.g. `make parts PARTS_ARGS='--boards 10'`.
+
+`offgrid` lists every electrical connection point off the 1.27 mm grid (symbol pins computed
+from the embedded library symbols with the instance's rotation/mirror/unit/body style, wire
+and bus ends, bus entries, junctions, no-connects, labels, sheet pins) in the sheet and every
+child sheet file, one line per item with the sheet file and the nearest grid point, and exits 1
+if there are any. `erc/<id>` gates on it as well as on ERC (both always run, so every report is
+fresh): KiCad's ERC only warns (`endpoint_off_grid`) and reports one pin per symbol. `Schematic.write()`
+in schgen refuses to write an off-grid sheet.
 
 ## Generating boards from Python
 

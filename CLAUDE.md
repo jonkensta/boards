@@ -19,7 +19,8 @@ shaped the tooling so it does not get re-derived or accidentally undone.
 - **`boardtools/` is parse-only** (s-expressions, JSON, CSV). Anything that modifies a design
   goes through `kicad-cli` or the jobset.
 - Run `make test && make smoke` before committing tooling changes. Smoke covers a 2-layer and a
-  8-layer board with hostile layer names and silkscreen text, and a deliberate DRC failure.
+  8-layer board with hostile layer names and silkscreen text, a deliberate DRC failure and an
+  off-grid no-connect in a child sheet that only the lint catches.
 
 ## Keeping agent sessions bounded (learned the hard way on boards/net/node)
 
@@ -136,10 +137,23 @@ keepout/gr_*; `footprint()` returns pad centres in board-local mm) are the share
 examples. Route with `N(ref, pin)` net lookups from the netlist, never assumed pad roles: on the
 DAC every resistor and the flying cap were initially backwards. Facts that cost time to discover:
 
-- **Schematic connection points must sit on the 1.27 mm grid** or ERC reports every pin/wire
-  end as `endpoint_off_grid`. Work in integer grid units and multiply.
-- Symbol pin positions: library coords are y-up; screen is y-down. Offset = (px, -py), then
-  rotate for `(at x y rot)` with (sx, sy) -> (sy, -sx) per 90 deg; `(mirror y)` negates x first.
+- **Schematic connection points must sit on the 1.27 mm grid** or ERC reports
+  `endpoint_off_grid` (a *warning* by default, and only one pin per symbol). Work in integer
+  grid units and multiply. `python3 -m boardtools offgrid <sch>` (parse-only) names every
+  off-grid pin, wire/bus end, bus entry, junction, no-connect, label and sheet pin, following
+  child sheets (`Sheetfile` relative to the parent; each file once; cycles and missing files
+  are errors); `erc/%` runs it and ERC unconditionally (fresh reports) and fails if either
+  failed (`out/offgrid.rpt`), and `schgen.Schematic.write()` refuses
+  off-grid sheets. Off-grid labels are not `endpoint_off_grid` in ERC (they show as
+  `label_dangling`), so the lint is stricter there.
+- Symbol pin positions: library coords are y-up; screen is y-down. The connection point is the
+  pin's `(at ...)` (the pin line runs `length` from there toward the body). Offset = (px, -py),
+  then rotate for `(at x y rot)` with (sx, sy) -> (sy, -sx) per 90 deg, then mirror:
+  `(mirror y)` negates x, `(mirror x)` negates y. Rotate-then-mirror was verified against ERC
+  for all 12 combinations; the order only matters at 90/270 (schgen had it reversed until
+  the off-grid lint; no board used a rotated mirrored part). Sub-symbols are `Name_U_S`: an
+  instance has the pins of unit U and 0, body style S (`(body_style N)`, older `(convert N)`)
+  and 0; `_0_1` is style 1 only, `_0_0` is common to both De Morgan styles.
   `Device:R` at rot 90 puts pin 1 on the left; `Device:LED` at rot 90 puts A on top, K below.
 - A pin landing mid-wire needs the wire split plus an explicit `(junction ...)`. Power symbols'
   pins are `power_in`, so every rail fed only by a connector needs a `power:PWR_FLAG`.

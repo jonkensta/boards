@@ -8,7 +8,8 @@ so wires can be drawn from symbol to symbol without hand-computing offsets.
 Only what the boards in this repo have needed is implemented: single-unit
 symbols (with `extends` flattened), wires, junctions, power symbols, PWR_FLAG,
 local net labels, no-connect flags, text, dashed boxes, DNP and KiCad 10 design
-variants. No hierarchical sheets or buses yet.
+variants. No hierarchical sheets or buses yet. `write()` refuses a sheet with any
+connection point off the grid (see `boardtools.offgrid`).
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from __future__ import annotations
 import os
 import uuid
 
-from . import sexpr
+from . import offgrid, sexpr
 
 Q = sexpr.Quoted
 G = 1.27
@@ -94,13 +95,13 @@ def pin_offsets(sym: sexpr.Node) -> dict[str, tuple[float, float]]:
 
 
 def xform(dx: float, dy: float, rot: int, mirror: str | None = None) -> tuple[float, float]:
-    """Apply a symbol's (mirror, rot) to a sheet-space offset."""
+    """Apply a symbol's (rot, mirror) to a sheet-space offset: KiCad rotates, then mirrors."""
+    for _ in range(int(rot) // 90):
+        dx, dy = dy, -dx
     if mirror == "y":
         dx = -dx
     if mirror == "x":
         dy = -dy
-    for _ in range(int(rot) // 90):
-        dx, dy = dy, -dx
     return dx, dy
 
 
@@ -225,8 +226,13 @@ class Schematic:
         return sch
 
     def write(self, path: str):
+        """Write the sheet; refuses (ValueError) if any connection point is off the 1.27 mm grid."""
+        node = self.node()
+        bad = offgrid.off_grid(offgrid.points(node))
+        if bad:
+            raise ValueError("off-grid connection points:\n" + "\n".join(offgrid.format_point(p) for p in bad))
         with open(path, "w", encoding="utf-8") as f:
-            f.write(sexpr.dumps(self.node()) + "\n")
+            f.write(sexpr.dumps(node) + "\n")
 
 
 def root_uuid_of(path: str) -> str:

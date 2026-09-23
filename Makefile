@@ -5,7 +5,7 @@
 # in <board dir>/out/ (git-ignored).
 #
 #   make new NAME=id         scaffold boards/<id> from templates/board
-#   make check  [BOARD=id]   ERC + DRC (all boards, or one); STRICT=1 also fails on warnings
+#   make check  [BOARD=id]   off-grid lint + ERC + DRC (all boards, or one); STRICT=1 also fails on warnings
 #   make fab    [BOARD=id]   check, then run the fab jobset -> boards/<id>/out/ (+ <leaf>-gerbers.zip)
 #   make export [BOARD=id]   the jobset without the Makefile checks
 #   make jlcpcb [BOARD=id]   fab, then JLCPCB-format BOM/CPL -> boards/<id>/out/jlcpcb/
@@ -77,12 +77,20 @@ pcb  = $(dir)/$(leaf).kicad_pcb
 out  = $(dir)/out
 
 # erc.rpt / drc.rpt hold the gating violations; *-warnings.rpt always lists warnings
-# so they stay visible even when they do not fail the build.
+# so they stay visible even when they do not fail the build. offgrid.rpt gates on
+# off-grid connection points, which ERC only warns about (endpoint_off_grid) and
+# reports once per symbol; the lint names every offending pin, wire end and label
+# (child sheets included). Lint and ERC both always run, so every report is fresh,
+# and the target fails if either failed.
 erc/%:
 	@test -f $(pro) || { echo "no board at $(dir) (expected $(pro))" >&2; exit 2; }
 	@mkdir -p $(out)
 	$(KICAD_CLI) sch erc --severity-warning -o $(out)/erc-warnings.rpt $(sch) >/dev/null
-	$(KICAD_CLI) sch erc $(SEVERITY) --exit-code-violations -o $(out)/erc.rpt $(sch)
+	@lint=0; $(PYTHON) -m boardtools offgrid $(sch) >$(out)/offgrid.rpt 2>&1 || { lint=1; cat $(out)/offgrid.rpt; }; \
+	echo '$(KICAD_CLI) sch erc $(SEVERITY) --exit-code-violations -o $(out)/erc.rpt $(sch)'; \
+	$(KICAD_CLI) sch erc $(SEVERITY) --exit-code-violations -o $(out)/erc.rpt $(sch); erc=$$?; \
+	[ $$lint -eq 0 ] || echo "$*: off-grid connection points (see $(out)/offgrid.rpt)" >&2; \
+	[ $$lint -eq 0 ] && [ $$erc -eq 0 ]
 
 drc/%:
 	@test -f $(pro) || { echo "no board at $(dir) (expected $(pro))" >&2; exit 2; }
