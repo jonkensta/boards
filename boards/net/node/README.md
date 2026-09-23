@@ -5,14 +5,17 @@ neighbour links. A node that detects something lights up and tells its neighbour
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-## Status: PCB placed and routed, DRC clean (2026-09-20)
+## Status: PCB placed and routed, DRC clean, Codex review addressed (2026-09-23)
 
 Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
 board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
 0 unconnected items and 0 schematic-parity issues (two `track_dangling` warnings are the open
-corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo (BZ1/R17/R18, placed and routed), sensor GPIOs
-moved (see Decisions), J6 USB pins swapped. **No firmware, nothing ordered, no jig built; LCSC numbers unverified.** Next:
-`make jlcpcb BOARD=net/node`, order-page check, jig.
+corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo
+(BZ1/R17/R18), sensor GPIOs moved (see Decisions), J6 USB pins swapped. The Codex review of
+the routed board (findings: C11 far from VREG_VIN, long crystal loop, USB series R far from
+the pins, paste on the pogo pads, plus nits) has been worked through; what remains of it is
+recorded under Resume path. **No firmware, nothing ordered, no jig built; LCSC numbers
+unverified.** Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Concept and first-iteration scope
 
@@ -313,17 +316,26 @@ committed board carries the zone fills.
 ## Resume path
 
 1. Re-read this file, `generate/README.md` and the CLAUDE.md sections on generating KiCad files
-   (the 0.4 mm-pitch escape rules and the flatpak KiCad setup are recorded there).
-   `generate/sch-1.png` is the rendered sheet. Regenerate the schematic only if the design
-   changes; regeneration replaces every UUID. Regenerate the PCB with the commands in
-   `generate/README.md`, then `make check BOARD=net/node`.
-2. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
+   (the 0.4 mm-pitch escape rules, the flatpak KiCad setup and the session-bounding rules are
+   recorded there). `generate/sch-1.png` is the rendered sheet. Regenerate the schematic only if
+   the design changes; regeneration replaces every UUID. Regenerate the PCB with the commands in
+   `generate/README.md`, then `make check BOARD=net/node`. Helper scripts that make a routing
+   pass cheap (regenerate + DRC with board-mm locations, courtyard overlap check, F.Cu segment
+   dump in a box) are described in CLAUDE.md; they lived in `out/` and are not committed.
+2. Known compromises, deliberately left: the crystal loop is about 17 mm (the 8.8 mm XOUT
+   diagonal is the top-edge fan itself; shortening it means redesigning that fan); R16 (USB DP
+   series R) is 7 mm from the pin because only one 0603 column fits between the DVDD track and
+   the flash; the 5 V ring is open at the top-left corner (two dangling-end warnings).
+   All fine for a proof of concept at full-speed USB and 12 MHz.
+3. One Codex re-check round on the review fixes has not been run; do it before ordering
+   (`\codex --profile shared exec ...` per CLAUDE.md, ask it to reproduce `make check`).
+4. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
    XSHUT track, vias inside the J6 pads). Silk is minimal: connector refs sit inside the
    housings, passives have no silk reference.
-3. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
+5. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
    check LED/connector orientation in the JLCPCB preview. Cables: JST-XH 3-pin pre-made,
    one length; XH has no strain relief, so a bush deployment needs a printed clip or tie.
-4. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, UART bootloader;
-   then rev B (LED power, bus voltage, maybe a small SMD buzzer).
+6. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, piezo driver
+   (PWM/PIO, antiphase pair), UART bootloader; then rev B (LED power, bus voltage).
 
 `generate/` holds the scripts that produced the schematic and the board (see its README).

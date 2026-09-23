@@ -236,7 +236,8 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   `template/` dirs into `~/.var/app/org.kicad.KiCad/config/kicad/10.0/` (otherwise ERC reports
   every library missing), and `KICAD_SYMBOL_DIR` / `KICAD_FOOTPRINT_DIR` pointing at
   `~/.local/share/flatpak/runtime/org.kicad.KiCad.Library.*/x86_64/stable/active/files/{symbols,footprints}`
-  for schgen/pcbgen. Output paths must be under `$HOME` (`/tmp` is not shared).
+  for schgen/pcbgen. Output paths must be under `$HOME` (`/tmp` is not shared), which also means
+  `make smoke` needs `TMPDIR=<somewhere under $HOME>` with the flatpak.
 - `*.net` is git-ignored: PCB generators need the netlist exported first (command in each
   `generate/README.md`).
 - The DRC loop that worked: a script that regenerates, runs `kicad-cli pcb drc
@@ -246,9 +247,11 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
 
 ## Review history
 
-Five Codex critique loops so far (five rounds on the original scaffold, three on the jobset
-restructure, one on the net/node placement and pcbgen changes (findings in
-`boards/net/node/README.md`, Resume path), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
+Six Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+restructure, one on the net/node placement and pcbgen changes, one on the routed net/node board
+(C11 away from its pin, crystal loop length, USB series R placement, paste on pogo pads,
+variants registry not idempotent, overstated escape rules; all addressed, re-check round still
+owed), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
 loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export
 (ordered under `-j`); zone refill; strict severity flags; whitespace/quote-proof layer parsing;
 every copper layer in the fab zip (the In1..In4 cap bit an 8-layer board); warnings reports
