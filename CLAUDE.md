@@ -47,13 +47,14 @@ cause was doing 0.4 mm pitch routing geometry in reasoning. Rules:
   `boards/chromatone/isolator/isolator.kicad_pro`; the id is the path relative to `boards/`), `lib/` shared symbols/footprints/3D (nickname `boards`),
   `templates/board/` scaffold source, `jobsets/` exports, `boardtools/` Python, `scripts/`
   scaffolder + smoke, `out/` generated (git-ignored). `boards/` is empty until the first design.
-- Entry points: `make new NAME=id`, `make check|fab|jlcpcb [BOARD=id]`, `make test`, `make smoke`.
+- Entry points: `make new NAME=id`, `make check|fab|jlcpcb|parts [BOARD=id]`, `make test`, `make smoke`.
   `make help` prints the list. Per-board targets are `erc/<id>`, `drc/<id>`, `check/<id>`,
-  `export/<id>` (slash form so the pattern stem may itself contain slashes).
+  `export/<id>`, `parts/<id>` (slash form so the pattern stem may itself contain slashes).
 - **Adding a jobset job:** copy an existing block in `jobsets/fab.kicad_jobset`, give it a fresh
   UUID `id`, and add that id to the `only` list of the destinations that should include it
   (the folder destination lists every job except the map-less drill job; the archive lists
-  ERC, DRC, gerbers, map-less drill). Then extend the output assertions in `scripts/smoke.sh`.
+  ERC, DRC, gerbers, map-less drill). Every destination that writes design outputs must list
+  ERC and DRC first (see "BOM from fab" below). Then extend the output assertions in `scripts/smoke.sh`.
   Job ids are the fixed `6b1e2a10-0000-4000-8000-0000000000NN` series.
 - **Editing template files:** `templates/board/board.kicad_pro` is the KiCad-10-native project
   with the baseline design rules; `board.kicad_sch` and `board.kicad_pcb` use literal UUIDs that
@@ -245,6 +246,51 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   report's `[type]` lines with `@(x, y)` converted to board-local mm; then a bounding-box
   courtyard checker (parse `F.CrtYd`, transform by `at`) for placement passes.
 
+## JLCPCB catalog check (`boardtools/parts.py`, `make parts`)
+
+- **Manual pre-order check, not CI.** Default source is the search endpoint behind
+  jlcpcb.com/parts, `POST https://jlcpcb.com/api/overseas-pcb-order/v1/shoppingCart/smtGood/selectSmtComponentList`
+  with `{"keyword":"C25804","currentPage":1,"pageSize":10}`. **Undocumented and unofficial**:
+  it may change or disappear without notice; if every lookup fails the tool exits 2. One
+  request per distinct LCSC number, 4 concurrent, 20 s timeout, honest `boardtools-parts/1`
+  User-Agent. Answer: `code` 200, `data.componentPageInfo.list[]` with `componentCode`,
+  `componentModelEn` (MPN), `componentBrandEn`, `componentSpecificationEn` (package, bare
+  `0603` for chips, `Plugin,...` for THT), `componentLibraryType` `base`/`expand`,
+  `preferredComponentFlag` (preferred extended parts carry no loading fee), `stockCount`,
+  `componentPrices[]` (`startNumber`/`endNumber`/`productPrice`). The keyword search is fuzzy
+  (C2040 also returns EPC2040, MIC2040; C99999999999 returns 41 unrelated parts), so a part
+  counts as found only when `componentCode` equals the request exactly.
+- Offline: `--db PATH` reads a jlcparts-style SQLite (`jlc_components`: `lcsc INTEGER` without
+  the `C`, `mfr` = MPN, `manufacturer`, `package`, `library_type` base/expand, `preferred`,
+  `stock`), opened `mode=ro&immutable=1` because CDFER's file is in WAL mode (a plain read-only
+  open leaves `-wal`/`-shm` files next to it).
+- **CDFER's snapshot (`https://cdfer.github.io/jlcpcb-parts-database/jlcpcb-components.sqlite3`)
+  is partial as of 2026-09-23**: 27 MB, 29,638 parts, all >= C6374509, `meta.format =
+  source-db-v2`; upstream yaqwsx/jlcparts' own manifest reports 30,025 components. The full
+  ~1.5 GB / ~616k-part file stopped being servable from GitHub Pages in August 2026 (CDFER issue
+  #10). None of the LCSC numbers on the current boards were in it. Its README ("~1GB", "stock
+  >= 5") is stale on size; the stock filter still applies. CDFER's added `basic` column is only
+  set for parts on their scraped list; use `library_type`. `--db` flags a snapshot under 100k
+  parts as partial.
+- **BOM from fab, not its own destination.** `make parts` reads `out/<leaf>-bom.csv` and
+  refuses (exit 2, "run make fab first") if the `.kicad_sch`/`.kicad_pro` or the BOM is missing,
+  or if any `*.kicad_sch` (sub-sheets), `*.kicad_pro` (text variables like `${ORDER_PART}` in an
+  LCSC field) under the board dir, or the jobset is newer than the BOM. Symbol libraries and
+  `sym-lib-table` are not inputs: the export uses the symbols embedded in the schematic (BOM was
+  byte-identical with every library removed). A git checkout bumps mtimes, so re-run fab after one. A
+  BOM-only jobset destination (tried: `...0c`, run via `jobset run --output`, 0.7 s) is wrong:
+  a full run (`make export`, GUI "run all") executes every destination, and `--stop-on-error`
+  only stops the failing one, so with a DRC error the BOM-only destination still wrote a BOM
+  that the gated folder destination suppressed. Putting ERC+DRC in front of it would cost ~20 s
+  per `make parts` (ERC ~9.5 s, DRC ~7-10 s on these boards), and `kicad-cli jobset run
+  --output` takes one destination, so the Makefile cannot select "all but one" either. Smoke
+  asserts that a failing-DRC `make export` writes no BOM, that `make parts` then refuses, and that
+  touching the project, jobset or schematic (or removing the schematic) makes it refuse.
+- Missing LCSC is a warning, not an error: there is no hand-assembly field yet, and the
+  isolator deliberately leaves passives to JLCPCB's BOM tool.
+- Smoke runs `make parts` against an empty fixture DB via `PARTS_ARGS=--db` (no network);
+  unit tests use a fake opener with canned JSON, including a fuzzy-only answer.
+
 ## Review history
 
 Six Codex critique loops so far (five rounds on the original scaffold, three on the jobset
@@ -264,6 +310,8 @@ reproduction-based re-check, not a read-through.
 
 1. Checked, archived order bundle with a manifest (rev, commit, KiCad version, hashes).
 2. BOM/CPL lint: cross-check factory-assembled BOM subset against the CPL; assembly policy field.
+   (Partially addressed: `make parts` checks LCSC numbers, stock, basic/extended, MPN and chip
+   size against the catalog; the CPL cross-check and a hand-assembly field are still open.)
 3. Per-fab constraint profiles (`.kicad_dru`) and an order spec.
 4. Interactive HTML BOM replacement (iBOM itself is SWIG-based) built on `boardtools.sexpr`.
 5. Assembly drawings (`pcb_export_pdf` job with F.Fab/F.SilkS/Edge.Cuts) and SVG-based revision diffs.

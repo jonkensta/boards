@@ -4,13 +4,16 @@ Commands:
   layers <board.kicad_pcb>            print copper layers (comma-separated); exit 1 if none
   info   <board.kicad_pcb>            print title block and layer count
   jlcpcb pos|bom <in.csv> <out.csv>   convert KiCad CSV exports to JLCPCB upload format
+  parts  <bom.csv> [--db PATH] [--boards N] [--strict]
+                                      check BOM LCSC numbers against JLCPCB's live parts
+                                      search (or an offline SQLite snapshot); exit 1 on errors
 """
 
 from __future__ import annotations
 
 import sys
 
-from . import jlcpcb, pcb
+from . import jlcpcb, parts, pcb
 
 
 def main(argv: list[str]) -> int:
@@ -34,6 +37,8 @@ def main(argv: list[str]) -> int:
             return 0
         if cmd == "jlcpcb":
             return jlcpcb.main(argv[1:])
+        if cmd == "parts":
+            return parts.main(argv[1:])
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

@@ -3,7 +3,8 @@
 # Copies the repo into a temp dir, scaffolds two boards (the second at a nested id
 # and converted to eight copper layers with hostile layer names/text), checks UUID handling and placeholder
 # substitution, runs `make fab` and `make jlcpcb` on both, and verifies the
-# outputs. Needs bash, python3, kicad-cli, unzip, make.
+# outputs, then `make parts` against a local fixture catalog (no network).
+# Needs bash, python3, kicad-cli, unzip, make.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -86,6 +87,23 @@ for i in 1 2 3 4 5 6; do
   grep -q "smoke-b-In${i}_Cu.g$i" <<<"$(unzip -Z1 $outb/smoke-b-gerbers.zip)" || fail "8-layer board: In${i}.Cu missing from zip"
 done
 
+# --- parts: checks the BOM fab left in out/ against a local fixture catalog (no network)
+python3 -c 'import sqlite3, sys; sqlite3.connect(sys.argv[1]).execute("CREATE TABLE jlc_components (lcsc INTEGER PRIMARY KEY, mfr, manufacturer, package, library_type, preferred, stock)")' "$tmp/parts.sqlite3"
+parts_db="--db $tmp/parts.sqlite3"
+make --no-print-directory parts BOARD=$A PARTS_ARGS="$parts_db" >"$tmp/parts.log" 2>&1 || { cat "$tmp/parts.log"; fail "make parts BOARD=$A"; }
+grep -q '^0 BOM lines: 0 error' "$tmp/parts.log" || fail "make parts summary: $(tail -1 "$tmp/parts.log")"
+# the BOM must be newer than every input: schematics, the project (text variables), the jobset
+for input in boards/$A/smoke-a.kicad_pro jobsets/fab.kicad_jobset boards/$A/smoke-a.kicad_sch; do
+  touch -d '+2 seconds' "$input"
+  make --no-print-directory parts BOARD=$A PARTS_ARGS="$parts_db" >"$tmp/parts.log" 2>&1 && fail "make parts accepted a BOM older than $input"
+  grep -q "is stale.*$input" "$tmp/parts.log" || fail "make parts: expected stale-BOM message for $input"
+  touch -d '-1 hour' "$input"
+done
+make --no-print-directory parts BOARD=$A PARTS_ARGS="$parts_db" >/dev/null 2>&1 || fail "make parts after restoring input mtimes"
+mv boards/$A/smoke-a.kicad_sch "$tmp/"
+make --no-print-directory parts BOARD=$A PARTS_ARGS="$parts_db" >/dev/null 2>&1 && fail "make parts passed without a schematic"
+mv "$tmp/smoke-a.kicad_sch" boards/$A/
+
 # --- gating: after a good build, a DRC failure must stop fab before the jobset runs
 # and must not leave the previous zip looking current
 sed -i 's/^\(\s*\)(gr_text "(" /\1(segment (start 60 60) (end 70 60) (width 0.1) (layer "F.Cu") (net 0))\n\1(gr_text "(" /' "$pcb_b"
@@ -94,6 +112,10 @@ if make --no-print-directory -j4 fab BOARD=$B >"$tmp/fail.log" 2>&1; then fail "
 [ ! -e $outb/smoke-b-gerbers.zip ] || fail "stale gerber zip survived a failed check"
 [ ! -e $outb/smoke-b.step ] || fail "stale STEP survived a failed check"
 grep -q 'track_width' $outb/drc.rpt || fail "expected track_width violation in drc.rpt"
+# the full jobset alone (make export, like GUI "run all") must not write a BOM past the failed DRC
+if make --no-print-directory export BOARD=$B >"$tmp/fail-export.log" 2>&1; then fail "export succeeded on a board with a DRC error"; fi
+[ ! -e $outb/smoke-b-bom.csv ] || fail "full jobset wrote a BOM despite the failed DRC"
+make --no-print-directory parts BOARD=$B PARTS_ARGS="$parts_db" >/dev/null 2>&1 && fail "make parts ran without a BOM"
 make --no-print-directory fab BOARD=does/not/exist >/dev/null 2>&1 && fail "fab on a missing board id must fail"
 
 echo "smoke: OK"

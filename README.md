@@ -41,6 +41,7 @@ kicad boards/blinky/blinky.kicad_pro
 make check  BOARD=blinky    # ERC + DRC (schematic parity, zones refilled); fails on errors (STRICT=1: also warnings)
 make fab    BOARD=blinky    # check, then run jobsets/fab.kicad_jobset -> boards/blinky/out/
 make jlcpcb BOARD=blinky    # fab, then JLCPCB-format BOM + CPL -> boards/blinky/out/jlcpcb/
+make parts  BOARD=blinky    # after fab: check every LCSC number in the BOM against JLCPCB's catalog
 make check                  # all boards
 make fab                    # all boards
 ```
@@ -62,7 +63,7 @@ make fab                    # all boards
 The same jobset runs from the KiCad project manager: Jobsets → open `jobsets/fab.kicad_jobset`
 → run. Change export settings there once and both GUI and CI follow.
 
-Other targets: `make export` (jobset without the Makefile checks), `make erc|drc`, `make test`
+Other targets: `make parts` (see boardtools below), `make export` (jobset without the Makefile checks), `make erc|drc`, `make test`
 (boardtools unit tests), `make smoke` (scaffolds throwaway 2- and 8-layer boards in a temp dir
 and runs the whole pipeline, including a deliberate DRC failure), `make list`, `make clean`.
 
@@ -77,7 +78,26 @@ python3 -m boardtools layers boards/blinky/blinky.kicad_pcb   # F.Cu,In1.Cu,In2.
 python3 -m boardtools info   boards/blinky/blinky.kicad_pcb   # title block + layer count
 python3 -m boardtools jlcpcb pos <kicad-pos.csv> <cpl.csv>
 python3 -m boardtools jlcpcb bom <kicad-bom.csv> <jlc-bom.csv>   # warns on lines without LCSC
+python3 -m boardtools parts <kicad-bom.csv> [--db PATH] [--boards N] [--strict]
 ```
+
+`parts` (and `make parts`, which checks the BOM `make fab` left in `out/` and refuses if it
+is missing or older than the schematics, project file or jobset) is a **manual pre-order check**, not part of CI, because it
+needs the network and uses the undocumented search endpoint behind jlcpcb.com/parts (one
+request per distinct LCSC number, four at a time), which JLCPCB may change without notice.
+`--db PATH` queries a jlcparts-style SQLite snapshot offline instead. It prints one row per
+BOM line with basic/preferred/extended, live stock, and any problems:
+
+- error: LCSC number malformed, not found at JLCPCB, or lookup failed (network/HTTP).
+  With `--db` a miss is only "not in snapshot": snapshots omit parts with fewer than 5 in
+  stock, and one with far fewer than ~600k parts is flagged as partial.
+- warning: no LCSC number (nothing marks a line as hand-assembled, so this may be deliberate),
+  stock below or within 3x of Qty x `--boards` (default 5, summed per LCSC number), MPN differs
+  from the catalog, chip size in the footprint (0402/0603/...) differs from the catalog package.
+- the summary counts distinct extended parts, each of which costs JLCPCB's loading fee.
+
+Exit 1 on errors (`--strict` or `make parts STRICT=1`: also warnings), 2 if every lookup
+failed or `--db` is unusable. Extra options go through `PARTS_ARGS`, e.g. `make parts PARTS_ARGS='--boards 10'`.
 
 ## Generating boards from Python
 
@@ -131,7 +151,7 @@ are summarised in `CLAUDE.md` under "Review history".
 
 - Tooling is complete for the current workflow: scaffold, check, export, JLCPCB files, CI.
 - Backlog, ranked, lives in `CLAUDE.md` ("Ideas not yet implemented"): order bundle with a
-  manifest, BOM/CPL lint, per-fab constraint profiles, HTML BOM, assembly drawings and revision
+  manifest, BOM/CPL lint (catalog side done: `make parts`), per-fab constraint profiles, HTML BOM, assembly drawings and revision
   diffs, panelization, revision in PCB markings, hierarchical sheets in `schgen`, per-variant
   jobset outputs.
 - Known gap: `pcbgen` does not yet carry a schematic DNP flag onto footprints (parity DRC only

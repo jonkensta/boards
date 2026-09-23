@@ -9,6 +9,8 @@
 #   make fab    [BOARD=id]   check, then run the fab jobset -> boards/<id>/out/ (+ <leaf>-gerbers.zip)
 #   make export [BOARD=id]   the jobset without the Makefile checks
 #   make jlcpcb [BOARD=id]   fab, then JLCPCB-format BOM/CPL -> boards/<id>/out/jlcpcb/
+#   make parts  [BOARD=id]   check the fab BOM's LCSC numbers/stock at JLCPCB (after make fab;
+#                            network, manual pre-order check, not CI; PARTS_ARGS='--boards 10')
 #   make test                boardtools unit tests
 #   make smoke               scaffold throwaway boards in a temp dir and run the whole pipeline
 #   make list                boards found under boards/
@@ -18,6 +20,7 @@ KICAD_CLI ?= kicad-cli
 PYTHON    ?= python3
 STRICT    ?= 0
 JOBSET    ?= jobsets/fab.kicad_jobset
+PARTS_ARGS ?=
 
 # boards/<id>/<leaf>.kicad_pro where leaf = last path component of <id>
 PRO_FILES  := $(shell find boards -name '*.kicad_pro' 2>/dev/null | sort)
@@ -26,7 +29,7 @@ BOARDS     := $(if $(BOARD),$(BOARD),$(ALL_BOARDS))
 
 SEVERITY := --severity-error $(if $(filter 1,$(STRICT)),--severity-warning)
 
-.PHONY: help list new check erc drc fab export jlcpcb test smoke clean
+.PHONY: help list new check erc drc fab export jlcpcb parts test smoke clean
 # Per-board targets (erc/<id>, fab/<id>, ...) are pattern rules and must NOT be .PHONY:
 # make skips implicit-rule search for phony targets. The pattern contains a slash so the
 # stem may contain slashes (nested board ids).
@@ -53,6 +56,7 @@ drc:    $(addprefix drc/,$(BOARDS))
 fab:    $(addprefix fab/,$(BOARDS))
 export: $(addprefix export/,$(BOARDS))
 jlcpcb: $(addprefix jlcpcb/,$(BOARDS))
+parts:  $(addprefix parts/,$(BOARDS))
 
 check/%: erc/% drc/% ;
 
@@ -100,6 +104,26 @@ jlcpcb/%: fab/%
 	@mkdir -p $(out)/jlcpcb
 	$(PYTHON) -m boardtools jlcpcb pos $(out)/$(leaf)-all-pos.csv $(out)/jlcpcb/$(leaf)-cpl.csv
 	$(PYTHON) -m boardtools jlcpcb bom $(out)/$(leaf)-bom.csv $(out)/jlcpcb/$(leaf)-bom.csv
+
+# A manual pre-order check, not a gate (it needs the network). It reads the BOM that fab
+# or export left in $(out) rather than exporting one: a separate BOM-only jobset
+# destination would write a BOM even when the full run's ERC/DRC failed, and gating it
+# inside the jobset costs ~20 s of ERC+DRC per check. fab/export purge first and write no
+# BOM when a check fails, so a BOM newer than all its inputs is current and passed.
+# Inputs: every .kicad_sch under the board dir (sub-sheets), every .kicad_pro (text
+# variables such as ${ORDER_PART} live there), and the jobset (fields, grouping). Symbol
+# libraries and sym-lib-table are not inputs: the export uses the symbols embedded in the
+# schematic (verified: identical BOM with every library removed).
+bom = $(out)/$(leaf)-bom.csv
+parts/%:
+	@test -f $(pro) && test -f $(sch) || { echo "no board at $(dir) (expected $(pro) and $(sch))" >&2; exit 2; }
+	@test -f $(bom) || { echo "no $(bom); run make fab BOARD=$* first" >&2; exit 2; }
+	@test -f $(JOBSET) || { echo "no jobset at $(JOBSET)" >&2; exit 2; }
+	@newer=$$(find $(dir) $(JOBSET) -path $(out) -prune -o -type f \( -name '*.kicad_sch' -o -name '*.kicad_pro' \
+	    -o -name '*.kicad_jobset' \) -newer $(bom) -print) || { echo "cannot scan the inputs of $(bom)" >&2; exit 2; }; \
+	  test -z "$$newer" || { echo "$(bom) is stale (changed since: $$(echo $$newer)); run make fab BOARD=$* first" >&2; exit 2; }
+	@echo "== $*"
+	@$(PYTHON) -m boardtools parts $(bom) $(if $(filter 1,$(STRICT)),--strict) $(PARTS_ARGS)
 
 clean:
 	find boards -type d -name out -prune -exec rm -rf {} +
