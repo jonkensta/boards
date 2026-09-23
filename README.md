@@ -12,9 +12,10 @@ boards/<id>/            one KiCad project per board, any depth; files named afte
 lib/                    shared symbols, footprints, 3D models (nickname `boards` in every project)
 templates/board/        project template used by `make new`
 jobsets/fab.kicad_jobset  the one definition of every fabrication export (GUI and CLI)
-boardtools/             Python helpers: s-expr parser, board facts, JLCPCB conversion, and the
-                        schematic/board generators (schgen, pcbgen) used by boards/*/generate/
-scripts/                scaffolder and smoke test
+boardtools/             Python helpers: s-expr parser, board facts, JLCPCB conversion, Specctra
+                        DSN/SES, and the schematic/board generators (schgen, pcbgen) used by
+                        boards/*/generate/
+scripts/                scaffolder, smoke test, Freerouting autorouter (route.py)
 boards/<id>/out/        generated outputs (git-ignored)
 .github/workflows/      CI: unit tests, smoke test, ERC/DRC, fab exports in kicad/kicad:10.0
 ```
@@ -44,6 +45,7 @@ make jlcpcb BOARD=blinky    # fab, then JLCPCB-format BOM + CPL -> boards/blinky
 make parts  BOARD=blinky    # after fab: check every LCSC number in the BOM against JLCPCB's catalog
 make check                  # all boards
 make fab                    # all boards
+make route  BOARD=blinky    # autoroute a placed board with Freerouting -> boards/blinky/out/route/ (see below)
 ```
 
 `make fab` produces, per board (paths below are inside `boards/<id>/out/`):
@@ -121,6 +123,57 @@ Regenerating replaces every UUID, so once a board is edited in the KiCad GUI the
 history rather than the source. `CLAUDE.md` lists the format details that cost time to learn
 (pin transforms, junctions, PWR_FLAG, 0.65 mm pitch fan-out, mirrored silk, keepouts).
 
+## Autorouting (Freerouting)
+
+For a board whose placement is done, `make route BOARD=<id>` autoroutes it with
+[Freerouting](https://github.com/freerouting/freerouting) and DRCs the result:
+
+```sh
+make route BOARD=chromatone/isolator                     # keep existing tracks/vias, route the rest
+make route BOARD=chromatone/isolator ROUTE_ARGS=--strip  # drop all tracks/vias first, route from scratch
+PASSES=20 make route BOARD=...                           # cap Freerouting's passes (default 100)
+```
+
+It writes a **new** board, `boards/<id>/out/route/<leaf>.kicad_pcb` (next to copies of the
+project, rules and schematic so parity DRC works there, plus the `.dsn`, `.ses`,
+`freerouting.log` and `drc.rpt`), then runs the same strict DRC as `make check` with
+`--save-board` so the copy has its zones filled. The source board is never touched: open the
+routed copy in KiCad, review it, and copy it over `boards/<id>/<leaf>.kicad_pcb` by hand if you
+keep it. The default output directory `out/route/` is the only thing the script ever deletes:
+it checks that `out/` and `out/route/` are real directories, then removes and recreates
+`out/route/`, so no planted symlink or hard link can redirect any write (including DRC's
+report) onto a source file. `scripts/route.py -o DIR` takes a new or empty real directory
+only, never clears it, and refuses one that contains the board or lies inside the board's
+directory other than under `out/`. `make fab`/`make clean` delete `out/`, including this.
+
+kicad-cli has no Specctra DSN export or SES import (only the pcbnew GUI and its SWIG bindings
+do), so `boardtools/specctra.py` writes the DSN and reads the SES textually, and
+`scripts/route.py` appends the session's new tracks and vias to a copy of the board.
+Freerouting runs from the Docker image `ghcr.io/freerouting/freerouting:2.4.1` (the release
+jar needs Java 25); set `FREEROUTING="java -jar /path/to/freerouting-2.4.1.jar"` to use a
+local jar, `FREEROUTING_VERSION` to pick another image tag. It is not part of CI or smoke.
+
+What goes into the DSN: copper layers, the Edge.Cuts outline (inner loops as cut-outs), every
+pad with its real shape and rotation on either side (rect, roundrect, oval, circle; chamfered
+pads as their rectangle; trapezoid and custom pads as a rectangle enclosing all their copper,
+primitives and strokes included), SMD and THT, NPTH holes and slots (slot walls also get the
+copper-to-edge clearance, as KiCad's DRC applies it),
+rule-area keepouts on the board and inside footprints, copper pours as planes (zone holes as
+windows), existing tracks and vias as protected wiring, and netclass track width / clearance /
+via size from the `.kicad_pro` (patterns and explicit assignments; a net in several classes
+takes each rule from the highest-priority class that sets it, as KiCad 10 does). Net, reference
+and pin names that a DSN cannot carry (`"`, backslash, non-ASCII) get generated identifiers and
+are mapped back on import. Not modelled: per-layer padstacks, blind/buried/micro vias, arcs
+(existing ones go in as chords), `.kicad_dru` custom rules, length/differential-pair
+constraints. Tracks get their netclass width, so give power nets a
+netclass if they need to be wider than Default. The router knows nothing about analog
+return paths or decoupling loops; route those by hand first and let it finish the rest.
+
+Verified on `chromatone/isolator` and `chromatone/dac` with all routing stripped: 100 %
+routed in 4 to 10 s, 0 DRC errors, 0 warnings, 0 unconnected, 0 parity issues. Also clean:
+the isolator with R1 (30 deg) and U1 (90 deg) moved to the back, and with a quoted net name
+and a hole in a ground pour.
+
 ## Review workflow
 
 Tooling changes and boards are reviewed adversarially with the Codex CLI: one fresh
@@ -139,7 +192,8 @@ are summarised in `CLAUDE.md` under "Review history".
 - **No KiCad Python bindings.** The SWIG `pcbnew` module is deprecated and removed in KiCad 11;
   the IPC API needs a running KiCad and cannot export before KiCad 11. `boardtools` therefore
   only parses files (s-expressions, JSON, CSV). Anything that must modify a design goes through
-  `kicad-cli` or the jobset.
+  `kicad-cli` or the jobset. The one exception is `scripts/route.py`, which appends
+  autorouted tracks to a *copy* of a board, because kicad-cli cannot import a Specctra session.
 - **Template rules are conservative** (0.15 mm track/clearance, 0.3 mm drill, 0.3 mm copper-to-edge).
   Tighten or loosen per board in Board Setup → Constraints to match the fab.
 
@@ -161,9 +215,10 @@ are summarised in `CLAUDE.md` under "Review history".
 ## Where things stand
 
 - Tooling is complete for the current workflow: scaffold, check, export, JLCPCB files, CI.
+- Optional Freerouting autorouting (`make route`), outside CI.
 - Backlog, ranked, lives in `CLAUDE.md` ("Ideas not yet implemented"): order bundle with a
   manifest, BOM/CPL lint (catalog side done: `make parts`), per-fab constraint profiles, HTML BOM, assembly drawings and revision
   diffs, panelization, revision in PCB markings, hierarchical sheets in `schgen`, per-variant
-  jobset outputs.
+  jobset outputs, autorouter follow-ups.
 - Known gap: `pcbgen` does not yet carry a schematic DNP flag onto footprints (parity DRC only
   warns about it).

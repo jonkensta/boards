@@ -11,6 +11,7 @@
 #   make jlcpcb [BOARD=id]   fab, then JLCPCB-format BOM/CPL -> boards/<id>/out/jlcpcb/
 #   make parts  [BOARD=id]   check the fab BOM's LCSC numbers/stock at JLCPCB (after make fab;
 #                            network, manual pre-order check, not CI; PARTS_ARGS='--boards 10')
+#   make route  BOARD=id     Freerouting autoroute (Docker) -> boards/<id>/out/route/, then DRC it
 #   make test                boardtools unit tests
 #   make smoke               scaffold throwaway boards in a temp dir and run the whole pipeline
 #   make list                boards found under boards/
@@ -21,6 +22,7 @@ PYTHON    ?= python3
 STRICT    ?= 0
 JOBSET    ?= jobsets/fab.kicad_jobset
 PARTS_ARGS ?=
+ROUTE_ARGS ?=
 
 # boards/<id>/<leaf>.kicad_pro where leaf = last path component of <id>
 PRO_FILES  := $(shell find boards -name '*.kicad_pro' 2>/dev/null | sort)
@@ -29,13 +31,13 @@ BOARDS     := $(if $(BOARD),$(BOARD),$(ALL_BOARDS))
 
 SEVERITY := --severity-error $(if $(filter 1,$(STRICT)),--severity-warning)
 
-.PHONY: help list new check erc drc fab export jlcpcb parts test smoke clean
+.PHONY: help list new check erc drc fab export jlcpcb parts route test smoke clean
 # Per-board targets (erc/<id>, fab/<id>, ...) are pattern rules and must NOT be .PHONY:
 # make skips implicit-rule search for phony targets. The pattern contains a slash so the
 # stem may contain slashes (nested board ids).
 
 help:
-	@sed -n '2,17p' $(MAKEFILE_LIST) | sed 's/^# \{0,1\}//'
+	@sed -n '2,18p' $(MAKEFILE_LIST) | sed 's/^# \{0,1\}//'
 
 list:
 	@printf '%s\n' $(ALL_BOARDS)
@@ -132,6 +134,19 @@ parts/%:
 	  test -z "$$newer" || { echo "$(bom) is stale (changed since: $$(echo $$newer)); run make fab BOARD=$* first" >&2; exit 2; }
 	@echo "== $*"
 	@$(PYTHON) -m boardtools parts $(bom) $(if $(filter 1,$(STRICT)),--strict) $(PARTS_ARGS)
+
+# Autorouting writes a NEW board (source untouched) and DRCs it; see scripts/route.py.
+# ROUTE_ARGS=--strip reroutes from scratch; PASSES=n caps Freerouting passes (default 100).
+route:
+	@test -n "$(BOARD)" || { echo 'usage: make route BOARD=<id> [ROUTE_ARGS=--strip]' >&2; exit 2; }
+	@$(MAKE) --no-print-directory route/$(BOARD)
+
+route/%:
+	@test -f $(pro) || { echo "no board at $(dir) (expected $(pro))" >&2; exit 2; }
+	@# DRC below checks $(out)/route, so --default-outdir makes route.py refuse any -o in ROUTE_ARGS.
+	$(PYTHON) scripts/route.py --default-outdir $(ROUTE_ARGS) $(pcb)
+	$(KICAD_CLI) pcb drc $(SEVERITY) --exit-code-violations --schematic-parity --refill-zones --save-board \
+	  -o $(out)/route/drc.rpt $(out)/route/$(leaf).kicad_pcb
 
 clean:
 	find boards -type d -name out -prune -exec rm -rf {} +

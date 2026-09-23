@@ -17,7 +17,8 @@ shaped the tooling so it does not get re-derived or accidentally undone.
   (`${KIPRJMOD}/out/`), which keeps them depth-independent; a Make-only override would
   desynchronise them. `.gitignore` ignores any `out/` directory.
 - **`boardtools/` is parse-only** (s-expressions, JSON, CSV). Anything that modifies a design
-  goes through `kicad-cli` or the jobset.
+  goes through `kicad-cli` or the jobset. Sole exception: `scripts/route.py` appends autorouted
+  tracks to a *copy* of a board in `out/route/` (kicad-cli cannot import SES); never in place.
 - Run `make test && make smoke` before committing tooling changes. Smoke covers a 2-layer and a
   8-layer board with hostile layer names and silkscreen text, a deliberate DRC failure and an
   off-grid no-connect in a child sheet that only the lint catches.
@@ -47,8 +48,9 @@ cause was doing 0.4 mm pitch routing geometry in reasoning. Rules:
 - Layout: `boards/<id>/` projects (any depth; files named after the leaf directory, e.g.
   `boards/chromatone/isolator/isolator.kicad_pro`; the id is the path relative to `boards/`), `lib/` shared symbols/footprints/3D (nickname `boards`),
   `templates/board/` scaffold source, `jobsets/` exports, `boardtools/` Python, `scripts/`
-  scaffolder + smoke, `out/` generated (git-ignored). `boards/` is empty until the first design.
-- Entry points: `make new NAME=id`, `make check|fab|jlcpcb|parts [BOARD=id]`, `make test`, `make smoke`.
+  scaffolder + smoke + Freerouting driver, `out/` generated (git-ignored). `boards/` is empty until the first design.
+- Entry points: `make new NAME=id`, `make check|fab|jlcpcb|parts [BOARD=id]`, `make route BOARD=id`,
+  `make test`, `make smoke`.
   `make help` prints the list. Per-board targets are `erc/<id>`, `drc/<id>`, `check/<id>`,
   `export/<id>`, `parts/<id>` (slash form so the pattern stem may itself contain slashes).
 - **Adding a jobset job:** copy an existing block in `jobsets/fab.kicad_jobset`, give it a fresh
@@ -305,6 +307,91 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
 - Smoke runs `make parts` against an empty fixture DB via `PARTS_ARGS=--db` (no network);
   unit tests use a fake opener with canned JSON, including a fuzzy-only answer.
 
+## Freerouting autorouting (verified 2026-09-23, Freerouting 2.4.1, KiCad 10.0.6)
+
+`boardtools/specctra.py` (DSN writer, SES reader; parse-only) + `scripts/route.py` (runs
+Freerouting, appends tracks to a copy) + `make route BOARD=id [ROUTE_ARGS=--strip]` (then strict
+DRC with parity and `--save-board` on `out/route/<leaf>.kicad_pcb`). Not in CI or smoke.
+Chosen over emitting routes for `generate/` scripts because it works for GUI-edited boards too
+and the generators become history once a board is hand-edited.
+
+- kicad-cli 10 has **no** Specctra DSN export or SES import (pcbnew GUI/SWIG only).
+- The release jar is built for **Java 25** (class file 69); Java 21 fails with
+  `UnsupportedClassVersionError`. Use the Docker image `ghcr.io/freerouting/freerouting:<ver>`
+  (tags 2.1.0..2.4.1, latest, nightly). Its default CMD starts the API server as user 10001;
+  run `--entrypoint java ... -jar /app/freerouting-executable.jar` with `--user uid:gid -e
+  HOME=/tmp` (else log4j spews errors about unwritable `/app/.local`) and
+  `--gui-enabled=false --api_server-enabled=false --usage_and_diagnostic_data-disable_analytics=true
+  -de x.dsn -do x.ses -mp N`. `-mt`, `-us`, `-is`, `-dr` also exist (`--help`).
+- **Freerouting exits 0 even when it parsed nothing** (it logs warnings and "routes" 0 nets), so
+  DRC's unconnected count is the real completion check, never the exit code.
+- DSN pin references must be `"R1"-"1"` (halves quoted). Quoting the whole `"R1-1"` made the net
+  reader bail with "Non-ansi character" warnings and route nothing. DSN declares
+  `(string_quote ")`, so `boardtools.sexpr` cannot parse DSN (the lone `"`); SES it can.
+- Frames: DSN `(unit um) (resolution um 10)`, y up (`y_dsn = -y_kicad`). Each footprint is its own
+  image placed `front` at rotation 0 with pads pre-rotated and pre-positioned, which sidesteps
+  DSN image rotation/mirror rules. Pad positions are footprint-local, rotated by the footprint
+  angle (`specctra.pad_position`). Pad angles are **absolute** and the angle is **omitted when
+  it is 0**, so a missing angle means 0, not the footprint's rotation (a 0 deg pad in a 90 deg
+  footprint was exported turned). Flipped footprints store post-flip local coordinates and
+  `B.*` pad layers, so the same transform holds. All of this was checked against pad
+  positions from a KiCad-saved board (pcbnew used once as a throwaway oracle, not in the repo).
+- In a `.kicad_pcb` zone the first `(polygon)` is the outline and every later one is a hole
+  (a second outline added through the API was dropped on save). Freerouting 2.4.1 reads
+  `(window ...)` holes in both `plane` and `keepout` areas (skipped only for host_cad allegro).
+  Zones inside footprints (module antenna keepouts) are stored in **board** coordinates.
+- NPTH slots are `(drill oval W H)` and turn with the pad's absolute angle; they go in as a
+  round-ended `path` keepout (matches KiCad's hole segment for a 120 deg slot). KiCad 10 DRC
+  (checked with tracks 0.24/0.28 mm away): a round NPTH gets `min_hole_clearance` (0.25) only,
+  but a **slot wall is also board edge** (`copper_edge_clearance` 0.30 fired), so slot keepouts
+  grow by max(hole, edge) and round ones by hole clearance, each minus the netclass clearance.
+- Custom pads: `size` is only the anchor; primitives (`gr_poly/rect/circle/line/arc/curve`, in
+  the pad's own frame, strokes add width/2) can be far larger, and exporting `size` let
+  Freerouting cross the copper (shorting_items). `pad_envelope` bounds anchor + primitives.
+  Arcs, standalone or as `(arc (start)(mid)(end))` edges inside a `gr_poly`'s `pts`, are
+  bounded exactly by `arc_extent` (circle through the three points plus every axis extreme
+  the sweep crosses); start/mid/end alone undersized a bulging edge (1.707 vs 2.0 mm, KiCad
+  checked) and Freerouting routed 0.1 mm from it.
+  Trapezoid: `rect_delta` (dx, dy) grows the y half-extent by dx/2 and x by dy/2 (matches
+  KiCad's effective polygon for the stock SMA/SMB handsoldering pad).
+- Names: the DSN declares `(string_quote ")`, so identifiers cannot contain `"`. Nets, refs,
+  pins and classes pass through `specctra.Names` (unsafe names become `~net3` etc.) and
+  `dsn()` returns the net map that `read_ses()` needs; mapping `"` to `'` silently merged
+  `N "a"` with `N 'a'`.
+- Netclasses: KiCad 10 resolves each rule separately across all of a net's classes (explicit
+  assignments plus every matching pattern), highest priority (lowest number) first, then
+  Default; unset rules are absent or null in the JSON. Composite classes are named `A,B`.
+- `route.py` output rule, kept deliberately simple after three findings (a symlinked `-o` let
+  `--strip` overwrite the source; a planted `out/route/drc.rpt -> ../../<leaf>.kicad_pcb` let
+  the DRC step overwrite it; a "marked earlier output" `-o archive` that contained
+  `archive/edited/edited.kicad_pcb` got the source rm -rf'd): the only directory ever deleted
+  is the default `realpath(board dir)/out/route`, after checking `out/` and `out/route` are real
+  directories; it is recreated empty. A custom `-o` must be new or an empty real directory, is
+  never cleared, must not contain the board, and may be inside the board dir only under `out/`.
+  `make route` uses the default (no `-o`).
+- Roundrect pads must be a **circumscribed** polygon: inscribed chords gave 0.194 mm vs 0.2 mm
+  clearance errors on 0603 pads. Oval = round-ended `path`, width = short side.
+- Freerouting keeps only the class clearance from keepouts and the outline. KiCad's
+  `min_hole_clearance` (0.25) and `min_copper_edge_clearance` (0.3) are larger, so NPTH keepouts
+  are grown and `path` keepouts line the outline by the difference (without it: a
+  hole_clearance error at the DAC's jack peg).
+- Zones with a net go in as `(plane ...)`: Freerouting connects that net through them and treats
+  them as obstacles for other nets on that layer, so on the chromatone boards (split B.Cu
+  grounds) all signals end up on F.Cu. Rule areas map to keepout / wire_keepout / via_keepout.
+- SES: coordinates are integers in `(routes (resolution um 10))` units, y up; existing wiring
+  comes back tagged `(type protect)` and is skipped; via padstack names are ours
+  (`Via[0-1]_600:300_um`), so size/drill are parsed from the name. KiCad 10 boards write nets as
+  `(net "name")`, older ones `(net code "name")`; both are handled.
+- Parity DRC on the copy needs the `.kicad_pro` (rules) and every `.kicad_sch` beside it.
+- Results with everything stripped: isolator 100 % in ~4 s, dac (TSSOP-20, 58 connections)
+  100 % in ~10 s, both 0 errors / 0 warnings / 0 parity; also clean with footprints at
+  30/45/135 deg and with the power tracks kept as protected wiring. ~18 s per `make route`
+  including Docker start-up. Widths come from netclasses only (pcbgen's per-call 0.4 mm power
+  width is not a netclass, so routed power tracks are 0.2 mm).
+- `net/node` (4 layers, RP2040, 60 footprints) stripped: Freerouting gave up by itself after
+  19 passes / 284 s with 16 of 141 connections unrouted and 1 violation (best score at pass 9),
+  so a dense board needs its hard parts (QFN fan-out, crystal, USB) routed by hand first.
+
 ## Review history
 
 Six Codex critique loops so far (five rounds on the original scaffold, three on the jobset
@@ -334,3 +421,5 @@ reproduction-based re-check, not a read-through.
 8. `schgen`: hierarchical sheets and buses (labels exist; all boards are still single-sheet).
 9. Per-variant jobset outputs (`variant_names` in the BOM/pos jobs) so `make jlcpcb` can build
    the `vib`/`bare` variants of `boards/net/node` instead of the hand-run `--variant` commands.
+10. Autorouter follow-ups: per-layer padstacks, `.kicad_dru` rules, tighter custom-pad
+   polygons, more Codex re-check rounds on `make route` (two done, all findings fixed).
