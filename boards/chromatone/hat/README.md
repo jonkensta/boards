@@ -20,6 +20,23 @@ boards stay in the repo as history; this is the board to order.
   it is good enough the DAC half (U2, U3, J3, C5..C16, R5..R11, D3, TP7..TP9) can be left
   unpopulated, and a rev B could drop it.
 
+## Resume path
+
+1. Decide the DAC question: plug the speaker into the Pi 4B's own 3.5 mm jack (PWM audio,
+   about 11 effective bits, some hiss). Good enough -> order with U2, U3, J3, C5..C16, R5..R11,
+   D3 unpopulated (add `dnp=True` to those `place()` calls in `generate/schematic.py`, regenerate
+   schematic -> netlist -> `pcb.py`; pcbgen copies dnp into the footprints so the CPL/BOM follow).
+2. In JLCPCB's BOM tool pick: 47 R 0603 (R1, R2), blue 0603 LED (D2), 2x20 female socket 8.5 mm
+   (J1, THT, back side -> Standard assembly or hand-solder). Everything else has an LCSC number.
+3. Check LED polarity and J2/J3 orientation in the placement preview; `make jlcpcb
+   BOARD=chromatone/hat` writes `out/jlcpcb/`.
+4. Bench: per `chromatone/README.md` (isolator LEDs, 8 MHz first, probe one domain at a time),
+   `dtoverlay=hifiberry-dac` if the DAC is fitted, XSMT from GPIO5 optional.
+5. If the layout is ever edited in the KiCad GUI, stop regenerating; `generate/` becomes history.
+
+Design was built and reviewed on branch `worktree-chromatone-hat` (Codex, two rounds, no
+electrical or layout finding); see CLAUDE.md for the pcbgen features it introduced.
+
 ## Pi pins used
 
 | Signal | Pi pin | GPIO | Goes to |
