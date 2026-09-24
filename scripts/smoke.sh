@@ -8,8 +8,11 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
-# under $HOME so a flatpak kicad-cli (which cannot see /tmp) can read the copy
-tmp=$(mktemp -d "${TMPDIR:-$HOME/.cache}/boards-smoke.XXXXXX")
+# under $HOME so a flatpak kicad-cli (which cannot see /tmp) can read the copy;
+# the base may not exist yet (CI container: HOME=/github/home, no .cache)
+tmpbase=${TMPDIR:-$HOME/.cache}
+mkdir -p "$tmpbase"
+tmp=$(mktemp -d "$tmpbase/boards-smoke.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
 
 fail() { echo "smoke: FAIL: $*" >&2; exit 1; }
