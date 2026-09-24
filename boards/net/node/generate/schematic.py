@@ -17,7 +17,7 @@ OUT = os.path.join(HERE, '..', 'node.kicad_sch')
 R_FP = 'Resistor_SMD:R_0603_1608Metric'
 C_FP = 'Capacitor_SMD:C_0603_1608Metric'
 JST3_FP = 'Connector_JST:JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical'
-JST3 = {'MPN': 'B3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': ''}
+JST3 = {'MPN': 'B3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C144394'}   # C144395 is the 4-pin B4B
 VARIANTS_TOF_ONLY = {'vib': {'dnp': True}, 'bare': {'dnp': True}}      # populated by default, gone elsewhere
 VARIANTS_VIB_ONLY = {'vib': {'dnp': False}}                             # DNP by default, populated in "vib"
 
@@ -27,6 +27,19 @@ s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, R
 
 # ---- helpers ------------------------------------------------------------------------------
 _n = {'R': 0, 'C': 0}
+# JLCPCB/LCSC parts per (kind, value), exact-code lookups 2026-09-24. Resistors: UNI-ROYAL 0603WAF, 1 %.
+PASSIVES = {
+    ('R', '1k'): ('0603WAF1001T5E', 'UNI-ROYAL', 'C21190'),
+    ('R', '10k'): ('0603WAF1002T5E', 'UNI-ROYAL', 'C25804'),
+    ('R', '4k7'): ('0603WAF4701T5E', 'UNI-ROYAL', 'C23162'),
+    ('R', '100'): ('0603WAF1000T5E', 'UNI-ROYAL', 'C22775'),
+    ('R', '27'): ('0603WAF270JT5E', 'UNI-ROYAL', 'C25190'),
+    ('C', '100n'): ('CC0603KRX7R9BB104', 'Yageo', 'C14663'),
+    ('C', '1u'): ('CL10A105KB8NNNC', 'Samsung', 'C15849'),
+    ('C', '10u'): ('CL10A106MA8NRNC', 'Samsung', 'C96446'),
+    ('C', '4u7'): ('CL10A475KO8NNNC', 'Samsung', 'C19666'),
+    ('C', '15p'): ('CL10C150JB8NNNC', 'Samsung', 'C1644'),
+}
 
 
 def passive(kind, x, y, value, desc=None, rot=0, **kw):
@@ -35,8 +48,9 @@ def passive(kind, x, y, value, desc=None, rot=0, **kw):
     ref = f'{kind}{_n[kind]}'
     # property text is centre-justified: keep it clear of the body and of the plates of Device:C
     pp = kw.pop('prop_pos', {'Reference': (3.2, -1.9), 'Value': (3.6, 1.9)} if rot == 0 else {'Reference': (-2.2, -2.0), 'Value': (2.0, -2.0)})
+    mpn, mfr, lcsc = PASSIVES[(kind, value)]
     pins = s.place('Device', kind, ref, x, y, rot, value=value, footprint=R_FP if kind == 'R' else C_FP,
-                   description=desc, prop_pos=pp, **kw)
+                   description=desc, prop_pos=pp, fields={'MPN': mpn, 'Manufacturer': mfr, 'LCSC': lcsc}, **kw)
     return ref, pins
 
 
@@ -58,9 +72,9 @@ def J(x, y):
     s.junction(g(x), g(y))
 
 
-C100 = ('100n', '100 nF X7R 16 V')
-C1U = ('1u', '1 uF X5R 10 V')
-C10U = ('10u', '10 uF X5R 10 V')
+C100 = ('100n', '100 nF X7R 50 V')
+C1U = ('1u', '1 uF X5R 50 V')
+C10U = ('10u', '10 uF X5R 25 V')
 
 # ---- U1 RP2040 (centre-left) ------------------------------------------------------------------
 UX, UY = 90, 100
@@ -94,17 +108,17 @@ for pin, name in LEFT.items():
 for pin in ['9', '11', '12', '17', '18'] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD
     s.no_connect(*U1[pin])
 
-# crystal: 12 MHz, 27 pF loads, 1k in series with XOUT (RP2040 hardware design guide)
+# crystal: 12 MHz ABM8-272-T3 (10 pF load), 15 pF loads, 1k in series with XOUT (RP2040 hardware design guide)
 Y1 = s.place('Device', 'Crystal_GND24', 'Y1', g(UX - 34), g(UY + 15), rot=270, value='12MHz',
-             footprint='Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm', description='12 MHz crystal, 3225, 10 pF load',
-             fields={'MPN': 'X322512MSB4SI', 'Manufacturer': 'YXC', 'LCSC': 'C9002'},
+             footprint='Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm', description='12 MHz crystal, 3225, 10 pF load, 50 ohm (RP2040 HDG part)',
+             fields={'MPN': 'ABM8-272-T3', 'Manufacturer': 'Abracon', 'LCSC': 'C20625731'},
              prop_pos={'Reference': (4.5, -2.2), 'Value': (4.5, 2.2)})
 assert Y1['1'] == (g(UX - 34), g(UY + 12)) and Y1['3'] == (g(UX - 34), g(UY + 18)) and Y1['2'] == (g(UX - 38), g(UY + 15))
 s.wire(U1['20'], Y1['1'])                                                    # XIN
 _, Rx = passive('R', g(UX - 26), g(UY + 20), '1k', rot=90)
 s.wire(U1['21'], Rx['2']); s.wire(Rx['1'], (g(UX - 32), g(UY + 20)), (g(UX - 32), g(UY + 18)), Y1['3'])
-_, Ca = passive('C', g(UX - 41), g(UY + 12), '27p', rot=90, desc='27 pF C0G 50 V', prop_pos={'Reference': (-7.0, -1.27), 'Value': (-7.0, 1.27)})
-_, Cb = passive('C', g(UX - 41), g(UY + 18), '27p', rot=90, desc='27 pF C0G 50 V', prop_pos={'Reference': (-7.0, -1.27), 'Value': (-7.0, 1.27)})
+_, Ca = passive('C', g(UX - 41), g(UY + 12), '15p', rot=90, desc='15 pF C0G 50 V', prop_pos={'Reference': (-7.0, -1.27), 'Value': (-7.0, 1.27)})
+_, Cb = passive('C', g(UX - 41), g(UY + 18), '15p', rot=90, desc='15 pF C0G 50 V', prop_pos={'Reference': (-7.0, -1.27), 'Value': (-7.0, 1.27)})
 s.wire(Ca['2'], Y1['1']); s.wire(Cb['2'], Y1['3']); J(UX - 34, UY + 12); J(UX - 34, UY + 18)
 W((UX - 44, UY + 12), (UX - 44, UY + 18), (UX - 44, UY + 21)); s.wire(Y1['2'], (g(UX - 44), g(UY + 15)))
 J(UX - 44, UY + 15); J(UX - 44, UY + 18); s.power('GND', g(UX - 44), g(UY + 21))
@@ -217,17 +231,17 @@ s.power('GND', g(LX), g(LY + 8)); s.flag(g(LX - 18), g(LY + 8))
 # ---- D2, D4 RGB LEDs (D4 chained on DOUT, DNP: fit for double brightness) ---------------------
 EX, EY = 220, 96
 s.text('D1 drops the LED supply to ~4.3 V so 3.3 V logic meets the WS2812B VIH (0.7 VDD). D4 is DNP: fit it for a brighter node.', g(198), g(72))
-LED_FIELDS = {'MPN': 'WS2812B-2020', 'Manufacturer': 'Worldsemi', 'LCSC': ''}
+LED_FIELDS = {'MPN': 'WS2812B-2020-V6', 'Manufacturer': 'Worldsemi', 'LCSC': 'C52917434'}   # C965555 (original 2020) is discontinued
 LED_PP = {'Reference': (10.0, -3.0), 'Value': (16.0, 5.0)}
-D2 = s.place('LED', 'WS2812B-2020', 'D2', g(EX), g(EY), value='WS2812B-2020', fields=LED_FIELDS, prop_pos=LED_PP)
+D2 = s.place('LED', 'WS2812B-2020', 'D2', g(EX), g(EY), value='WS2812B-2020-V6', fields=LED_FIELDS, prop_pos=LED_PP)
 assert D2['3'] == (g(EX - 6), g(EY)) and D2['4'] == (g(EX), g(EY - 6)) and D2['1'] == (g(EX + 6), g(EY))
 stub_label(D2['3'], 'LED_DIN', 'l')
 DX = EX + 28                                                            # D4 column; C19 sits at EX + 48
-D4 = s.place('LED', 'WS2812B-2020', 'D4', g(DX), g(EY), value='WS2812B-2020', fields=LED_FIELDS, prop_pos=LED_PP, dnp=True)
+D4 = s.place('LED', 'WS2812B-2020', 'D4', g(DX), g(EY), value='WS2812B-2020-V6', fields=LED_FIELDS, prop_pos=LED_PP, dnp=True)
 assert D4['3'] == (g(DX - 6), g(EY)) and D4['4'] == (g(DX), g(EY - 6)) and D4['1'] == (g(DX + 6), g(EY))
 s.wire(D2['1'], D4['3']); s.no_connect(*D4['1'])
 D1 = s.place('Device', 'D', 'D1', g(EX - 9), g(EY - 10), rot=180, value='1N4148W', footprint='Diode_SMD:D_SOD-123',
-             fields={'MPN': '1N4148W', 'Manufacturer': '', 'LCSC': ''}, prop_pos={'Reference': (-2.0, -2.5), 'Value': (-3.5, 2.8)})
+             fields={'MPN': '1N4148W', 'Manufacturer': 'Semtech', 'LCSC': 'C81598'}, prop_pos={'Reference': (-2.0, -2.5), 'Value': (-3.5, 2.8)})
 assert D1['2'] == (g(EX - 12), g(EY - 10)) and D1['1'] == (g(EX - 6), g(EY - 10))
 s.wire(D1['1'], (g(EX), g(EY - 10)), D2['4']); J(EX, EY - 10)
 s.wire(D1['2'], (g(EX - 16), g(EY - 10)), (g(EX - 16), g(EY - 14))); s.power('+5V', g(EX - 16), g(EY - 14))
@@ -243,6 +257,7 @@ SX, SY = 200, 150
 s.text('Sensor port. J5 takes off-board modules (LD2410, AM312 PIR, I2C breakouts). U3 = default variant, SW1 = "vib" variant, "bare" = header only.', g(178), g(132))
 J5 = s.place('Connector_Generic', 'Conn_01x07', 'J5', g(SX), g(SY), value='SENSOR',
              footprint='Connector_PinHeader_2.54mm:PinHeader_1x07_P2.54mm_Vertical', description='Pin header 1x7, 2.54 mm',
+             fields={'MPN': 'HX PZ2.54-1x7P ZZ', 'Manufacturer': 'hanxia', 'LCSC': 'C32713273'},
              prop_pos={'Reference': (1.5, -11.0), 'Value': (1.5, 11.0)})
 assert J5['1'] == (g(SX - 4), g(SY - 6)) and J5['7'] == (g(SX - 4), g(SY + 6))
 W((SX - 4, SY - 6), (SX - 12, SY - 6), (SX - 12, SY - 12)); s.power('+5V', g(SX - 12), g(SY - 12))
@@ -252,7 +267,7 @@ for pin, name in {'3': 'SENS_INT', '4': 'SDA', '5': 'SCL', '6': 'SENS_AIN'}.item
 W((SX - 4, SY + 6), (SX - 8, SY + 6), (SX - 8, SY + 10)); s.power('GND', g(SX - 8), g(SY + 10))
 TX, TY = 232, 172
 U3 = s.place('Sensor_Distance', 'VL53L0CXV0DH1', 'U3', g(TX), g(TY), value='VL53L0CXV0DH/1', footprint='OptoDevice:ST_VL53L0X',
-             fields={'MPN': 'VL53L0CXV0DH/1', 'Manufacturer': 'STMicroelectronics', 'LCSC': ''},
+             fields={'MPN': 'VL53L0CXV0DH/1', 'Manufacturer': 'STMicroelectronics', 'LCSC': 'C91199'},
              variants=VARIANTS_TOF_ONLY, prop_pos={'Reference': (-9.0, -15.5), 'Value': (-9.0, 16.5)})
 assert U3['11'] == (g(TX), g(TY - 12)) and U3['1'] == (g(TX + 2), g(TY - 12)) and U3['3'] == (g(TX), g(TY + 12))
 s.no_connect(*U3['8'])
@@ -260,7 +275,7 @@ for pin, name in {'5': 'SENS_XSHUT', '7': 'SENS_INT', '9': 'SDA', '10': 'SCL'}.i
     stub_label(U3[pin], name, 'l', length=6)
 W((TX, TY - 12), (TX, TY - 16), (TX + 16, TY - 16)); s.power('+3V3', g(TX), g(TY - 16))
 s.wire(U3['1'], (g(TX + 2), g(TY - 14)), (g(TX), g(TY - 14))); J(TX, TY - 14)
-for x, (val, desc) in ((TX + 10, C100), (TX + 16, ('4u7', '4.7 uF X5R 10 V'))):
+for x, (val, desc) in ((TX + 10, C100), (TX + 16, ('4u7', '4.7 uF X5R 16 V'))):
     _, c = passive('C', g(x), g(TY - 13), val, desc=desc, variants=VARIANTS_TOF_ONLY)
     s.wire(c['2'], (g(x), g(TY - 6)))
     if x != TX + 16:
@@ -271,7 +286,7 @@ s.power('GND', g(TX), g(TY + 16))
 
 VX, VY = 262, 174
 SW1 = s.place('Switch', 'SW_SPST', 'SW1', g(VX), g(VY), rot=90, value='SW-18010P', footprint='boards:SW-18010P',
-              description='Spring vibration switch, normally open', fields={'MPN': 'SW-18010P', 'Manufacturer': '', 'LCSC': ''},
+              description='Spring vibration switch, normally open', fields={'MPN': 'SW-18010P', 'Manufacturer': 'SHOU HAN', 'LCSC': 'C2681585'},
               dnp=True, variants=VARIANTS_VIB_ONLY, prop_pos={'Reference': (-9.0, -1.27), 'Value': (-9.5, 1.27)})
 assert SW1['2'] == (g(VX), g(VY - 4)) and SW1['1'] == (g(VX), g(VY + 4))
 W((VX, VY - 4), (VX, VY - 6), (VX, VY - 10)); s.label('SENS_INT', g(VX), g(VY - 10), rot=90); J(VX, VY - 6)
@@ -284,7 +299,7 @@ s.text('debounce', g(VX + 8), g(VY + 2), size=1.0)
 BX, BY = 300, 92
 s.text('Piezo element, not a self-oscillating buzzer: pitch = drive frequency (PWM/PIO). Two GPIOs in antiphase give 6.6 Vpp; one GPIO and the other held low gives half.', g(BX - 24), g(BY - 10))
 BZ = s.place('Device', 'Buzzer', 'BZ1', g(BX), g(BY), value='PKMCS0909E4000-R1', footprint='Buzzer_Beeper:Buzzer_Murata_PKMCS0909E',
-             description='Piezo sounder element, 9 x 9 x 1.9 mm SMD, 4 kHz, 3 Vp-p', fields={'MPN': 'PKMCS0909E4000-R1', 'Manufacturer': 'Murata', 'LCSC': ''},
+             description='Piezo sounder element, 9 x 9 x 1.9 mm SMD, 4 kHz, 3 Vp-p', fields={'MPN': 'PKMCS0909E4000-R1', 'Manufacturer': 'Murata', 'LCSC': 'C910763'},
              prop_pos={'Reference': (8.0, -1.27), 'Value': (8.0, 1.27)})
 assert BZ['1'] == (g(BX - 2), g(BY - 2)) and BZ['2'] == (g(BX - 2), g(BY + 2))
 _, ra = passive('R', g(BX - 10), g(BY - 2), '100', rot=90)

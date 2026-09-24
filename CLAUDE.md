@@ -325,6 +325,11 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   touching the project, jobset or schematic (or removing the schematic) makes it refuse.
 - Missing LCSC is a warning, not an error: there is no hand-assembly field yet, and the
   isolator deliberately leaves passives to JLCPCB's BOM tool.
+- **Easy-to-confuse codes and listing checks.** C144394 is the 3-pin B3B-XH-A(LF)(SN),
+  C144395 the 4-pin B4B-XH-A. A code resolving is not enough: check the JLCPCB listing's
+  description (load capacitance, ESR, ratings) against the design's assumptions. net/node's
+  "10 pF load" crystal C9002 was a 20 pF / 80 ohm part; it became the RP2040 guide's
+  ABM8-272-T3 (C20625731) with 15 pF caps.
 - Smoke runs `make parts` against an empty fixture DB via `PARTS_ARGS=--db` (no network);
   unit tests use a fake opener with canned JSON, including a fuzzy-only answer.
 

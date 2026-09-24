@@ -56,8 +56,8 @@ U2 = b.footprint('U2', 15.6, 27.4, 90, ref_pos=(-5.4, 0))       # W25Q16: near r
 # crystal above the top edge; XIN straight up, XOUT via the up-left fan to R1, node back over the top
 Y1 = b.footprint('Y1', 13.8, 3.3, 90, ref_fab=True)             # 1 XIN (14.65,4.4) 2 GND (14.65,2.2) 3 node (12.95,2.2) 4 GND (12.95,4.4)
 R1 = b.footprint('R1', 9.0, 1.7, 270, ref_fab=True)             # vertical on the row end: 2 XOUT (9.0,2.525) bottom, 1 node (9.0,0.875) top
-C1 = b.footprint('C1', 16.4, 4.4, 270, ref_fab=True)            # 27p XIN: 1 GND (16.4,3.625) 2 XIN (16.4,5.175)
-C2 = b.footprint('C2', 7.05, 2.85, 90, ref_fab=True)            # 27p node: 2 node (7.05,2.075) 1 GND (7.05,3.625), west of R1
+C1 = b.footprint('C1', 16.4, 4.4, 270, ref_fab=True)            # 15p XIN: 1 GND (16.4,3.625) 2 XIN (16.4,5.175)
+C2 = b.footprint('C2', 7.05, 2.85, 90, ref_fab=True)            # 15p node: 2 node (7.05,2.075) 1 GND (7.05,3.625), west of R1
 # up-left fan from pins 26..21 turns west onto rows y 8.7 / 7.5 / 6.3 / 5.1 / 3.9 / 2.7 (1.2 pitch: vias fit between)
 C14 = b.footprint('C14', 8.6, 5.1, 180, ref_fab=True)           # DVDD 23: 1 DVDD (9.375,5.1) 2 GND (7.825,5.1)
 R2 = b.footprint('R2', 7.6, 9.7, 90, ref_fab=True)              # RUN pull-up: 2 RUN (7.6,8.925) on the RUN row, 1 3V3 (7.6,10.475)

@@ -14,8 +14,9 @@ corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven pi
 (BZ1/R17/R18), sensor GPIOs moved (see Decisions), J6 USB pins swapped. The Codex review of
 the routed board (findings: C11 far from VREG_VIN, long crystal loop, USB series R far from
 the pins, paste on the pogo pads, plus nits) has been worked through; what remains of it is
-recorded under Resume path. **No firmware, nothing ordered, no jig built; LCSC numbers
-unverified.** Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
+recorded under Resume path. **No firmware, nothing ordered, no jig built.** LCSC numbers
+picked and verified 2026-09-24 via `make parts` (Y1 changed to the HDG crystal, C1/C2 to 15 pF;
+see Parts and cost). Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Concept and first-iteration scope
 
@@ -53,7 +54,7 @@ unverified.** Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
   STM32G0B1 (six USARTs, USB DFU in ROM), ESP32-C3 (only two UARTs, but a free WiFi gateway
   node), CH32V003/PY32F003 (cheapest, but bit-banged UARTs and a WCH-Link/SWD programmer).
   Minimal RP2040 support per the Raspberry Pi "Hardware design with RP2040" guide: W25Q16
-  QSPI flash, 12 MHz crystal with 27 pF loads and 1 k in series with XOUT, 10 k pull-ups on
+  QSPI flash, 12 MHz crystal (Abracon ABM8-272-T3, the guide's part) with 15 pF loads and 1 k in series with XOUT, 10 k pull-ups on
   RUN and QSPI_SS, TESTEN to GND, USB_VDD / ADC_AVDD / VREG_VIN on 3.3 V, VREG_VOUT to DVDD
   with 1 uF, one 100 nF per IOVDD pin, 10 uF bulk.
 - **5 V rail through the net, ME6211C33M5G 3.3 V LDO per node** (SOT-23-5, 500 mA, stable
@@ -70,9 +71,12 @@ unverified.** Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
   pressing anything. Later, firmware can update neighbours over the links (a UART bootloader),
   so the jig is only ever needed once per node. Tag-Connect was considered and rejected (the
   cable costs more than several nodes; a home-made pogo block does the same job).
-- **LED: WS2812B-2020** so level maps to colour and brightness with one pin and the gradient is
+- **LED: WS2812B-2020** (the V6 revision, WS2812B-2020-V6; the original C965555 is
+  discontinued) so level maps to colour and brightness with one pin and the gradient is
   obvious in a room. D1 (1N4148W) drops its supply to about 4.3 V so 3.3 V logic meets the
-  0.7 x VDD input threshold; C19 100 nF at the LED. A discrete RGB LED on three PWM pins was
+  input threshold: the original part specified 0.7 x VDD (the schematic note still quotes
+  that); the V6 specifies VIH = 0.55 x VDD (2.4 V at 4.3 V), so D1 is now margin rather than a
+  necessity; C19 100 nF at the LED. A discrete RGB LED on three PWM pins was
   the cheaper alternative (no level issue) but dimmer and three pins. A "powerful" emitter with
   a MOSFET was left out of rev A on purpose. D4 is a second WS2812B-2020 chained on D2's DOUT,
   DNP in every variant: fitting it doubles the light with no firmware or power-design change
@@ -140,23 +144,23 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 
 | ref        | part                                   | notes                                   |
 |------------|----------------------------------------|-----------------------------------------|
-| U1         | RP2040                                 | LCSC C2040 (verify)                     |
-| U2         | W25Q16JVSSIQ, SOIC-8 208 mil           | C82317 (verify)                         |
-| U3         | VL53L0CXV0DH/1                         | default variant only; LCSC blank        |
-| U4         | ME6211C33M5G-N, SOT-23-5               | C82942 (verify); CE tied to VIN         |
-| Y1, C1, C2, R1 | 12 MHz 3225 (C9002, verify), 27 pF, 1 k | per RP2040 design guide            |
+| U1         | RP2040                                 | C2040                                   |
+| U2         | W25Q16JVSSIQ, SOIC-8 208 mil           | C82317                                  |
+| U3         | VL53L0CXV0DH/1                         | C91199; default variant only            |
+| U4         | ME6211C33M5G-N, SOT-23-5               | C82942; CE tied to VIN                  |
+| Y1, C1, C2, R1 | 12 MHz 3225 ABM8-272-T3 (C20625731), 15 pF C0G (C1644), 1 k | per RP2040 design guide (HDG crystal, 10 pF load) |
 | C3..C12    | 100 nF x8, 1 uF, 10 uF                 | 3.3 V decoupling (IOVDD x6, USB, ADC, VREG_VIN, bulk) |
 | C13..C15   | 1 uF, 100 nF, 100 nF                   | DVDD (1.1 V core)                       |
 | C16        | 100 nF                                 | flash                                   |
 | C17, C18   | 10 uF                                  | LDO in/out                              |
 | R2..R6     | 10 k, 10 k, 4k7, 4k7, 10 k             | RUN, QSPI_SS, SDA, SCL, SENS_INT pull-ups |
-| J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST B3B-XH-A, LCSC blank |
+| J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST B3B-XH-A(LF)(SN), C144394 (THT) |
 | J6, R15, R16 | pogo pads, 27 R x2               | J6 not in BOM/pos                       |
-| D1, D2, D4, C19 | 1N4148W, WS2812B-2020 x2, 100 nF  | LED supply drop, LED, second LED (DNP), cap |
-| BZ1, R17, R18 | PKMCS0909E4000-R1, 100 R x2    | piezo element, series R from GPIO12/13 (LCSC blank) |
-| J5         | 1x7 pin header                         | sensor port                             |
+| D1, D2, D4, C19 | 1N4148W (C81598), WS2812B-2020-V6 x2 (C52917434), 100 nF | LED supply drop, LED, second LED (DNP), cap |
+| BZ1, R17, R18 | PKMCS0909E4000-R1, 100 R x2    | piezo element (C910763), series R from GPIO12/13 |
+| J5         | 1x7 pin header, HX PZ2.54-1x7P ZZ      | sensor port; C32713273 (THT)            |
 | C20, C21   | 100 nF, 4.7 uF                         | VL53L0X, default variant only           |
-| SW1, C22   | SW-18010P, 100 nF                      | `vib` variant only (DNP otherwise)      |
+| SW1, C22   | SW-18010P (C2681585), 100 nF           | `vib` variant only (DNP otherwise)      |
 | H1..H4     | M2 mounting holes                      | not in BOM/pos                          |
 
 ## Programming jig
@@ -197,11 +201,27 @@ kicad-cli pcb export pos --variant vib --exclude-dnp --format csv --units mm --s
 
 ## Parts and cost
 
-LCSC numbers in the schematic that still need checking on the order page: C2040 (RP2040),
-C82317 (W25Q16JVSSIQ), C82942 (ME6211C33M5G-N), C9002 (12 MHz 3225).
-Blank and to be picked in JLCPCB's BOM tool: WS2812B-2020, 1N4148W, VL53L0CXV0DH/1, JST
-B3B-XH-A, SW-18010P, all 0603 passives. As with the other boards, `Description`
-carries ratings (X7R 16 V, C0G, etc.) into the JLCPCB Comment column.
+Every BOM line has an MPN, Manufacturer and LCSC number, picked by exact-code lookups and
+verified on 2026-09-24 with `make parts BOARD=net/node PARTS_ARGS='--boards 30'` (23 lines,
+0 errors, 0 warnings; 10 basic, 1 preferred, 9 extended parts, so 9 extended-part loading
+fees per order). The table lives in `generate/schematic.py` (`PASSIVES` keyed by kind and
+value, plus per-symbol fields). Passives: UNI-ROYAL 0603WAF 1 % resistors (1 k C21190, 10 k
+C25804, 4k7 C23162, 100 R C22775, 27 R C25190); 100 nF Yageo CC0603KRX7R9BB104 X7R 50 V
+(C14663, also C22 in `vib`), 1 uF Samsung CL10A105KB8NNNC X5R 50 V (C15849), 10 uF
+CL10A106MA8NRNC X5R 25 V (C96446), 4.7 uF CL10A475KO8NNNC X5R 16 V (C19666), 15 pF
+CL10C150JB8NNNC C0G 50 V (C1644). As with the other boards, `Description` carries the real
+ratings into the JLCPCB Comment column (and groups the BOM, so it is the same per value).
+
+- **Crystal change.** Y1 was C9002 (YXC X322512MSB4SI), but JLCPCB lists it as a 20 pF-load,
+  80 ohm ESR crystal, so the old "10 pF load" description was wrong and 27 pF caps were chosen
+  for the wrong part. Y1 is now the crystal the RP2040 hardware design guide uses, Abracon
+  ABM8-272-T3 (C20625731: 12 MHz, 10 pF load, 50 ohm ESR, 3225-4P), with the guide's 15 pF
+  loads (15 pF in series pair plus ~3 pF stray is about 10 pF). Its pinout (1 and 3 crystal,
+  2 and 4 GND, 1 and 3 diagonal) matches `Device:Crystal_GND24` and the existing footprint,
+  so the layout is unchanged.
+- **THT parts (J1..J5).** All have LCSC numbers. JLCPCB can hand-fit them (about $0.0164 per
+  joint plus $3.58 per order, about $19 for 30 boards including the loading fees), or they can
+  be deselected on the order page and hand-soldered. That is decided at order time.
 
 Rough per-node parts cost at 50 to 100 pieces: about $1.50 for the RP2040, flash, crystal and
 LDO; $0.50 for connectors, LED and passives; the VL53L0X adds about $1.50, the
@@ -251,8 +271,9 @@ Cables are a real line item: one 3-wire XH cable per link, roughly two per node 
   range must be well above 8 (use 0..255) or a corner touch never reaches the far corner.
 - **Outdoor use** stays deferred: series R + TVS on each link, sealed connectors and a coating
   before any bush deployment that sees weather.
-- **LCSC numbers.** Only C2040, C82317, C82942 and C9002 are filled in and none are
-  confirmed on the order page; the rest are blank on purpose.
+- **LCSC numbers.** Every fitted part has one, picked and verified 2026-09-24 with
+  `make parts` (see Parts and cost); the order-page preview is still the final check for
+  orientation.
 
 ## PCB (rev A, routed)
 
@@ -332,7 +353,7 @@ committed board carries the zone fills.
 4. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
    XSHUT track, vias inside the J6 pads). Silk is minimal: connector refs sit inside the
    housings, passives have no silk reference.
-5. LCSC numbers, `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
+5. `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
    check LED/connector orientation in the JLCPCB preview. Cables: JST-XH 3-pin pre-made,
    one length; XH has no strain relief, so a bush deployment needs a printed clip or tie.
 6. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, piezo driver
