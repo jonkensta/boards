@@ -45,11 +45,21 @@ for i, (hx, hy) in enumerate([(3.5, 3.5), (44.5, 3.5), (3.5, 44.5), (44.5, 44.5)
 # ---- placement ------------------------------------------------------------------------------
 # side-entry JST XH (S3B): pins on a row DJ in from the edge, housing mouth facing out; pin 1 is the
 # counter-clockwise-first pin (the footprint cannot be mirrored), see README
+# Tiling rule: nodes are tiled by translation, so W (J4) must line up with a western neighbour's E (J2)
+# and S (J3) with a southern neighbour's N (J1): one shared pin-row centre per axis, and both are the
+# board centre lines (U1's pin 43..45 caps are 0402 so they fit above J4, see README).
 DJ = 8.1                                                          # housing mouth 1.1 mm beyond the edge
-J1 = b.footprint('J1', 26.5, DJ, 180, ref_pos=(2.5, 5.5))       # N: mouth up, pins x 26.5 / 24 / 21.5
-J2 = b.footprint('J2', W - DJ, 26.5, 90, ref_pos=(2.5, 5.5))    # E: mouth right, pins y 26.5 / 24 / 21.5
-J3 = b.footprint('J3', 21.4, H - DJ, 0, ref_pos=(2.5, 5.5))     # S: mouth down, pins x 21.4 / 23.9 / 26.4 (0.1 west: J5's courtyard)
-J4 = b.footprint('J4', DJ, 26.4, 270, ref_pos=(2.5, 5.5))       # W: mouth left, pins y 26.4 / 28.9 / 31.4 (south of the U1 cap column)
+LINK_EW_Y, LINK_NS_X, JP = H / 2, W / 2, 2.5                      # shared pin-row centres (board centre), XH pitch
+J1 = b.footprint('J1', LINK_NS_X + JP, DJ, 180, ref_pos=(2.5, 5.5))       # N: mouth up, pins x 26.5 / 24 / 21.5
+J2 = b.footprint('J2', W - DJ, LINK_EW_Y + JP, 90, ref_pos=(2.5, 5.5))    # E: mouth right, pins y 26.5 / 24 / 21.5
+J3 = b.footprint('J3', LINK_NS_X - JP, H - DJ, 0, ref_pos=(2.5, 5.5))     # S: mouth down, pins x 21.5 / 24 / 26.5
+J4 = b.footprint('J4', DJ, LINK_EW_Y - JP, 270, ref_pos=(2.5, 5.5))       # W: mouth left, pins y 21.5 / 24 / 26.5
+# fail generation if the tiling alignment regresses: pin 2 of every link on its edge's centre line (1 um),
+# and facing pin rows coincide as sets
+assert abs(J4['2'][1] - J2['2'][1]) < 1e-3 and abs(J3['2'][0] - J1['2'][0]) < 1e-3, 'link connectors misaligned'
+assert all(abs(v - c) < 1e-3 for v, c in ((J1['2'][0], W / 2), (J3['2'][0], W / 2), (J2['2'][1], H / 2), (J4['2'][1], H / 2))), 'link connectors not centred'
+assert all(abs(a - b) < 1e-3 for a, b in zip(sorted(p[1] for p in J2.values()), sorted(p[1] for p in J4.values())))
+assert all(abs(a - b) < 1e-3 for a, b in zip(sorted(p[0] for p in J1.values()), sorted(p[0] for p in J3.values())))
 # U1 rot 180: right edge pins 1..14 at x 17.438 (y 15.6 .. 10.4), top edge 15..28 at y 9.562
 # (x 16.6 .. 11.4), left edge 29..42 at x 10.562 (y 10.4 .. 15.6), bottom edge 43..56 at
 # y 16.438 (x 11.4 .. 16.6). Pad tips: right 17.875, top 9.125, left 10.125, bottom 16.875.
@@ -67,16 +77,17 @@ R2 = b.footprint('R2', 7.6, 9.7, 90, ref_fab=True)              # RUN pull-up: 2
 # left edge
 C6 = b.footprint('C6', 8.35, 12.0, 180, ref_fab=True)           # IOVDD 33: 1 3V3 (9.125) 2 GND (7.575)
 C7 = b.footprint('C7', 8.35, 15.6, 180, ref_fab=True)           # IOVDD 42
-# bottom-left column: ADC_AVDD 43 + VREG_VIN 44 (joined) -> C10; DVDD 45 -> C13, C15
-C10 = b.footprint('C10', 8.9, 17.9, 180, ref_fab=True)          # 1 3V3 (9.675,17.9) 2 GND (8.125,17.9)
-C11 = b.footprint('C11', 8.9, 19.5, 180, ref_fab=True)          # VREG_VIN 1u under C10 (pin 44 joins 43): 1 3V3 (9.675,19.5) 2 GND (8.125)
-C13 = b.footprint('C13', 8.9, 21.1, 180, ref_fab=True)          # DVDD 1u: 1 DVDD (9.675,21.1) 2 GND (8.125)
-C15 = b.footprint('C15', 8.9, 22.7, 180, ref_fab=True)          # DVDD 100n
+# bottom-left corner, 0402 so the cluster fits between U1 and the centred J4 (courtyard top y 18.55):
+# ADC_AVDD 43 + VREG_VIN 44 (joined) -> C11 / C10 stacked beside C7; VREG_VOUT 45 -> C13 under pins 44/45, C15 below it
+C11 = b.footprint('C11', 8.95, 16.8, 180, ref_fab=True)         # VREG_VIN 1u: 1 3V3 (9.43,16.8) 2 GND (8.47,16.8)
+C10 = b.footprint('C10', 8.95, 17.84, 180, ref_fab=True)        # ADC_AVDD 100n: 1 3V3 (9.43,17.84) 2 GND (8.47,17.84)
+C13 = b.footprint('C13', 11.3, 17.62, 180, ref_fab=True)        # VREG_VOUT 1u: 1 DVDD (11.78,17.62) 2 GND (10.82,17.62)
+C15 = b.footprint('C15', 11.83, 19.0, 270, ref_fab=True)        # DVDD 100n: 1 DVDD (11.83,18.52) top, 2 GND (11.83,19.48)
 C16 = b.footprint('C16', 20.0, 35.2, 0, ref_fab=True)             # 100n plane cap below the flash (J4 took its old spot): 1 3V3 (19.225,35.2) 2 GND (20.775,35.2)
 R13 = b.footprint('R13', 11.8, 28.4, 90, ref_fab=True)            # W: 2 J4 (11.8,27.575) via -> B.Cu -> J4.2 (8.1,28.9); 1 LINK_W (11.8,29.225)
 R14 = b.footprint('R14', 11.8, 31.4, 90, ref_fab=True)            # W pull-up: 2 LINK_W (11.8,30.575) 1 3V3 (11.8,32.225); column between J4 and U2
 # bottom edge: USB_VDD 48 + IOVDD 49 joined -> C9 (its 3V3 pad also feeds the flash through a via)
-C9 = b.footprint('C9', 13.4, 20.7, 270, ref_fab=True)           # 1 3V3 (13.4,19.925) 2 GND (13.4,21.475)
+C9 = b.footprint('C9', 13.9, 20.7, 270, ref_fab=True)           # 1 3V3 (13.9,19.925) 2 GND (13.9,21.475); east of the DP run
 R3 = b.footprint('R3', 20.975, 26.0, 180, ref_fab=True)         # QSPI_SS pull-up: 2 SS (20.2,26) on the SS run, 1 3V3 (21.75,26)
 # right edge: IOVDD 10 -> C4; C3 on the plane beside it; IOVDD 1 via only
 C4 = b.footprint('C4', 19.7, 12.0, 0, ref_fab=True)             # 1 3V3 (18.925) 2 GND (20.475)
@@ -116,7 +127,8 @@ C21 = b.footprint('C21', 34.1, 35.4, 0, ref_fab=True)
 R4 = b.footprint('R4', 25.6, 12.4, 90, ref_fab=True)              # SDA pull-up hanging below the SDA run (y 10.9): 2 SDA (25.6,11.575), 1 3V3 (25.6,13.225)
 R5 = b.footprint('R5', 28.4, 31.3, 270, ref_fab=True)           # SCL pull-up: 1 3V3 (28.4,30.475) 2 SCL (28.4,32.125) on the SCL run
 R6 = b.footprint('R6', 24.925, 22.0, 0, ref_fab=True)           # INT pull-up: 1 3V3 (24.15,22) 2 INT (25.7,22) on the INT run; XSHUT passes under the body
-J5 = b.footprint('J5', 46.4, 38.85, 270, ref_pos=(7.6, 2.6))   # pins x 46.4 - 2.54 k: 1 +5V (on the ring), 2 3V3, 3 INT, 4 SDA, 5 SCL, 6 AIN 33.7, 7 GND 31.16     # pins x 20.73 + 2.54 k: 1 +5V, 2 3V3, 3 INT 25.81, 4 SDA 28.35, 5 SCL 30.89, 6 AIN 33.43, 7 GND 35.97
+J5DX = 0.07                                                      # J5 nudged east just clear of the centred J3's courtyard (more puts its silk on the edge)
+J5 = b.footprint('J5', 46.4 + J5DX, 38.85, 270, ref_pos=(7.6, 2.6))   # pins x 46.47 - 2.54 k: 1 +5V (on the ring), 2 3V3, 3 INT, 4 SDA, 5 SCL, 6 AIN, 7 GND
 SW1 = b.footprint('SW1', 42.0, 33.5, 0, ref_fab=True, val_pos=(0, -3.6))   # vib variant, DNP: 1 GND (40.73) 2 SENS_INT (43.27)
 C22 = b.footprint('C22', 38.4, 33.5, 270, ref_fab=True)         # debounce: 1 SENS_INT (38.4,32.725) 2 GND (38.4,34.275)
 
@@ -182,24 +194,24 @@ T(AIN, (10.125, 14.0), (4.6, 14.0)); V(AIN, 4.6, 14.0)
 T(SWDIO, (5.7, 7.5), (5.7, 37.2), (8.69, 37.2), layer=B); V(SWDIO, 8.69, 37.2)
 T(SWCLK, (6.3, 6.3), (6.3, 36.4), (11.23, 36.4), (11.23, 37.2), layer=B); V(SWCLK, 11.23, 37.2)
 T(RUN, (6.9, 8.7), (6.8, 8.8), (6.8, 35.6), (13.77, 35.6), (13.77, 37.2), layer=B); V(RUN, 13.77, 37.2)
-T(AIN, (4.6, 14.0), (4.6, 14.4), (5.2, 15.0), (5.2, 39.75), (17.9, 39.75), (19.35, 38.3), (29.8, 38.3), (30.6, 37.6), (32.9, 37.6), J5['6'], layer=B)   # under J6, above the ring notch, north of J3's pins -> J5.6
+T(AIN, (4.6, 14.0), (4.6, 14.4), (5.2, 15.0), (5.2, 39.75), (17.9, 39.75), (19.35, 38.3), (29.8, 38.3), (30.6, 37.6), (32.9 + J5DX, 37.6), J5['6'], layer=B)   # under J6, above the ring notch, north of J3's pins -> J5.6
 
 # ---- U1 bottom edge -------------------------------------------------------------------------
-T(V3, (UX - 2.6, 16.9), (UX - 2.2, 16.9)); T(V3, (UX - 2.6, 16.9), (UX - 3.6, 17.9), (10.125, 17.9))   # 43+44 -> C10.1
-pad_via(V3, 9.675, 17.9, 9.675, 16.7); pad_via(G, 8.125, 17.9, 7.7, 17.9)                       # C10 vias
-T(DVDD, (UX - 1.8, 16.875), (UX - 1.8, 17.3), (10.9, 18.6), (10.9, 22.7), (10.125, 22.7))        # 45 -> down x 10.9 -> C15.1
-T(DVDD, (10.9, 21.1), (10.125, 21.1)); T(DVDD, (10.9, 21.9), (10.2, 21.9)); V(DVDD, 10.2, 21.9)   # C13.1, DVDD via between C13/C15
-T(V3, (9.675, 17.9), (9.675, 19.5)); pad_via(G, 8.125, 19.5, 7.7, 19.5)                          # C11 on C10's 3V3 pad
-pad_via(G, 8.125, 21.1, 7.7, 21.1); pad_via(G, 8.125, 22.7, 7.7, 22.7)
-T(DM, (UX - 1.4, 16.875), (UX - 1.4, 18.8), (11.7, 19.7), (11.7, 20.575))                      # 46 -> R15.2
-T(DP, (UX - 1.0, 16.875), (UX - 1.0, 19.0), (12.6, 19.4), (12.6, 23.2), (11.9, 23.9), (11.7, 23.975))   # 47 -> past R15 -> R16.2
+T(V3, (UX - 2.6, 16.9), (UX - 2.2, 16.9)); T(V3, (UX - 2.6, 16.9), (9.8, 16.9), C11['1']); V(V3, 10.2, 16.9)   # 43+44 west to C11.1, plane via on the way
+T(V3, (10.4, 16.9), (9.6, 17.7), C10['1']); T(V3, C11['1'], C10['1'])                          # C10.1 off the same run
+T(G, C11['2'], (7.75, 17.32), C10['2']); V(G, 7.75, 17.32)                                     # C10/C11 share a GND via (east of the RUN lane)
+T(DVDD, (UX - 1.8, 16.875), (UX - 1.8, 17.3), C13['1']); T(DVDD, C13['1'], C15['1'])            # 45 -> C13.1 -> C15.1
+T(DVDD, C15['1'], (11.1, 18.75)); V(DVDD, 11.1, 18.75)                                         # DVDD via -> B.Cu to pin 50 and C14
+pad_via(G, *C13['2'], 10.3, 18.4); pad_via(G, *C15['2'], 11.0, 19.6)
+T(DM, (UX - 1.4, 16.875), (UX - 1.4, 20.2), (12.225, 20.575), (11.7, 20.575))                  # 46 straight down east of C13/C15 -> R15.2
+T(DP, (UX - 1.0, 16.875), (UX - 1.0, 23.2), (12.225, 23.975), (11.7, 23.975))                  # 47 straight down -> past R15 -> R16.2
 T(V3, (UX - 0.6, 16.9), (UX - 0.2, 16.9)); T(V3, (13.6, 16.9), (13.6, 19.925))                 # 48+49 -> C9.1
-T(V3, (13.875, 19.925), (14.35, 20.0)); V(V3, 14.35, 20.0)                                     # C9.1 via
+T(V3, C9['1'], (14.35, 20.0)); V(V3, 14.35, 20.0)                                     # C9.1 via
 V(V3, 13.695, 22.5); T(V3, (13.695, 22.5), (13.695, 23.8125))                                  # U2.8 VCC from the plane
-pad_via(G, 13.4, 21.475, 14.3, 21.9)                                                           # C9.2
+pad_via(G, *C9['2'], 14.3, 21.9)                                                              # C9.2
 T(DVDD, (UX + 0.2, 16.875), (UX + 0.2, 18.9)); V(DVDD, UX + 0.2, 18.9)                          # 50 via
-# DVDD on B.Cu: C14 via (10.4, 5.7) -> C13/C15 via (10.2, 21.9) -> pin 50 via (14.2, 18.9)
-T(DVDD, (10.4, 5.7), (10.4, 21.7), (10.2, 21.9), (12.0, 21.9), (12.0, 20.3), (13.0, 20.3), (14.2, 19.1), (14.2, 18.9), layer=B)
+# DVDD on B.Cu: C14 via (10.4, 5.7) -> C13/C15 via (11.1, 18.75) -> pin 50 via (14.2, 18.9)
+T(DVDD, (10.4, 5.7), (10.4, 15.8), (11.1, 16.5), (11.1, 18.75), (14.05, 18.75), (14.2, 18.9), layer=B)
 pad_via(V3, *C16['1'], C16['1'][0], 36.1); pad_via(G, *C16['2'], C16['2'][0], 36.1)          # C16
 # QSPI: 51..53 to the near row, 54..56 around the right side to the far row (bend order 56 first)
 T(SD3, (UX + 0.6, 16.875), (UX + 0.6, 18.4), (14.965, 18.765), (14.965, 23.8125))              # 51 -> U2.7
@@ -234,8 +246,8 @@ T(SDA, (17.875, 10.8), (18.2, 10.8), (18.3, 10.9), (26.6, 10.9), (26.6, 32.9), (
 T(SCL, (17.875, 10.4), (27.3, 10.4), (27.3, 31.9), (30.8, 31.9), (30.8, 33.8))                 # -> U3.10
 T(SDA, (25.6, 10.9), R4['2']); pad_via(V3, *R4['1'], 25.6, 14.2)                               # R4 hangs below the SDA run
 pad_via(V3, 28.4, 30.475, 28.4, 29.6)                                                          # R5.1 (R5.2 on the SCL run)
-T(SDA, (26.6, 32.9), (26.6, 33.4)); V(SDA, 26.6, 33.4); T(SDA, (26.6, 33.4), (26.6, 36.3), (27.4, 37.1), (38.0, 37.1), (38.78, 37.88), J5['4'], layer=B)   # -> J5.4
-T(SCL, (30.8, 31.9), (35.78, 31.9), (36.24, 32.5), J5['5'])                                     # -> J5.5 on F.Cu, east of C20/C21
+T(SDA, (26.6, 32.9), (26.6, 33.4)); V(SDA, 26.6, 33.4); T(SDA, (26.6, 33.4), (26.6, 36.3), (27.4, 37.1), (38.0 + J5DX, 37.1), (38.78 + J5DX, 37.88), J5['4'], layer=B)   # -> J5.4
+T(SCL, (30.8, 31.9), (35.78 + J5DX, 31.9), (36.24 + J5DX, 32.5), J5['5'])                                     # -> J5.5 on F.Cu, east of C20/C21
 # XSHUT (x 25.0) and INT (x 25.7) south, then east to U3's left column
 T(XSHUT, (XK[5], 18.1), (XK[5], 37.2), (27.6, 37.2), (28.4, 36.4), (28.4, 35.4))               # -> U3.5
 T(INT, (XK[6], 18.1), (XK[6], 35.05), (27.6, 35.05), (27.6, 33.8), (28.4, 33.8))              # -> U3.7
@@ -246,7 +258,7 @@ T(N('SW1', '2'), (43.27, 33.5), (43.27, 32.0), (39.0, 32.0), (38.4, 32.6))
 pad_via(G, 38.4, 34.275, 38.4, 35.3); pad_via(G, 40.73, 33.5, 40.73, 35.5, w=P)                # C22.2, SW1.1
 # LINK_S: F.Cu south at x 22.9 -> R11 -> J3.2 (23.9, 39.9); R12 pull-up sits on the run
 T(LS, (XK[2], 18.1), (XK[2], 34.125)); pad_via(V3, 20.925, 32.6, 20.925, 31.6)
-T(J3S, R11['2'], (22.9, 38.0), (23.9, 39.0), J3['2'])
+T(J3S, R11['2'], (22.9, 38.0), (24.0, 39.1), J3['2'])
 # LINK_N: B.Cu north on x 20.5, east on y 14.3 to a via under R7.1; R8.2 joins on F.Cu. J1.2 comes down on B.Cu to R7.2
 T(LN, (XK[0], 19.6), (20.5, 18.6), (20.5, 15.0), (21.2, 14.3), (24.0, 14.3), layer=B); V(LN, 24.0, 14.3)
 T(LN, R8['2'], R7['1'], (24.0, 14.3))
@@ -258,7 +270,7 @@ T(LE, R9['1'], R10['2']); T(N('R9', '2'), R9['2'], J2['2']); pad_via(V3, *R10['1
 # LINK_W: B.Cu south on x 23.6, west on y 28.1 to the via between R13.1 and R14.2; R13.2 -> via -> B.Cu -> J4.2
 T(LW, (XK[3], 19.1), (XK[3], 28.1), (12.6, 28.1), (11.8, 28.9), layer=B); V(LW, 11.8, 28.9)
 T(LW, R13['1'], R14['2']); pad_via(V3, *R14['1'], 11.8, 32.9)
-V(N('R13', '2'), 11.8, 27.0); T(N('R13', '2'), (11.8, 27.0), R13['2']); T(N('R13', '2'), (11.8, 27.0), (10.9, 27.0), (10.9, 28.9), J4['2'], layer=B)
+V(N('R13', '2'), 11.8, 27.0); T(N('R13', '2'), (11.8, 27.0), R13['2']); T(N('R13', '2'), (11.8, 27.0), (10.3, 25.5), (10.3, J4['2'][1]), J4['2'], layer=B)
 # LED_DIN: B.Cu east on y 20.3, via above D2.3 (top-right pad)
 T(LDIN, (XK[4], 20.3), (29.6, 20.3), (30.4, 21.1), (30.4, 22.1), layer=B); V(LDIN, 30.4, 22.1); T(LDIN, (30.4, 22.1), (29.75, 22.75), D2['3'])
 # LEDs: D2 DOUT (bottom-left) -> D4 DIN (top-right) around D2's GND pad; LED_VDD from D1 through C19 to both VDD pads (top-left)
@@ -288,9 +300,9 @@ T(G, (28.4, 34.6), (31.6, 34.6)); T(G, (29.2, 35.4), (30.8, 35.4)); T(G, (30.0, 
 # corner (the crystal/SWD vias live there); feeds from every connector's pin 1 and from J6.7
 RING = [(1.5, 7.5), (1.5, 40.5), (7.5, 40.5), (7.5, 46.5), (40.5, 46.5), (40.5, 40.5), (46.5, 40.5), (46.5, 7.5), (40.5, 7.5), (40.5, 1.5), (7.5, 1.5)]
 T(V5, *RING, w=0.8, layer=B)
-T(V5, J1['1'], (26.5, 1.5), w=P, layer=B); T(V5, J2['1'], (46.5, 26.5), w=P, layer=B)          # J1.1, J2.1 (J5.1 sits on the ring)
-T(V5, J3['1'], (21.4, 45.6), w=P); V(V5, 21.4, 45.6); T(V5, (21.4, 45.6), (21.4, 46.5), w=P, layer=B)   # J3.1 on F.Cu over the SENS_AIN run
-T(V5, J4['1'], (3.5, 26.4), w=P); V(V5, 3.5, 26.4); T(V5, (3.5, 26.4), (1.5, 26.4), w=P, layer=B)       # J4.1 on F.Cu over the west lanes
+T(V5, J1['1'], (J1['1'][0], 1.5), w=P, layer=B); T(V5, J2['1'], (46.5, J2['1'][1]), w=P, layer=B)          # J1.1, J2.1 (J5.1 sits on the ring)
+x3 = J3['1'][0]; T(V5, J3['1'], (x3, 45.6), w=P); V(V5, x3, 45.6); T(V5, (x3, 45.6), (x3, 46.5), w=P, layer=B)   # J3.1 on F.Cu over the SENS_AIN run
+y4 = J4['1'][1]; T(V5, J4['1'], (3.5, y4), w=P); V(V5, 3.5, y4); T(V5, (3.5, y4), (1.5, y4), w=P, layer=B)       # J4.1 on F.Cu over the west lanes
 T(V5, J6['7'], (16.31, 45.6), w=P); V(V5, 16.31, 45.6); T(V5, (16.31, 45.6), (16.31, 46.5), w=P, layer=B)   # J6.7
 pad_via(G, *J6['5'], 13.77, 45.0, w=P)                                                     # J6.5 GND
 

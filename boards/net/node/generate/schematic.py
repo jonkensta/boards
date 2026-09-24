@@ -40,6 +40,15 @@ PASSIVES = {
     ('C', '4u7'): ('CL10A475KO8NNNC', 'Samsung', 'C19666'),
     ('C', '15p'): ('CL10C150JB8NNNC', 'Samsung', 'C1644'),
 }
+# U1 decoupling at pins 43..45 in 0402 so the cap cluster fits between U1 and the centred W link
+# connector J4 (see README). JLCPCB basic parts, exact-code lookups 2026-09-24; no basic 0402 1 uF
+# is rated 50 V, so the 1 uF is the 25 V basic part (rails are 3.3 V and 1.1 V).
+C0402 = {'C10', 'C11', 'C13', 'C15'}
+C0402_FP = 'Capacitor_SMD:C_0402_1005Metric'
+PASSIVES_0402 = {
+    '100n': ('CL05B104KB54PNC', 'Samsung', 'C307331', '100 nF X7R 50 V 0402'),
+    '1u': ('CL05A105KA5NQNC', 'Samsung', 'C52923', '1 uF X5R 25 V 0402'),
+}
 
 
 def passive(kind, x, y, value, desc=None, rot=0, **kw):
@@ -49,7 +58,11 @@ def passive(kind, x, y, value, desc=None, rot=0, **kw):
     # property text is centre-justified: keep it clear of the body and of the plates of Device:C
     pp = kw.pop('prop_pos', {'Reference': (3.2, -1.9), 'Value': (3.6, 1.9)} if rot == 0 else {'Reference': (-2.2, -2.0), 'Value': (2.0, -2.0)})
     mpn, mfr, lcsc = PASSIVES[(kind, value)]
-    pins = s.place('Device', kind, ref, x, y, rot, value=value, footprint=R_FP if kind == 'R' else C_FP,
+    fp = R_FP if kind == 'R' else C_FP
+    if ref in C0402:
+        mpn, mfr, lcsc, desc = PASSIVES_0402[value]
+        fp = C0402_FP
+    pins = s.place('Device', kind, ref, x, y, rot, value=value, footprint=fp,
                    description=desc, prop_pos=pp, fields={'MPN': mpn, 'Manufacturer': mfr, 'LCSC': lcsc}, **kw)
     return ref, pins
 

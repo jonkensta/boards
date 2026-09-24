@@ -15,7 +15,9 @@ survived; no substantive findings).
 Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
 board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
 0 unconnected items and 0 schematic-parity issues (two `track_dangling` warnings are the open
-corner of the 5 V ring, by design). Magnetic buzzer replaced by a GPIO-driven piezo
+corner of the 5 V ring, by design; two `silk_edge_clearance` warnings are J5's silk 0.09 mm from
+the east edge after it moved 0.07 mm for the centred J3, see Resume path). All four link
+connectors are centred on their edges and aligned for tiling (see Decisions). Magnetic buzzer replaced by a GPIO-driven piezo
 (BZ1/R17/R18), sensor GPIOs moved (see Decisions), J6 USB pins swapped. The Codex review of
 the routed board (findings: C11 far from VREG_VIN, long crystal loop, USB series R far from
 the pins, paste on the pogo pads, plus nits) has been worked through; what remains of it is
@@ -69,6 +71,24 @@ see Parts and cost). Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
   mirrored, so **pin 1 is now the counter-clockwise-first pin** of each edge (it was the
   clockwise-first pin with the vertical part). The pinout per connector is unchanged, and
   that is all a straight cable needs.
+- **Tiling alignment** (2026-09-24): nodes are tiled by translation (every node the same way
+  up), so each W connector J4 lines up exactly with the E connector J2 of its western neighbour
+  and each S connector J3 with the N connector J1 of its southern neighbour. All four are also
+  centred on their edges: pin 2 of J1/J3 at x 24.0 and of J2/J4 at y 24.0 (the board centre
+  lines). `generate/pcb.py` derives the positions from two shared constants (W/2, H/2) and
+  asserts both the alignment and the centring (1 um), so neither can silently regress. The pin
+  rows coincide as sets, but because the footprint cannot be mirrored the pin numbers run the
+  opposite way on facing edges: J2 (E) pin 1 is the south pin, J4 (W) pin 1 the north pin; J1
+  (N) pin 1 is the east pin, J3 (S) pin 1 the west pin. A pin-1-to-pin-1 JST cable between two
+  facing connectors therefore takes a half twist, which a loose cable does without complaint.
+- **0402 caps at U1 pins 43..45** (2026-09-24): C10 (100 nF, ADC_AVDD), C11 (1 uF, VREG_VIN),
+  C13 (1 uF, VREG_VOUT) and C15 (100 nF, DVDD) are 0402; every other passive stays 0603. The
+  centred J4's courtyard starts 1.42 mm below U1's, less than a 0603 courtyard (1.46 mm), and
+  the old 0603 column west of pins 43..45 sat exactly where J4 now is. In 0402 all four fit
+  around U1's bottom-left corner with 1.4 to 2.9 mm of track from pin to pad (before: 2.6 to
+  8.0 mm). Parts are JLCPCB basic: 100 nF Samsung CL05B104KB54PNC X7R 50 V (C307331) and 1 uF
+  Samsung CL05A105KA5NQNC X5R 25 V (C52923; no basic 0402 1 uF is rated 50 V, and the rails
+  are 3.3 V and 1.1 V). Their Descriptions end in "0402" so the BOM keeps them on separate lines.
 - **RP2040** (QFN-56, LCSC C2040) because it needs no programmer (ROM USB bootloader), PIO
   gives as many UARTs as wanted, and it is cheap and always in stock. Alternatives noted:
   STM32G0B1 (six USARTs, USB DFU in ROM), ESP32-C3 (only two UARTs, but a free WiFi gateway
@@ -135,7 +155,8 @@ see Parts and cost). Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
 ## Pinouts
 
 Link J1..J4 (N, E, S, W): 1 = +5V, 2 = DATA, 3 = GND. On the board pin 1 is the
-counter-clockwise-first pin of each connector.
+counter-clockwise-first pin of each connector. Facing connectors of tiled nodes line up pin row on pin row
+with the numbers reversed (see Decisions, tiling alignment).
 
 Sensor header J5: 1 +5V, 2 +3V3, 3 SENS_INT (GPIO6), 4 SDA (GPIO10), 5 SCL (GPIO11),
 6 SENS_AIN (GPIO26/ADC0), 7 GND.
@@ -169,8 +190,8 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 | U3         | VL53L0CXV0DH/1                         | C91199; default variant only            |
 | U4         | ME6211C33M5G-N, SOT-23-5               | C82942; CE tied to VIN                  |
 | Y1, C1, C2, R1 | 12 MHz 3225 ABM8-272-T3 (C20625731), 15 pF C0G (C1644), 1 k | per RP2040 design guide (HDG crystal, 10 pF load) |
-| C3..C12    | 100 nF x8, 1 uF, 10 uF                 | 3.3 V decoupling (IOVDD x6, USB, ADC, VREG_VIN, bulk) |
-| C13..C15   | 1 uF, 100 nF, 100 nF                   | DVDD (1.1 V core)                       |
+| C3..C12    | 100 nF x8, 1 uF, 10 uF                 | 3.3 V decoupling (IOVDD x6, USB, ADC, VREG_VIN, bulk); C10 (100 nF, C307331) and C11 (1 uF, C52923) are 0402 |
+| C13..C15   | 1 uF, 100 nF, 100 nF                   | DVDD (1.1 V core); C13 (1 uF, C52923) and C15 (100 nF, C307331) are 0402 |
 | C16        | 100 nF                                 | flash                                   |
 | C17, C18   | 10 uF                                  | LDO in/out                              |
 | R2..R6     | 10 k, 10 k, 4k7, 4k7, 10 k             | RUN, QSPI_SS, SDA, SCL, SENS_INT pull-ups |
@@ -209,7 +230,7 @@ until the jobset grows per-variant outputs (CLAUDE.md ideas list, item 9):
 
 ```sh
 cd boards/net/node
-kicad-cli sch export bom --variant vib --exclude-dnp --group-by Value \
+kicad-cli sch export bom --variant vib --exclude-dnp --group-by 'Value,Description,Footprint,MPN,Manufacturer,LCSC' \
   --fields 'Reference,Value,Description,Footprint,MPN,Manufacturer,LCSC,${QUANTITY}' \
   --labels 'Refs,Value,Description,Footprint,MPN,Manufacturer,LCSC,Qty' -o out/node-bom-vib.csv node.kicad_sch
 kicad-cli pcb export pos --variant vib --exclude-dnp --format csv --units mm --side both -o out/node-vib-pos.csv node.kicad_pcb
@@ -223,13 +244,14 @@ kicad-cli pcb export pos --variant vib --exclude-dnp --format csv --units mm --s
 
 Every BOM line has an MPN, Manufacturer and LCSC number, picked by exact-code lookups and
 verified on 2026-09-24 with `make parts BOARD=net/node PARTS_ARGS='--boards 30'` (23 lines,
-0 errors, 0 warnings; 10 basic, 1 preferred, 9 extended parts, so 9 extended-part loading
+0 errors, 0 warnings; 11 basic, 1 preferred, 9 extended parts, so 9 extended-part loading
 fees per order). The table lives in `generate/schematic.py` (`PASSIVES` keyed by kind and
 value, plus per-symbol fields). Passives: UNI-ROYAL 0603WAF 1 % resistors (1 k C21190, 10 k
 C25804, 4k7 C23162, 100 R C22775, 27 R C25190); 100 nF Yageo CC0603KRX7R9BB104 X7R 50 V
 (C14663, also C22 in `vib`), 1 uF Samsung CL10A105KB8NNNC X5R 50 V (C15849), 10 uF
 CL10A106MA8NRNC X5R 25 V (C96446), 4.7 uF CL10A475KO8NNNC X5R 16 V (C19666), 15 pF
-CL10C150JB8NNNC C0G 50 V (C1644). As with the other boards, `Description` carries the real
+CL10C150JB8NNNC C0G 50 V (C1644); the four 0402 caps at U1 pins 43..45 come from
+`PASSIVES_0402` (see Decisions). As with the other boards, `Description` carries the real
 ratings into the JLCPCB Comment column (and groups the BOM, so it is the same per value).
 
 - **Crystal change.** Y1 was C9002 (YXC X322512MSB4SI), but JLCPCB lists it as a 20 pF-load,
@@ -306,10 +328,10 @@ fight for the same space, and every IOVDD/DVDD pin still needs a cap and a groun
 JLCPCB 4-layer adds roughly $1 per board at this size.
 
 Floorplan (board-local mm, origin top-left): J1..J4 side entry, one per edge, mouth facing out
-and 1.1 mm past the edge, pin row 8.1 mm in (pin 1 = +5V is the counter-clockwise-first pin):
-J1 N rot 180, pins x 26.5/24/21.5 at y 8.1; J2 E rot 90, pins y 26.5/24/21.5 at x 39.9; J3 S
-rot 0, pins x 21.4/23.9/26.4 at y 39.9; J4 W rot 270, pins y 26.4/28.9/31.4 at x 8.1, which is
-4.9 mm south of centre because U1's cap column fills the west edge above it. Each housing's
+and 1.1 mm past the edge, pin row 8.1 mm in (pin 1 = +5V is the counter-clockwise-first pin),
+centred and aligned for tiling (see Decisions): J1 N rot 180, pins 1/2/3 at x 26.5/24/21.5,
+y 8.1; J2 E rot 90, pins 1/2/3 at y 26.5/24/21.5, x 39.9; J3 S rot 0, pins 1/2/3 at
+x 21.5/24/26.5, y 39.9; J4 W rot 270, pins 1/2/3 at y 21.5/24/26.5, x 8.1. Each housing's
 courtyard reaches 10.9 mm into the board. M2 holes 3.5 mm in from each corner
 with 3.2 mm keepouts on all copper layers; **U1 rot 180 at (14, 13)** so GPIO0..GPIO11 face the
 centre on its right edge, crystal/SWD/RUN on its top edge, QSPI/USB/core power on its bottom
@@ -326,18 +348,24 @@ SDA/SCL rows, with R4 beside them; R9/R10 (E link) west of J2 at x 35.5; D2 at (
 D4 chained below it; D1/C19 to their right; U4 LDO top-right with C17/C18/C12 in a row; BZ1
 piezo rot 0 at (41.8, 13.4) in the NE corner between the LDO row and J2, with R17/R18 at x 31.3
 and the plane caps C8/C5/C3 below them in BZ1's old spot; U3 rot 180 at (30, 34.6) with C20/C21
-to its right; SW1/C22 above J5; J5 rot 270 with pin 1 (+5V) at (46.4, 38.85) sitting on the
-5 V ring, pins running west to GND at x 31.16; C16 below the flash at (20, 35.2).
+to its right; SW1/C22 above J5; J5 rot 270 with pin 1 (+5V) at (46.47, 38.85) sitting on the
+5 V ring, pins running west to GND at x 31.23 (0.07 mm east of its old spot to clear J3's
+courtyard; its silk now sits 0.09 mm from the edge, two `silk_edge_clearance` warnings); C16 below the flash at (20, 35.2).
 
 Routing plan, in the order pcb.py writes it:
 
 - **U1 escapes.** Top edge: 19 GND to a via, 20 XIN straight up, 21..26 fan up-left and turn
   west onto rows 1.2 mm apart (RUN 8.7, SWDIO 7.5, SWCLK 6.3, DVDD 5.1, 3V3 3.9, XOUT 2.7).
   Left edge: 33/42 to C6/C7, 38 SENS_AIN west on F.Cu to a via at (4.6, 14). Bottom edge:
-  43+44 and 48+49 joined at the pad tips (same net) with C10 (100 nF) and C11 (1 uF, VREG_VIN)
-  stacked under pin 44, 45 down to C13/C15, 46/47 USB straight down to R15/R16 stacked in the
-  one 0603 column that fits between the DVDD track and the flash (4 and 7 mm from the pins;
-  DP passes R15 on its right, DM passes R16 on its left, then the pair runs 0.8 mm apart to J6;
+  43+44 joined at the pad tips and run west (with a 3V3 plane via) to the 0402 pair C11 (1 uF,
+  VREG_VIN, at (8.95, 16.8), under C7) and C10 (100 nF, at (8.95, 17.84)), sharing a GND via
+  east of the RUN lane; 45 goes down-left into the 0402 C13 (1 uF, VREG_VOUT) lying under pins
+  44/45 at (11.3, 17.62), with C15 (100 nF) standing below its DVDD pad at (11.83, 19.0) and a
+  DVDD via beside them that takes B.Cu to C14 and pin 50; 48+49 joined to C9 (0603, at (13.9,
+  20.7), just east of the DP run). 46/47 USB run straight down side by side at x 12.6 / 13.0
+  (east of C13/C15, west of C9) to R15/R16, stacked in the 0603 column at x 11.7 (4 and 7 mm
+  from the pins); DM enters R15 from the east, DP passes R15 and enters R16, then the pair runs
+  0.8 mm apart to J6;
   full-speed USB, so this is a tidiness point, not a signal-integrity one), USB straight
   down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
   GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
@@ -361,7 +389,7 @@ Routing plan, in the order pcb.py writes it:
   B.Cu stubs, J3.1 and J4.1 on F.Cu stubs to a via (they would cross SENS_AIN / the west lanes),
   J5.1 sits on the ring, J6.7 through a via, U4/C17 through a via at (31.6, 2.4); D1's anode
   drops to B.Cu to reach J2.1 under the R9 -> J2.2 run.
-- Every cap has a via per pad (C8/C5 share one per net); U1's centre pad has four; U2 VCC comes
+- Every cap has a via per pad (C8/C5 share one per net, C10/C11 a GND via, C13/C15 a DVDD via); U1's centre pad has four; U2 VCC comes
   from a via next to C9.
 
 Last step of every regeneration: `kicad-cli pcb drc --refill-zones --save-board` so the
@@ -378,10 +406,11 @@ committed board carries the zone fills.
    dump in a box) are described in CLAUDE.md; they lived in `out/` and are not committed.
 2. Known compromises, deliberately left: the crystal loop is about 17 mm (the 8.8 mm XOUT
    diagonal is the top-edge fan itself; shortening it means redesigning that fan); R16 (USB DP
-   series R) is 7 mm from the pin because only one 0603 column fits between the DVDD track and
-   the flash; the 5 V ring is open at the top-left corner (two dangling-end warnings); J4 sits
-   4.9 mm south of the west edge's centre (U1's cap column is above it) and the link runs to
-   R13/R14 (W) and R7 (N) now hop to B.Cu. All fine for a proof of concept at full-speed USB and 12 MHz.
+   series R) is 7 mm from the pin because only one 0603 column fits between the decoupling cluster
+   and the flash; the 5 V ring is open at the top-left corner (two dangling-end warnings); J5's
+   silk is 0.09 mm from the east edge (two `silk_edge_clearance` warnings; trimming the S3B
+   footprint's courtyard side margin from 0.5 to 0.4 mm would let J5 go back and clear them);
+   the link runs to R13/R14 (W) and R7 (N) hop to B.Cu. All fine for a proof of concept at full-speed USB and 12 MHz.
 3. Codex re-check done 2026-09-24 (review fixes and side-entry layout, no findings). Order the
    boards **unpanelised** (economic PCBA, 48 x 48 needs no rails): the housings overhang 1.1 mm,
    so a JLCPCB panel would need > 2.2 mm between boards plus tolerance, not the default 2 mm.
