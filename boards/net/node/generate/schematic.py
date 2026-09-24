@@ -16,8 +16,8 @@ OUT = os.path.join(HERE, '..', 'node.kicad_sch')
 
 R_FP = 'Resistor_SMD:R_0603_1608Metric'
 C_FP = 'Capacitor_SMD:C_0603_1608Metric'
-JST3_FP = 'Connector_JST:JST_XH_B3B-XH-A_1x03_P2.50mm_Vertical'
-JST3 = {'MPN': 'B3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C144394'}   # C144395 is the 4-pin B4B
+JST3_FP = 'boards:JST_XH_S3B-XH-A_1x03_P2.50mm_Horizontal_EdgeMount'   # stock footprint, silk trimmed for the edge overhang
+JST3 = {'MPN': 'S3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C157928'}   # side entry; was the vertical B3B-XH-A, C144394
 VARIANTS_TOF_ONLY = {'vib': {'dnp': True}, 'bare': {'dnp': True}}      # populated by default, gone elsewhere
 VARIANTS_VIB_ONLY = {'vib': {'dnp': False}}                             # DNP by default, populated in "vib"
 
@@ -175,7 +175,7 @@ s.text('Neighbour links: 5 V, single-wire half-duplex UART (open drain, 4k7 pull
 for i, (name, x) in enumerate(zip(['LINK_N', 'LINK_E', 'LINK_S', 'LINK_W'], [150, 174, 198, 222])):
     y = 50
     Jn = s.place('Connector_Generic', 'Conn_01x03', f'J{i + 1}', g(x), g(y), rot=270, value=name[-1],
-                 footprint=JST3_FP, fields=JST3, description='JST XH 3-pin, vertical',
+                 footprint=JST3_FP, fields=JST3, description='JST XH 3-pin, side entry',
                  prop_pos={'Reference': (-3.0, 6.5), 'Value': (2.0, 6.5)})
     # rot 270 puts pin 1 on the right: 1 = 5 V (right), 2 = DATA (middle), 3 = GND (left)
     assert Jn['1'] == (g(x + 2), g(y - 4)) and Jn['2'] == (g(x), g(y - 4)) and Jn['3'] == (g(x - 2), g(y - 4))
@@ -230,7 +230,7 @@ s.power('GND', g(LX), g(LY + 8)); s.flag(g(LX - 18), g(LY + 8))
 
 # ---- D2, D4 RGB LEDs (D4 chained on DOUT, DNP: fit for double brightness) ---------------------
 EX, EY = 220, 96
-s.text('D1 drops the LED supply to ~4.3 V so 3.3 V logic meets the WS2812B VIH (0.7 VDD). D4 is DNP: fit it for a brighter node.', g(198), g(72))
+s.text('D1 drops the LED supply to ~4.3 V: WS2812B-2020-V6 VIH is 0.55 VDD (2.4 V), so 3.3 V logic has margin. D4 is DNP: fit it for a brighter node.', g(198), g(72))
 LED_FIELDS = {'MPN': 'WS2812B-2020-V6', 'Manufacturer': 'Worldsemi', 'LCSC': 'C52917434'}   # C965555 (original 2020) is discontinued
 LED_PP = {'Reference': (10.0, -3.0), 'Value': (16.0, 5.0)}
 D2 = s.place('LED', 'WS2812B-2020', 'D2', g(EX), g(EY), value='WS2812B-2020-V6', fields=LED_FIELDS, prop_pos=LED_PP)

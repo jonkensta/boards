@@ -5,7 +5,12 @@ neighbour links. A node that detects something lights up and tells its neighbour
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-## Status: PCB placed and routed, DRC clean, Codex review addressed (2026-09-23)
+## Status: PCB re-placed for side-entry link connectors, DRC clean (2026-09-24)
+
+The four link connectors are now side-entry JST S3B-XH-A (see Decisions); the board was
+re-placed and re-routed around them on 2026-09-24 and passes `make check` as described below.
+Codex re-checked this layout on 2026-09-24 (make check reproduced; the earlier review fixes
+survived; no substantive findings).
 
 Rev A schematic is generated and ERC-clean. `generate/pcb.py` places and routes the whole
 board (48 x 48 mm, 4 layers); `make check BOARD=net/node` passes with 0 violations,
@@ -49,6 +54,21 @@ see Parts and cost). Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
   pin. Four links on GPIO0..3 so one PIO block can run all four UARTs. Because every node shares
   the 5 V rail, there is no "one end unpowered" case to worry about on the data line. A keyed
   connector matters: a reversed 3-pin cable would put 5 V on either the data pin or the ground.
+- **Side-entry link connectors** (2026-09-24): J1..J4 changed from the vertical B3B-XH-A
+  (C144394) to the right-angle **S3B-XH-A(LF)(SN), LCSC C157928** (extended, ~142k in stock),
+  so cables leave in the plane of the board and a node lies flat instead of standing on four
+  upright plugs. Each housing sits on its own edge with the mouth facing out and **1.1 mm past
+  the edge** (pin row 8.1 mm in). The housing is 11.5 mm deep (mouth 9.2 mm in front of the
+  pins); flush mounting would cost another 1.1 mm of board on every side, and a bigger
+  overhang leaves less of the 7 mm base on the board (at 1.1 mm about 6 mm is supported).
+  Tiled nodes need at least 2.2 mm between boards plus the plug and cable bend. Footprint:
+  `boards:JST_XH_S3B-XH-A_1x03_P2.50mm_Horizontal_EdgeMount`, the stock Connector_JST footprint
+  with the silkscreen stopped 1.5 mm short of the mouth and the contact-slot marks removed.
+  The stock silk crosses the board edge (`silk_edge_clearance` warnings), and trimming it in
+  the generator instead gives `lib_footprint_mismatch` warnings. A through-hole footprint cannot be
+  mirrored, so **pin 1 is now the counter-clockwise-first pin** of each edge (it was the
+  clockwise-first pin with the vertical part). The pinout per connector is unchanged, and
+  that is all a straight cable needs.
 - **RP2040** (QFN-56, LCSC C2040) because it needs no programmer (ROM USB bootloader), PIO
   gives as many UARTs as wanted, and it is cheap and always in stock. Alternatives noted:
   STM32G0B1 (six USARTs, USB DFU in ROM), ESP32-C3 (only two UARTs, but a free WiFi gateway
@@ -74,8 +94,7 @@ see Parts and cost). Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
 - **LED: WS2812B-2020** (the V6 revision, WS2812B-2020-V6; the original C965555 is
   discontinued) so level maps to colour and brightness with one pin and the gradient is
   obvious in a room. D1 (1N4148W) drops its supply to about 4.3 V so 3.3 V logic meets the
-  input threshold: the original part specified 0.7 x VDD (the schematic note still quotes
-  that); the V6 specifies VIH = 0.55 x VDD (2.4 V at 4.3 V), so D1 is now margin rather than a
+  input threshold: the original part specified 0.7 x VDD; the V6 specifies VIH = 0.55 x VDD (2.4 V at 4.3 V), so D1 is now margin rather than a
   necessity; C19 100 nF at the LED. A discrete RGB LED on three PWM pins was
   the cheaper alternative (no level issue) but dimmer and three pins. A "powerful" emitter with
   a MOSFET was left out of rev A on purpose. D4 is a second WS2812B-2020 chained on D2's DOUT,
@@ -115,7 +134,8 @@ see Parts and cost). Next: `make jlcpcb BOARD=net/node`, order-page check, jig.
 
 ## Pinouts
 
-Link J1..J4 (N, E, S, W): 1 = +5V, 2 = DATA, 3 = GND.
+Link J1..J4 (N, E, S, W): 1 = +5V, 2 = DATA, 3 = GND. On the board pin 1 is the
+counter-clockwise-first pin of each connector.
 
 Sensor header J5: 1 +5V, 2 +3V3, 3 SENS_INT (GPIO6), 4 SDA (GPIO10), 5 SCL (GPIO11),
 6 SENS_AIN (GPIO26/ADC0), 7 GND.
@@ -154,7 +174,7 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 | C16        | 100 nF                                 | flash                                   |
 | C17, C18   | 10 uF                                  | LDO in/out                              |
 | R2..R6     | 10 k, 10 k, 4k7, 4k7, 10 k             | RUN, QSPI_SS, SDA, SCL, SENS_INT pull-ups |
-| J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST B3B-XH-A(LF)(SN), C144394 (THT) |
+| J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST S3B-XH-A(LF)(SN) side entry, C157928 (THT) |
 | J6, R15, R16 | pogo pads, 27 R x2               | J6 not in BOM/pos                       |
 | D1, D2, D4, C19 | 1N4148W (C81598), WS2812B-2020-V6 x2 (C52917434), 100 nF | LED supply drop, LED, second LED (DNP), cap |
 | BZ1, R17, R18 | PKMCS0909E4000-R1, 100 R x2    | piezo element (C910763), series R from GPIO12/13 |
@@ -285,8 +305,12 @@ unrouted can via out; on two layers the QSPI group and the power/USB group on th
 fight for the same space, and every IOVDD/DVDD pin still needs a cap and a ground return.
 JLCPCB 4-layer adds roughly $1 per board at this size.
 
-Floorplan (board-local mm, origin top-left): J1..J4 centred on each edge (N top, E right, S
-bottom, W left; pin 1 = +5V is the clockwise-first pin); M2 holes 3.5 mm in from each corner
+Floorplan (board-local mm, origin top-left): J1..J4 side entry, one per edge, mouth facing out
+and 1.1 mm past the edge, pin row 8.1 mm in (pin 1 = +5V is the counter-clockwise-first pin):
+J1 N rot 180, pins x 26.5/24/21.5 at y 8.1; J2 E rot 90, pins y 26.5/24/21.5 at x 39.9; J3 S
+rot 0, pins x 21.4/23.9/26.4 at y 39.9; J4 W rot 270, pins y 26.4/28.9/31.4 at x 8.1, which is
+4.9 mm south of centre because U1's cap column fills the west edge above it. Each housing's
+courtyard reaches 10.9 mm into the board. M2 holes 3.5 mm in from each corner
 with 3.2 mm keepouts on all copper layers; **U1 rot 180 at (14, 13)** so GPIO0..GPIO11 face the
 centre on its right edge, crystal/SWD/RUN on its top edge, QSPI/USB/core power on its bottom
 edge; U2 flash rot 90 directly below U1 (near row SD3/SCLK/SD0 straight down, far row
@@ -294,12 +318,16 @@ SS/SD1/SD2 around the right side and back under the far row); crystal cluster ab
 straight up into Y1 (rot 90 at (13.8, 3.3)), XOUT going up-left with the SWD fan onto the top
 row, which ends in R1 standing on the row end at (9.0, 1.7); the crystal node runs along y 0.875
 back to Y1's node pad, C2 hangs off it to the west (loop about 17 mm, of which the 8.8 mm XOUT
-diagonal is forced by the fan); J6 pogo pads at (12.5, 38) rot 90 (even row y 35.5 =
-SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd row y 40.5 = USB_DM/USB_DP/GND/+5V,
-columns 2.54 mm apart, rows 5.05 mm apart); D2 at (29, 24) with D4 chained below it; D1/C19 to
-their right; U4 LDO top-right with C17/C18 and the plane caps C12/C8/C5 in a row; U3 rot
-180 at (30, 34.6) with C20/C21 to its right; J5 rot 90 with pin 1 at (20.73, 38.6); SW1/C22
-bottom-right; BZ1 piezo rot 90 at (34, 14.4) with R17/R18 between it and U4.
+diagonal is forced by the fan); J6 pogo pads at (12.5, 40.3) rot 90, moved 2.3 mm south
+to make room for J4 (even row y 37.8 = SWDIO/SWCLK/RUN/BOOT at x 8.69/11.23/13.77/16.31, odd
+row y 42.8 = USB_DM/USB_DP/GND/+5V, columns 2.54 mm apart, rows 5.05 mm apart); R13/R14 (W link)
+in the column between J4 and the flash at x 11.8; R7/R8 (N link) under J1 at y 12.6, below the
+SDA/SCL rows, with R4 beside them; R9/R10 (E link) west of J2 at x 35.5; D2 at (29, 24) with
+D4 chained below it; D1/C19 to their right; U4 LDO top-right with C17/C18/C12 in a row; BZ1
+piezo rot 0 at (41.8, 13.4) in the NE corner between the LDO row and J2, with R17/R18 at x 31.3
+and the plane caps C8/C5/C3 below them in BZ1's old spot; U3 rot 180 at (30, 34.6) with C20/C21
+to its right; SW1/C22 above J5; J5 rot 270 with pin 1 (+5V) at (46.4, 38.85) sitting on the
+5 V ring, pins running west to GND at x 31.16; C16 below the flash at (20, 35.2).
 
 Routing plan, in the order pcb.py writes it:
 
@@ -314,22 +342,27 @@ Routing plan, in the order pcb.py writes it:
   down to R15/R16, 50 to a via, 51..56 QSPI. Right edge: 1 and 10 to vias (10's neighbours
   GPIO7/GPIO8 are deliberately unused), 2..8 fan down-right (pin k bends at x 18.6 + 0.3k) and
   turn south at y 18.1 onto x 21.5 + 0.7k; 13/14 SDA/SCL straight east; 15/16 BUZZ_A/B up-right
-  onto rows y 7.0 / 6.2 (the right pin bends first) east to R17/R18, R7's J1 leg drops to B.Cu
-  to pass under them.
-- **B.Cu lanes.** West side x 5.2/5.7/6.3/6.9 = SENS_AIN/SWDIO/SWCLK/RUN, ending in vias
-  *inside* the J6 pogo pads (nothing is soldered there). LINK_N north on x 20.5, LINK_E north on
-  x 22.2 then east on y 15.4, LINK_W south then west on y 25.6 (east of the west lanes, into a
-  via between R13 and R14), LED_DIN east on y 20.3, INT east on y 30.5 to C22/SW1, SDA/SCL/INT
-  short diagonals to J5 pins 3..5 from vias below U3.
-- **F.Cu long runs.** LINK_S on x 22.9 to R11, then between J5 pins 1 and 2 to J3; XSHUT and
-  INT on x 25.0/25.7, SDA/SCL on x 26.6/27.3 down to U3. Pull-ups sit *on* their run with the
+  onto rows y 6.2 / 5.4 (clear of J1's pins; the right pin bends first) east to R17/R18; BUZZ_B
+  continues over the top of BZ1 (y 7.3, below the H2 keepout) to its far pad.
+- **B.Cu lanes.** West side x 5.2/5.7/6.3/6.8 = SENS_AIN/SWDIO/SWCLK/RUN (west of J4's pins),
+  ending in vias *inside* the J6 pogo pads (nothing is soldered there); SENS_AIN continues under
+  J6 (y 39.75), north of J3's pins (y 38.3) and around J5.7 to J5.6. LINK_N north on x 20.5 then
+  east on y 14.3 to R7, and J1.2 comes down to R7 on B.Cu under the SDA/SCL rows; LINK_E north on
+  x 22.2, east on y 15.4, south on x 34.7 to R9/R10; LINK_W south then west on y 28.1 under the
+  flash to R13/R14, and R13's J4 leg on B.Cu to J4.2; LED_DIN east on y 20.3; INT east on y 30.5
+  to C22/SW1, and from SW1.2 (THT, copper even when DNP) down to J5.3; SDA from a via below U3
+  east on y 37.1 to J5.4.
+- **F.Cu long runs.** LINK_S on x 22.9 to R11, then straight to J3.2; XSHUT and INT on x
+  25.0/25.7, SDA/SCL on x 26.6/27.3 down to U3, SCL on east of C20/C21 to J5.5; USB DM/DP between
+  J4's pins and R13/R14 to J6. Pull-ups sit *on* their run with the
   3V3 pad hanging off (R4, R5, R6, R12, R3, R2); R6's body straddles the XSHUT track.
 - **5 V ring** on B.Cu, 0.8 mm wide, inset 1.5 mm, square notches inside three M2 keepouts,
-  **open at the top-left corner** (the crystal and SWD vias live there); feeds: J1..J4 pin 1,
-  J6 pin 7 (via from a F.Cu stub that also serves J5 pin 1), U4/C17 via a via at (31.6, 2.4),
-  D1's anode on F.Cu straight to J2 pin 1. J4 pin 3 connects solidly to the B.Cu pour (no room
-  for two thermal spokes between the ring and the SENS_AIN lane).
-- Every cap has a via per pad; U1's centre pad has four; U2 VCC comes from a via next to C9.
+  **open at the top-left corner** (the crystal and SWD vias live there); feeds: J1.1 and J2.1 on
+  B.Cu stubs, J3.1 and J4.1 on F.Cu stubs to a via (they would cross SENS_AIN / the west lanes),
+  J5.1 sits on the ring, J6.7 through a via, U4/C17 through a via at (31.6, 2.4); D1's anode
+  drops to B.Cu to reach J2.1 under the R9 -> J2.2 run.
+- Every cap has a via per pad (C8/C5 share one per net); U1's centre pad has four; U2 VCC comes
+  from a via next to C9.
 
 Last step of every regeneration: `kicad-cli pcb drc --refill-zones --save-board` so the
 committed board carries the zone fills.
@@ -346,15 +379,17 @@ committed board carries the zone fills.
 2. Known compromises, deliberately left: the crystal loop is about 17 mm (the 8.8 mm XOUT
    diagonal is the top-edge fan itself; shortening it means redesigning that fan); R16 (USB DP
    series R) is 7 mm from the pin because only one 0603 column fits between the DVDD track and
-   the flash; the 5 V ring is open at the top-left corner (two dangling-end warnings).
-   All fine for a proof of concept at full-speed USB and 12 MHz.
-3. One Codex re-check round on the review fixes has not been run; do it before ordering
-   (`\codex --profile shared exec ...` per CLAUDE.md, ask it to reproduce `make check`).
+   the flash; the 5 V ring is open at the top-left corner (two dangling-end warnings); J4 sits
+   4.9 mm south of the west edge's centre (U1's cap column is above it) and the link runs to
+   R13/R14 (W) and R7 (N) now hop to B.Cu. All fine for a proof of concept at full-speed USB and 12 MHz.
+3. Codex re-check done 2026-09-24 (review fixes and side-entry layout, no findings). Order the
+   boards **unpanelised** (economic PCBA, 48 x 48 needs no rails): the housings overhang 1.1 mm,
+   so a JLCPCB panel would need > 2.2 mm between boards plus tolerance, not the default 2 mm.
 4. Review the layout in the GUI once (silkscreen labels, the open ring corner, R6 over the
-   XSHUT track, vias inside the J6 pads). Silk is minimal: connector refs sit inside the
+   XSHUT track, vias inside the J6 pads, the 1.1 mm connector overhang and J5.1 on the ring). Silk is minimal: connector refs sit inside the
    housings, passives have no silk reference.
 5. `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch),
-   check LED/connector orientation in the JLCPCB preview. Cables: JST-XH 3-pin pre-made,
+   check LED/connector orientation in the JLCPCB preview (every housing mouth must face out). Cables: JST-XH 3-pin pre-made,
    one length; XH has no strain relief, so a bush deployment needs a printed clip or tie.
 6. Pogo jig (rows 5.05 mm apart, columns 2.54 mm), USB bring-up, link protocol, piezo driver
    (PWM/PIO, antiphase pair), UART bootloader; then rev B (LED power, bus voltage).
