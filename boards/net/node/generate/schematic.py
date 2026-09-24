@@ -21,9 +21,9 @@ JST3 = {'MPN': 'S3B-XH-A(LF)(SN)', 'Manufacturer': 'JST', 'LCSC': 'C157928'}   #
 VARIANTS_TOF_ONLY = {'vib': {'dnp': True}, 'bare': {'dnp': True}}      # populated by default, gone elsewhere
 VARIANTS_VIB_ONLY = {'vib': {'dnp': False}}                             # DNP by default, populated in "vib"
 
-s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, RGB LED, piezo, sensor port',
+s = Schematic('node', root_uuid_of(OUT), 'Net node: RP2040, 4 neighbour links, RGB LED, piezo, sensor',
               rev='A', date='2026-09-16', paper='A3',
-              comment='PoC. Variants: default = VL53L0X ToF, vib = SW-18010P, bare = header only')
+              comment='PoC. Variants: default = VL53L0X ToF, vib = SW-18010P, bare = no sensor')
 
 # ---- helpers ------------------------------------------------------------------------------
 _n = {'R': 0, 'C': 0}
@@ -111,14 +111,14 @@ W((UX - 20, UY - 24), (UX - 24, UY - 24), (UX - 24, UY - 20)); s.power('GND', g(
 # GPIO map (right side) and left-side signals
 GPIO = {'2': 'LINK_N', '3': 'LINK_E', '4': 'LINK_S', '5': 'LINK_W', '6': 'LED_DIN',
         '7': 'SENS_XSHUT', '8': 'SENS_INT', '13': 'SDA', '14': 'SCL', '15': 'BUZZ_A', '16': 'BUZZ_B',
-        '38': 'SENS_AIN'}   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10; GPIO12/13 drive the piezo antiphase
+        }   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10; GPIO12/13 drive the piezo antiphase
 LEFT = {'26': 'RUN', '46': 'USB_DM', '47': 'USB_DP', '56': 'QSPI_SS', '52': 'QSPI_SCLK', '53': 'QSPI_SD0',
         '55': 'QSPI_SD1', '54': 'QSPI_SD2', '51': 'QSPI_SD3', '24': 'SWCLK', '25': 'SWDIO'}
 for pin, name in GPIO.items():
     stub_label(U1[pin], name, 'r')
 for pin, name in LEFT.items():
     stub_label(U1[pin], name, 'l')
-for pin in ['9', '11', '12', '17', '18'] + [str(n) for n in range(27, 38) if n != 33] + ['39', '40', '41']:   # 33 = IOVDD
+for pin in ['9', '11', '12', '17', '18'] + [str(n) for n in range(27, 42) if n != 33]:   # 33 = IOVDD; 38 (GPIO26/ADC0) free since J5 was removed
     s.no_connect(*U1[pin])
 
 # crystal: 12 MHz ABM8-272-T3 (10 pF load), 15 pF loads, 1k in series with XOUT (RP2040 hardware design guide)
@@ -266,18 +266,7 @@ s.wire(cl['2'], (g(EX + 48), g(EY + 8)), (g(DX), g(EY + 8))); s.wire(D4['2'], (g
 W((DX, EY + 8), (EX, EY + 8)); s.wire(D2['2'], (g(EX), g(EY + 8))); s.power('GND', g(EX), g(EY + 8))
 
 # ---- sensor port ---------------------------------------------------------------------------------
-SX, SY = 200, 150
-s.text('Sensor port. J5 takes off-board modules (LD2410, AM312 PIR, I2C breakouts). U3 = default variant, SW1 = "vib" variant, "bare" = header only.', g(178), g(132))
-J5 = s.place('Connector_Generic', 'Conn_01x07', 'J5', g(SX), g(SY), value='SENSOR',
-             footprint='Connector_PinHeader_2.54mm:PinHeader_1x07_P2.54mm_Vertical', description='Pin header 1x7, 2.54 mm',
-             fields={'MPN': 'HX PZ2.54-1x7P ZZ', 'Manufacturer': 'hanxia', 'LCSC': 'C32713273'},
-             prop_pos={'Reference': (1.5, -11.0), 'Value': (1.5, 11.0)})
-assert J5['1'] == (g(SX - 4), g(SY - 6)) and J5['7'] == (g(SX - 4), g(SY + 6))
-W((SX - 4, SY - 6), (SX - 12, SY - 6), (SX - 12, SY - 12)); s.power('+5V', g(SX - 12), g(SY - 12))
-W((SX - 4, SY - 4), (SX - 8, SY - 4), (SX - 8, SY - 8)); s.power('+3V3', g(SX - 8), g(SY - 8))
-for pin, name in {'3': 'SENS_INT', '4': 'SDA', '5': 'SCL', '6': 'SENS_AIN'}.items():
-    stub_label(J5[pin], name, 'l', length=8)
-W((SX - 4, SY + 6), (SX - 8, SY + 6), (SX - 8, SY + 10)); s.power('GND', g(SX - 8), g(SY + 10))
+s.text('Sensor. U3 = default variant, SW1 = "vib" variant, "bare" = no sensor (relay-only node).', g(178), g(132))
 TX, TY = 232, 172
 U3 = s.place('Sensor_Distance', 'VL53L0CXV0DH1', 'U3', g(TX), g(TY), value='VL53L0CXV0DH/1', footprint='OptoDevice:ST_VL53L0X',
              fields={'MPN': 'VL53L0CXV0DH/1', 'Manufacturer': 'STMicroelectronics', 'LCSC': 'C91199'},

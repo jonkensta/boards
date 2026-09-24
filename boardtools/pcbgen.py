@@ -268,16 +268,25 @@ class Board:
                            ["filled_areas_thickness", "no"], ["fill", "yes", ["thermal_gap", _n(thermal_gap)], ["thermal_bridge_width", _n(thermal_bridge)]],
                            ["polygon", ["pts"] + [["xy", _n(X), _n(Y)] for X, Y in pts]]])
 
-    def keepout(self, x: float, y: float, r: float = 3.2, nseg: int = 24, name: str = "mounting keepout"):
-        """Circular rule area: no tracks, vias or pour on either copper layer (pads allowed)."""
-        pts = [self.P(x + r * math.cos(2 * math.pi * i / nseg), y + r * math.sin(2 * math.pi * i / nseg)) for i in range(nseg)]
+    def keepout(self, x: float, y: float, r: float = 3.2, nseg: int = 24, name: str = "mounting keepout", *,
+                r_in: float = 0.0, pads: bool = True, footprints: bool = True, tracks: bool = False):
+        """Circular rule area on all copper layers: no tracks, vias or pour (pads and footprints allowed).
+
+        pads/footprints=False also forbid pads and footprint courtyards (tracks=True allows tracks).
+        r_in > 0 cuts a concentric hole of that radius out of the area (an annulus), so a mounting
+        hole's own footprint inside it is not flagged. The outer polygon is circumscribed (covers
+        radius r everywhere), the inner one inscribed (never cuts into radius r_in)."""
+        k = 1 / math.cos(math.pi / nseg)
+        ring = lambda rr: ["polygon", ["pts"] + [["xy", _n(X), _n(Y)] for X, Y in (
+            self.P(x + rr * math.cos(2 * math.pi * i / nseg), y + rr * math.sin(2 * math.pi * i / nseg)) for i in range(nseg))]]
+        rule = lambda ok: "allowed" if ok else "not_allowed"
         self.items.append(["zone", ["net", "0"], ["net_name", Q("")], ["layers", Q("*.Cu")], ["uuid", _u()],
                            ["name", Q(name)], ["hatch", "edge", "0.5"],
-                           ["keepout", ["tracks", "not_allowed"], ["vias", "not_allowed"], ["pads", "allowed"],
-                            ["copperpour", "not_allowed"], ["footprints", "allowed"]],
+                           ["keepout", ["tracks", rule(tracks)], ["vias", "not_allowed"], ["pads", rule(pads)],
+                            ["copperpour", "not_allowed"], ["footprints", rule(footprints)]],
                            ["connect_pads", ["clearance", "0"]], ["min_thickness", "0.25"], ["filled_areas_thickness", "no"],
                            ["fill", ["thermal_gap", "0.5"], ["thermal_bridge_width", "0.5"]],
-                           ["polygon", ["pts"] + [["xy", _n(X), _n(Y)] for X, Y in pts]]])
+                           ring(r * k if (r_in or not pads or not footprints) else r)] + ([ring(r_in)] if r_in else []))
 
     # ---- graphics -----------------------------------------------------------------
     def gr_line(self, x1, y1, x2, y2, layer: str, width: float):

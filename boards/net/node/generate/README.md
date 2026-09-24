@@ -16,11 +16,16 @@ the netlist with `boardtools.pcbgen`. Regenerate with:
 
 ```sh
 kicad-cli sch export netlist --format kicadsexpr -o boards/net/node/generate/node.net boards/net/node/node.kicad_sch
-python3 boards/net/node/generate/pcb.py           # --pads [REF ...] prints pad centres instead of writing
+python3 boards/net/node/generate/pcb.py           # --pads [REF ...] prints pad centres; --place writes placement only
 kicad-cli pcb drc --refill-zones --save-board --schematic-parity -o /dev/null boards/net/node/node.kicad_pcb
 make check BOARD=net/node
-kicad-cli pcb render --side top --zoom 1.0 --width 900 --height 900 --background opaque -o boards/net/node/out/top.png boards/net/node/node.kicad_pcb
+kicad-cli pcb render --side top --zoom 1.0 --width 400 --height 400 --background opaque -o boards/net/node/out/top.png boards/net/node/node.kicad_pcb
 ```
+
+`pcb.py` fails (AssertionError, nothing written) if the link connectors lose their tiling
+alignment or if any pad or courtyard comes within 3.7 mm of a mounting-hole centre; DRC enforces
+the same hole rule through a keepout annulus per hole (`Board.keepout(..., r_in=2.6, pads=False,
+footprints=False, tracks=True)`), see the README's Decisions.
 
 `node.net` is git-ignored (`*.net`), so export it before running `pcb.py`. Without the
 `--save-board` step the committed board has unfilled zones. With the flatpak KiCad, `-o` paths

@@ -239,6 +239,26 @@ class PcbgenTests(unittest.TestCase):
         self.assertIsNone(sexpr.child(pads["1"], "zone_connect"))
         self.assertEqual(sexpr.child(pads["2"], "zone_connect"), ["zone_connect", "2"])
 
+    def test_keepout_default_and_washer_annulus(self):
+        import math
+        b = pcbgen.Board(self.template, pcbgen.Netlist(self.netlist), "x.kicad_sch", 10, 10, origin=(0, 0))
+        b.keepout(5, 5)                                                   # legacy: inscribed disc, pads/footprints allowed
+        b.keepout(5, 5, 3.7, 32, "washer", r_in=2.6, pads=False, footprints=False, tracks=True)
+        out = os.path.join(self.tmp.name, "ko.kicad_pcb")
+        b.write(out)
+        disc, washer = list(sexpr.children(sexpr.parse(open(out).read()), "zone"))
+        self.assertEqual(sexpr.child(disc, "keepout")[1:], [["tracks", "not_allowed"], ["vias", "not_allowed"], ["pads", "allowed"],
+                                                           ["copperpour", "not_allowed"], ["footprints", "allowed"]])
+        self.assertEqual(sexpr.child(washer, "keepout")[1:], [["tracks", "allowed"], ["vias", "not_allowed"], ["pads", "not_allowed"],
+                                                             ["copperpour", "not_allowed"], ["footprints", "not_allowed"]])
+        radii = lambda poly: [math.dist((5, 5), (float(p[1]), float(p[2]))) for p in sexpr.child(poly, "pts")[1:]]
+        d = list(sexpr.children(disc, "polygon"))
+        self.assertEqual(len(d), 1)
+        self.assertAlmostEqual(max(radii(d[0])), 3.2, places=3)
+        outer, inner = sexpr.children(washer, "polygon")                   # second polygon = hole of the annulus
+        self.assertAlmostEqual(min(radii(outer)), 3.7 / math.cos(math.pi / 32), places=3)   # circumscribed
+        self.assertAlmostEqual(max(radii(inner)), 2.6, places=3)
+
     def test_pads_rotated_and_netted(self):
         c1, root = self.build(2)
         self.assertEqual(c1, {"1": (2.0, 4.0), "2": (2.0, 2.0)})      # rot 90 (CCW on screen): pad 1 (-1,0) -> below
