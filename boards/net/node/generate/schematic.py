@@ -110,15 +110,17 @@ W((UX - 20, UY - 24), (UX - 24, UY - 24), (UX - 24, UY - 20)); s.power('GND', g(
 
 # GPIO map (right side) and left-side signals
 GPIO = {'2': 'LINK_N', '3': 'LINK_E', '4': 'LINK_S', '5': 'LINK_W', '6': 'LED_DIN',
-        '7': 'SENS_XSHUT', '8': 'SENS_INT', '13': 'SDA', '14': 'SCL', '15': 'BUZZ_A', '16': 'BUZZ_B',
-        }   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10; GPIO12/13 drive the piezo antiphase
-LEFT = {'26': 'RUN', '46': 'USB_DM', '47': 'USB_DP', '56': 'QSPI_SS', '52': 'QSPI_SCLK', '53': 'QSPI_SD0',
+        '7': 'SENS_XSHUT', '8': 'SENS_INT', '13': 'SDA', '14': 'SCL',
+        }   # I2C1; pins 9/11/12 NC free lanes for IOVDD pin 10
+LEFT = {'29': 'BUZZ_A', '30': 'BUZZ_B'}   # GPIO18/19 = PWM slice 1 A/B drive the piezo antiphase from U1's west edge, away from
+                                          # the crystal (GPIO12/13, pins 15/16, sat four pins from XIN on the same edge)
+LEFT |= {'26': 'RUN', '46': 'USB_DM', '47': 'USB_DP', '56': 'QSPI_SS', '52': 'QSPI_SCLK', '53': 'QSPI_SD0',
         '55': 'QSPI_SD1', '54': 'QSPI_SD2', '51': 'QSPI_SD3', '24': 'SWCLK', '25': 'SWDIO'}
 for pin, name in GPIO.items():
     stub_label(U1[pin], name, 'r')
 for pin, name in LEFT.items():
     stub_label(U1[pin], name, 'l')
-for pin in ['9', '11', '12', '17', '18'] + [str(n) for n in range(27, 42) if n != 33]:   # 33 = IOVDD; 38 (GPIO26/ADC0) free since J5 was removed
+for pin in ['9', '11', '12', '15', '16', '17', '18'] + [str(n) for n in range(27, 42) if n not in (29, 30, 33)]:   # 33 = IOVDD; 38 (GPIO26/ADC0) free since J5 was removed
     s.no_connect(*U1[pin])
 
 # crystal: 12 MHz ABM8-272-T3 (10 pF load), 15 pF loads, 1k in series with XOUT (RP2040 hardware design guide)

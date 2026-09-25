@@ -87,7 +87,8 @@ numbers verified 2026-09-24 via `make parts` (see Parts and cost). Next: review,
   (2026-09-24). The RP2040 and its immediate support (a cap at every supply pin, crystal,
   flash, LDO, USB series resistors) sit in the 26 mm centre square between the link housings,
   where the space is; each peripheral takes a corner, around its M2 hole, on the side where its
-  pins leave U1 (rot 180): piezo BZ1 NE (GPIO12/13 are U1's NE-most pins), ToF U3 SE below J2
+  pins leave U1 (rot 180): piezo BZ1 NE (driven from GPIO18/19 on U1's west edge since 2026-09-25, see
+  crystal isolation), ToF U3 SE below J2
   (I2C / INT / XSHUT come off U1's east edge and cross the QSPI rows in one short B.Cu hop), pogo
   pads J6 SW (USB and, via the flash, BOOT leave U1's south edge; SWD comes down the west side),
   vibration switch SW1 NW (it needs only SENS_INT, one slow B.Cu lane under J1). The LED D2 is
@@ -100,7 +101,38 @@ numbers verified 2026-09-24 via `make parts` (see Parts and cost). Next: review,
   the NPTH does not trip it. Verified on a copy: a cap pad and the piezo courtyard nudged into the
   annulus are both flagged, the holes are not. Generator: `pcb.py` asserts the pad-edge and
   courtyard distances from every hole centre (closest now: BZ1 courtyard 3.75 mm, pad J6.1
-  5.09 mm).
+  6.43 mm).
+- **Crystal isolation (2026-09-25).** An audit found switching copper beside the 12 MHz crystal
+  nets (XIN, XOUT, the R1-Y1 node): BUZZ_B 0.51 mm, BUZZ_A 1.25 mm, +3V3 0.20 mm, DVDD 0.60 mm,
+  SWCLK 1.0 mm, LINK_N 0.93 mm. Root cause: the piezo was on GPIO12/13 (pins 15/16), four pins
+  from XIN/XOUT on the same package edge. Rule now: every non-GND net keeps >= 1.0 mm (same layer,
+  edge to edge, tracks and pads) from crystal-net copper, the LED nets (LED_VDD, LED_DIN,
+  D2 DOUT) and every D4 pad >= 2.0 mm; only the RP2040's own 0.4 mm-pitch pin field plus 1.5 mm
+  of escape is exempt. `generate/xtal_check.py` measures it and `pcb.py` asserts it (checked: a
+  LINK_N row nudged 0.4 mm and D4 moved 0.3 mm west each fail generation). Changes: the piezo
+  moved to GPIO18/19 (pins 29/30, PWM slice 1, U1's NW corner; the only free even/odd pairs on
+  the NE side are GPIO14/15 next to XIN, and GPIO8/9 whose escape collides with IOVDD 10's via,
+  see the GPIO map) and reaches BZ1 on B.Cu under U1; XOUT follows XIN diagonally before turning
+  north so IOVDD 22 / DVDD 23 / C5 stay >= 1 mm away (Y1 / R1 0.65 / 0.8 mm east, C2 vertical,
+  C1 lower, LINK_N re-routed north of C2, D2 / D4 0.6 mm east); a F.Cu GND guard pour (priority 1,
+  solid onto GND pads) covers the cluster. Its outline (`GUARD` in pcb.py: 24.12..31.5 x
+  10.75..19.45, notched around R7 and D4) encloses nothing but GND and crystal copper, asserted
+  with >= 0.2 mm from the outline to any other copper (checked: the old rectangle fails on D4's
+  pads, LED_VDD and LINK_N). 19 GND vias, placed by script, stitch it to In1, 18 along its edge at
+  <= 2 mm pitch except beside R1's XOUT pad (3.7), at C2's node pad (3.0 / 2.2) and at the U1
+  escape (2.6); every one of the pour's three fill pieces has its own vias, and the load caps'
+  and Y1's GND pads have short vias. In1 stays unbroken under the cluster (no other-net via
+  inside the pour; In1 / In2 carry no tracks). The checker measures tracks (arcs included),
+  vias, pads and zone copper, and raises on copper it does not model; D4's pads get the 2 mm
+  rule whatever their net (GND included). **Known exemption:** within the RP2040's pad field plus
+  1.5 mm, where the pins are 0.4 mm apart, the IOVDD 22 escape runs 0.20 mm and the DVDD 23
+  escape 0.60 mm from XOUT's escape (SWCLK 1.0 mm). Pins 21 / 22 / 23 are adjacent, and 22 / 23
+  are held in the NW fan's order by SWCLK / SWDIO / RUN, so no cheap re-route reaches 1 mm.
+  Beyond that zone they are 1.07 mm (+3V3) and 1.51 mm (DVDD).
+- **Pogo pads centred in the SW corner (2026-09-25).** J6 moved from (12.9, 40.3) to (12.4, 35.9),
+  same orientation (rotating gains nothing): its courtyard is now 0.57 / 0.58 / 0.60 mm from J3's
+  courtyard, J4's courtyard and H3's 3.7 mm ring (before 0.07 / 4.98 / 0.12 mm), the best the
+  corner allows.
 - **RP2040** (QFN-56, LCSC C2040) because it needs no programmer (ROM USB bootloader), PIO
   gives as many UARTs as wanted, and it is cheap and always in stock. Alternatives noted:
   STM32G0B1 (six USARTs, USB DFU in ROM), ESP32-C3 (only two UARTs, but a free WiFi gateway
@@ -160,7 +192,7 @@ numbers verified 2026-09-24 via `make parts` (see Parts and cost). Next: review,
 - **Piezo sounder, not a magnetic buzzer (2026-09-20).** The 12 mm magnetic buzzer with its
   2N7002/flyback driver was dropped (largest part after the connectors, and it would have shared
   the 5 V budget with the LEDs). BZ1 is now a Murata PKMCS0909E4000-R1 9 x 9 x 1.9 mm SMD piezo
-  *element* driven from GPIO12/GPIO13 (BUZZ_A/BUZZ_B) through 100 R each: no transistor, no 5 V
+  *element* driven from GPIO18/GPIO19 (BUZZ_A/BUZZ_B, PWM slice 1 A/B; GPIO12/13 until 2026-09-25) through 100 R each: no transistor, no 5 V
   draw, and pitch is whatever frequency firmware drives (PWM or PIO). Driving the two pins in
   antiphase gives 6.6 Vpp (about 6 dB more); loudness is otherwise only coarse (near/far from
   the 4 kHz resonance, burst modulation). Roughly 65 to 70 dB at 10 cm: a beep in the room, not
@@ -189,8 +221,9 @@ USB D+/D- have the 27 R series resistors on the board. Ground BOOT while applyin
 force the USB bootloader on a programmed node.
 
 GPIO map: 0..3 LINK_N/E/S/W, 4 LED_DIN, 5 SENS_XSHUT, 6 SENS_INT, 10 SDA (I2C1), 11 SCL (I2C1),
-12/13 BUZZ_A/BUZZ_B (piezo, antiphase). GPIO7..9 and 14..29 are unconnected (no-connect flags;
-GPIO26/ADC0 went with J5). GPIO7..9 are left free on purpose: IOVDD pin 10 sits between GPIO7 and GPIO8 on the QFN, and with
+18/19 BUZZ_A/BUZZ_B (piezo, antiphase: PWM slice 1 channels A/B, U1 pins 29/30 on the west edge).
+GPIO7..9, 12..17 and 20..29 are unconnected (no-connect flags; GPIO26/ADC0 went with J5, GPIO12/13
+were the piezo pair until 2026-09-25). GPIO7..9 are left free on purpose: IOVDD pin 10 sits between GPIO7 and GPIO8 on the QFN, and with
 0.4 mm pitch its decoupling via only fits if both neighbours stay unrouted (2026-09-20).
 Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 
@@ -211,7 +244,7 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 | J1..J4, R7/R9/R11/R13 (100 R), R8/R10/R12/R14 (4k7) | links N/E/S/W | JST S3B-XH-A(LF)(SN) side entry, C157928 (THT) |
 | J6, R15, R16 | pogo pads, 27 R x2               | J6 not in BOM/pos                       |
 | D1, D2, D4, C19 | 1N4148W (C81598), WS2812B-2020-V6 x2 (C52917434), 100 nF | LED supply drop, LED, second LED (DNP), cap |
-| BZ1, R17, R18 | PKMCS0909E4000-R1, 100 R x2    | piezo element (C910763), series R from GPIO12/13 |
+| BZ1, R17, R18 | PKMCS0909E4000-R1, 100 R x2    | piezo element (C910763), series R from GPIO18/19 |
 | C20, C21   | 100 nF, 4.7 uF                         | VL53L0X, default variant only           |
 | SW1, C22   | SW-18010P (C2681585), 100 nF           | `vib` variant only (DNP otherwise)      |
 | H1..H4     | M2 mounting holes                      | not in BOM/pos                          |
@@ -221,11 +254,11 @@ Crystal on XIN/XOUT, flash on QSPI_SS/SCLK/SD0..3, SWCLK/SWDIO and RUN to J6.
 Eight P75 pogo pins in a 2x4 grid: columns on 2.54 mm pitch, the two rows 5.05 mm apart (the
 SMD header footprint, not a 2.54 mm grid; a printed block, not perfboard),
 plus two pins for the M2 holes or a printed frame to locate the board. Pad centres (board-local
-mm, origin at the top-left corner, y down; the pads sit in the SW corner): even row y 37.775 at
-x 9.09 / 11.63 / 14.17 / 16.71 (SWDIO, SWCLK, RUN, BOOT), odd row y 42.825 at the same x
-(USB_DM, USB_DP, GND, +5V). Relative to H3's centre (3.5, 44.5): first column +5.59 mm in x, rows
--6.725 and -1.675 mm in y. (2026-09-24: 0.4 mm east of the earlier position, for the hole
-clearance.) Wire them to:
+mm, origin at the top-left corner, y down; the pads sit in the SW corner): even row y 33.375 at
+x 8.59 / 11.13 / 13.67 / 16.21 (SWDIO, SWCLK, RUN, BOOT), odd row y 38.425 at the same x
+(USB_DM, USB_DP, GND, +5V). Relative to H3's centre (3.5, 44.5): first column +5.09 mm in x, rows
+-11.125 and -6.075 mm in y. (2026-09-25: moved 0.5 mm west and 4.4 mm north from (9.09, 37.775 /
+42.825), centring J6 between J3, J4 and H3.) Wire them to:
 
 - a Raspberry Pi Debug Probe or a Pico running picoprobe (SWDIO, SWCLK, GND; power from +5V),
   flashed with `openocd` or `picotool load`; or
@@ -306,6 +339,10 @@ Cables are a real line item: one 3-wire XH cable per link, roughly two per node 
   level pulse; `bare` nodes only relay.
 - **Global commands:** flood with a hop count (colour, reset, brightness). A host can attach via
   a node on the jig's USB (the ESP32-on-J5 route went with J5; a WiFi variant is rev B).
+- **Piezo:** PWM slice 1, GPIO18 = channel A (BUZZ_A), GPIO19 = channel B (BUZZ_B); same TOP for
+  both, B output inverted (`pwm_set_output_polarity(1, false, true)`) and both at 50 % gives the
+  antiphase 6.6 Vpp drive; TOP sets the pitch (4 kHz resonance). One channel at 50 % and the
+  other held low gives half the swing. Idle both low.
 - **Later:** UART bootloader over the links so a programmed node can flash its neighbours.
 
 ## Decisions for the first batch (2026-09-19)
@@ -356,19 +393,22 @@ the old 3.2 mm track keepout plus the 3.7 mm washer annulus.
   (IOVDD 22) and C14 (DVDD 23) just north of their pins, C6 / C7 (33 / 42) west, C4 (IOVDD 10)
   east, C3 (IOVDD 1) below the SE corner, the 0402 C10 / C11 (ADC_AVDD / VREG_VIN) and C13 / C15
   (VREG_VOUT / DVDD) at the SW corner, C9 + C8 (USB_VDD 48 + IOVDD 49, joined) below pins 48/49.
-  Crystal NE of the north edge: Y1 rot 90 at (26.1, 15.9), XIN 45 deg up-right into its SE pad
-  and on to C1 (29.4, 17.0), XOUT straight up into R1 (25.0, 13.0), node R1 -> Y1's NW pad and
-  C2 (28.05, 12.9); nothing but GND under Y1 / C1 / C2 / R1. Flash U2 rot 180 at (34.6, 33.5)
-  SE of U1, C16 at its VCC pin. LDO U4 NW at (15.5, 13.5) with C17 / C18 / C12. LED D2 NE at
-  (33.4, 14.2) with D4 (DNP) west of it; D1 and C19 in the strip above at (35, 5) / (35.75, 9.5).
+  Crystal NE of the north edge: Y1 rot 90 at (26.75, 15.9); XIN 45 deg up-right, under Y1's SW
+  (GND) pad along y 17.9 and up into its SE pad, on to C1 (30.0, 18.0); XOUT 45 deg up-right
+  beside XIN, then north on x 24.975 into R1 (25.8, 13.0); node R1 -> Y1's NW pad and C2
+  (28.05, 12.4, vertical); nothing but GND under or around Y1 / C1 / C2 / R1 (F.Cu guard pour,
+  see crystal isolation). Flash U2 rot 180 at (34.6, 33.5) SE of U1, C16 at its VCC pin. LDO U4
+  NW at (15.5, 13.5) with C17 / C18 / C12. LED D2 NE at (34.0, 14.2) with D4 (DNP) west of it at
+  (31.4, 14.2) (both 0.6 mm east of the 2026-09-24 spot, for the 2 mm LED rule); C19 right above
+  D2's VDD pin at (34.8, 11.8); D1 in the strip above at (35, 5).
   R15 / R16 (USB 27 R) at (20.2, 32.0 / 33.5). Link resistors: R7 / R8 NE of J1 at (31.2, 11.1 /
-  9.6), R9 / R10 in the pocket east of U1 at (34.4, 26.8 / 28.3), R11 / R12 above J3 at
+  9.05), R9 / R10 in the pocket east of U1 at (34.4, 26.8 / 28.3), R11 / R12 above J3 at
   (23.0 / 24.6, 35.6), R13 / R14 by J4 at (13.2, 24.0) / (16.1, 26.0). R2 (RUN) hangs under the
   RUN row, R3 (QSPI_SS) is below the flash.
-- **Corners.** NE: BZ1 rot 180 at (42.5, 12.0), R17 / R18 below it. SE: U3 rot 180 at
+- **Corners.** NE: BZ1 rot 0 at (42.5, 12.0), R17 / R18 below it (R17 west to BZ1.1, R18 east to BZ1.2). SE: U3 rot 180 at
   (43.8, 33.8) just below J2 (its housing ends 4.4 mm north of the sensor, well outside the
   25 deg field of view), C20 / C21 south of it, the I2C pull-ups R4 / R5 between it and J2. SW:
-  J6 pogo pads at (12.9, 40.3) rot 90 (see Programming jig). NW: SW1 at (11.0, 7.5) with C22 and
+  J6 pogo pads at (12.4, 35.9) rot 90, centred in the corner (see Programming jig). NW: SW1 at (11.0, 7.5) with C22 and
   R6 (SENS_INT pull-up) on its INT run.
 
 Routing plan, in the order pcb.py writes it (one function per block):
@@ -376,8 +416,11 @@ Routing plan, in the order pcb.py writes it (one function per block):
 - **North.** Four GND vias in the exposed pad; TESTEN (19) runs inward onto it. NW fan: 26 / 25 /
   24 bend at y 19.9 / 19.7 / 19.5 onto rows 19.7 / 19.05 / 18.4 (RUN / SWDIO / SWCLK) and run west
   to staggered vias at x 11.4 / 10.0 / 10.7; 23 fans NW into C14 (DVDD via to B.Cu), 22 goes
-  north into C5 (3V3 plane via between C5 and C14). Crystal as above. BUZZ_A / B (15 / 16) run
-  east on y 19.95 / 19.3, under the LEDs, to R17 / R18.
+  north into C5 (3V3 plane via between C5 and C14). Crystal as above.
+- **Piezo.** BUZZ_A / B (29 / 30, U1's NW corner) drop through vias just west of the pins (between
+  R2 and C6), run east under U1's body on B.Cu (y 21.8 / 22.4, north of the exposed-pad vias) and
+  NE under the SCL / SDA rows, surface at (30.4, 19.6) / (31.2, 20.2) east of C1 and run east on
+  F.Cu (y 19.6 / 20.2) to R17 / R18. GPIO -> R track 21.6 / 24.8 mm (was 15.9 / 13.0).
 - **South.** 43+44 joined, west to C11 / C10 and C7's plane via; 45 into C13 / C15 and the DVDD
   via; 46 / 47 straight down to R15 / R16; 48+49 down x 23.6 into C9 and on to C8 (own 3V3 and GND
   vias); 50 to a DVDD via. QSPI fans SE (56 bends first): SD0 / SCLK / SD3 straight into the
@@ -392,12 +435,15 @@ Routing plan, in the order pcb.py writes it (one function per block):
   past R14 to R13 and J4.2. DVDD from C14's via down x 18.8 on B.Cu to the C13 / C15 via and on to
   pin 50's via. SWD lanes on B.Cu at x 10.0 / 10.7 / 11.4 (under J4's housing) to vias inside the
   J6 even-row pads (nothing is soldered there). USB: DM / DP run 0.6 mm apart from the resistors,
-  then each drops through its own gap in the even row to J6.1 / J6.3. LINK_S on B.Cu under U1 and
+  down just east of J6.8 and west along the 1.9 mm gap between the pad rows, each dropping into
+  its odd-row pad J6.1 / J6.3 (pin -> R -> pad 22.0 / 19.8 mm). LINK_S on B.Cu under U1 and
   down x 25.0 to R11 / R12, R11 -> J3.2 on F.Cu. QSPI_SS (BOOT) from a via on the SS row down to
-  y 37.3 and west on B.Cu to J6.8, with R3 on the way.
-- **North-east.** LINK_N on B.Cu up x 31.9 to R7 / R8, R7 -> J1.2 along y 11.4 north of R1 / C2.
+  y 37.3 and west on B.Cu to a via in J6.8, with R3 on the way.
+- **North-east.** LINK_N on B.Cu up x 31.9 to R7 / R8, R7 -> J1.2 along y 9.9 north of C2.
   LED_DIN on B.Cu up x 35.3 to D2's DIN; D2 DOUT -> D4 DIN; LED_VDD from D1's cathode down x 36.65
-  (C19 on it) and west along y 12.6 to both VDD pads; D1's anode on J1.1 (F.Cu, 0.4 mm). SENS_INT
+  and west along y 12.6 to both VDD pads, C19 dropping onto it over D2's VDD pin (LED supply loop
+  C19 -> D2 VDD -> D2 GND via -> In1 -> C19 GND via: 15.5 -> 8.7 mm, of which LED_VDD copper
+  7.7 -> 2.1 mm); D1's anode on J1.1 (F.Cu, 0.4 mm). SENS_INT
   leaves the bundle through a via, runs up x 36.2 and west along y 10.4 on B.Cu (under J1, 1.8 mm
   north of the crystal cluster) to SW1.2, then on F.Cu to C22 and R6.
 - **5 V ring** on B.Cu, 0.8 mm at inset 1.5 mm, square notches around all four M2 keepouts, now
@@ -415,7 +461,7 @@ plane cap -> 5.4; C9 (48) 4.0 -> 3.8; C10 / C11 (43 / 44) 2.8 / 2.9 -> 3.5 / 2.9
 1.4 -> 1.4; C14 (23) 6.6 -> 3.9; C15 (50, through pin 45) 6.4 -> 6.3; C16 (flash) plane cap ->
 1.9; C17 / C18 (LDO) 3.8 / 3.9 -> 4.1 / 1.9; C20 / C21 (U3) 1.7 / 1.7 -> 3.3 / 1.4; GND pad to
 via 0.8 .. 1.8 mm (C20 2.6, through C21's via). Crystal copper (XIN + XOUT + node) 23.3 ->
-16.2 mm; USB (pin -> R -> pad) DM 26.2 -> 23.6 mm, DP 26.7 -> 23.1 mm.
+16.2 mm (18.2 mm after the 2026-09-25 isolation pass: XIN 5.8 -> 6.7, XOUT 7.1 -> 7.5, node 3.3 -> 4.0); USB (pin -> R -> pad) DM 26.2 -> 23.6 mm, DP 26.7 -> 23.1 mm.
 
 Last step of every regeneration: `kicad-cli pcb drc --refill-zones --save-board` so the
 committed board carries the zone fills.
@@ -434,8 +480,7 @@ committed board carries the zone fills.
 2. Known compromises, deliberately left: DVDD pin 50 has no cap of its own (C13 1 uF and C15
    100 nF sit at pin 45; pin 50 reaches them through a via and about 4 mm of B.Cu, as before;
    pins 48..51 leave no room for a pad and a via at pin 50); C8 (IOVDD 49) shares 48/49's
-   joined pads with C9 and sits beside it; LED_VDD passes 0.7 mm east of C2's courtyard (nothing
-   but GND runs under the crystal cluster itself); U3 sits just below J2 rather than deep in the
+   joined pads with C9 and sits beside it; U3 sits just below J2 rather than deep in the
    SE corner, because the QSPI columns and the ring notch take the corner itself; the SWD lanes and
    SENS_INT run under link housings on B.Cu. All fine for a proof of concept at full-speed USB
    and 12 MHz.
