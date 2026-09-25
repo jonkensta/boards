@@ -178,6 +178,9 @@ class Board:
         if not has_attr and comp["flags"]:     # footprints without an attr clause still need the flags
             out.append(["attr"] + sorted(comp["flags"]))
         for vname, ov in comp["variants"].items():
+            # KiCad 10 reads an exclusion a variant leaves out as "off", not as the base value, and the netlist only
+            # exports variant dnp: carry the base exclusions into every variant unless it overrides them
+            ov = {**{k: True for k in ("exclude_from_bom", "exclude_from_pos_files") if k in comp["flags"]}, **ov}
             out.append(["variant", ["name", Q(vname)]] + [[k, "yes" if on else "no"] for k, on in ov.items()])
         pads: dict[str, tuple[float, float]] = {}
         for el in fp[2:]:

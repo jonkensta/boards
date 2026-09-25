@@ -28,11 +28,18 @@ the same hole rule through a keepout annulus per hole (`Board.keepout(..., r_in=
 footprints=False, tracks=True)`), see the README's Decisions.
 
 `pcb.py` also fails if crystal-net copper (XIN, XOUT, the R1-Y1 node) comes within 1.0 mm of any
-other non-GND copper on the same layer, or within 2.0 mm of the LED nets / D4 (`xtal_check.py`,
+other non-GND copper on the same layer, or within 2.0 mm of the LED nets (+5V, LED_DATA, LED_DIN,
+LED_CH1..3) or any pad of the corner LEDs D1..D4 (`xtal_check.py`,
 see the README's crystal isolation), or if the crystal guard pour's outline comes within 0.2 mm of copper
 other than GND and the crystal nets. Audit a board file with
 `python3 boards/net/node/generate/xtal_check.py [board] [radius]` (every net within `radius`,
 default 1.5 mm, plus the crystal track lengths; `--raw` drops the U1 pin-field exemption).
+
+The corner LEDs are laid out once for the NW corner (`LED_LOCAL`, `LED_A` / `LED_B`) and rotated a
+quarter turn per corner with `cw()`, which asserts a square board; the chain lanes are one NW-frame
+path rotated onto the N, W and S edges (`route_leds`). The decoupling-loop numbers in the README
+come from a scratch script run on the DRC-saved board (`--save-board` first: generated segments
+carry net codes, saved ones net names).
 
 `node.net` is git-ignored (`*.net`), so export it before running `pcb.py`. Without the
 `--save-board` step the committed board has unfilled zones. With the flatpak KiCad, `-o` paths

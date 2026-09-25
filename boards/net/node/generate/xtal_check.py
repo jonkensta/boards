@@ -22,11 +22,11 @@ sys.path.insert(0, _d)
 from boardtools import sexpr
 
 MIN_GAP = 1.0                                   # any other non-GND net
-LED_GAP = 2.0                                   # LED switching nets and every D4 pad (D4 is DNP but may be fitted)
+LED_GAP = 2.0                                   # LED switching nets (supply included) and every pad of every LED
 CRYSTAL = ('Net-(U1-XIN)', 'Net-(U1-XOUT)', 'Net-(C2-Pad2)')
-LED_NETS = ('/LED_VDD', '/LED_DIN', 'Net-(D2-DOUT)')
-LED_REFS = ('D2', 'D4')
-EXEMPT = ('GND',)                               # plus 'unconnected-*' pins (no signal), except D4's pads
+LED_NETS = ('+5V', '/LED_DATA', '/LED_DIN', '/LED_CH1', '/LED_CH2', '/LED_CH3')   # +5V is the LEDs' supply since D1 went
+LED_REFS = ('D1', 'D2', 'D3', 'D4')             # the four corner WS2812B-2020s
+EXEMPT = ('GND',)                               # plus 'unconnected-*' pins (no signal), except LED pads
 OX = OY = 50.0                                  # board origin (reported positions are board-local)
 MCU, ESCAPE = 'U1', 1.5                         # crystal copper within ESCAPE of U1's pad field is the pin escape:
                                                 # XIN / XOUT sit between IOVDD 22 and TESTEN at 0.4 mm pitch there
@@ -212,7 +212,7 @@ def gap(a, b):
 
 def limit(net, ref=''):
     """Required gap to crystal copper for a shape of `net` (on footprint `ref`)."""
-    return LED_GAP if net in LED_NETS or ref in LED_REFS[1:] else MIN_GAP
+    return LED_GAP if net in LED_NETS or ref in LED_REFS else MIN_GAP
 
 
 def _clip_out(seg, box):
@@ -239,8 +239,8 @@ def _at(k, d):
 
 
 def gaps(items, codes=None):
-    """{name: (gap mm, layer, nearest crystal net, required mm)} per non-crystal, non-exempt net; D4's pads
-    are reported as 'D4 <net>' whatever their net (they get LED_GAP even when unconnected)."""
+    """{name: (gap mm, layer, nearest crystal net, required mm)} per non-crystal, non-exempt net; LED pads
+    are reported as '<ref> <net>' whatever their net (they get LED_GAP, GND and unconnected pins included)."""
     sh = shapes(items, codes or {})
     pts = [p for n, L, k, d, r in sh if r == MCU and k == 'poly' for p in d]
     box = (min(x for x, _ in pts) - ESCAPE, min(y for _, y in pts) - ESCAPE,
@@ -252,7 +252,7 @@ def gaps(items, codes=None):
         xt += [(n, L, k, d, r)] if k == 'poly' else [(n, L, 'cap', (*piece, d[4]), r) for piece in _clip_out(d[:4], box)]
     best = {}
     for net, L, k, d, ref in sh:
-        led = ref in LED_REFS[1:]                              # every D4 pad, whatever its net (GND included)
+        led = ref in LED_REFS                                  # every LED pad, whatever its net (GND included)
         if not led and (net in CRYSTAL or net in EXEMPT or not net or net.startswith('unconnected-') and 'unconnected-' not in EXEMPT):
             continue
         name = f'{ref} {net}' if led else net

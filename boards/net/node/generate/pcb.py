@@ -4,7 +4,7 @@
 the edge). Floorplan rule: the RP2040 and its immediate support (decoupling, crystal, flash, LDO,
 USB series R) fill the centre square between the connectors; the peripherals take the corners:
 piezo NE (driven from U1's west edge, away from the crystal),
-ToF sensor SE, pogo pads SW, vibration switch NW. M2 holes in the corners with nothing
+ToF sensor SE, pogo pads SW, vibration switch NW, plus one WS2812B LED per corner (rotationally symmetric). M2 holes in the corners with nothing
 but tracks within 3.7 mm of their centres (washer). See README.md (PCB section) for the plan.
 
 Coordinates are board-local mm (origin top-left, y down). Escape rules that shaped this file
@@ -144,7 +144,7 @@ C5 = b.footprint('C5', 23.3, 16.825, 90, ref_fab=True)          # IOVDD 22: 1 3V
 C14 = b.footprint('C14', 20.65, 17.6, 180, ref_fab=True)        # DVDD 23: 1 DVDD (21.425,17.6) 2 GND (19.875,17.6)
 Y1 = b.footprint('Y1', 26.75, 16.0, 90, ref_fab=True)           # 1 XIN SE, 2 GND NE, 3 node NW, 4 GND SW
 R1 = b.footprint('R1', 25.8, 13.0, 180, ref_fab=True)         # 2 XOUT west on the XOUT column, 1 node east
-C1 = b.footprint('C1', 30.0, 18.0, 180, ref_fab=True)           # 2 XIN west, 1 GND east (low: >= 2 mm from D4)
+C1 = b.footprint('C1', 30.0, 18.0, 180, ref_fab=True)           # 2 XIN west, 1 GND east (kept low, from when the LEDs sat NE of the crystal)
 C2 = b.footprint('C2', 28.05, 12.4, 90, ref_fab=True)           # vertical NE of R1: 2 node north, 1 GND south
 R2 = b.footprint('R2', 18.5, 20.775, 90, ref_fab=True)          # RUN pull-up: 2 RUN (18.5,19.95) hanging below the RUN row, 1 3V3 (18.5,21.6)
 # west edge: IOVDD 33 -> C6, IOVDD 42 -> C7
@@ -171,11 +171,43 @@ U4 = b.footprint('U4', 15.5, 13.5, 0, ref_pos=(0, -2.6))        # 1 VIN (14.36,1
 C17 = b.footprint('C17', 12.2, 13.5, 90, ref_fab=True)          # 10u in: 1 +5V (12.2,14.275) south, 2 GND north
 C18 = b.footprint('C18', 18.4, 13.5, 270, ref_fab=True)         # 1 3V3 (18.4,12.725) north, 2 GND south
 C12 = b.footprint('C12', 15.5, 16.2, 0, ref_fab=True)
-# NE of the centre square: the LED, D4 (DNP) chained below it; D1 drops J1.1's 5 V for them from the NE corner strip
-D2 = b.footprint('D2', 34.0, 14.2, 90, ref_fab=True)            # 4 VDD TL, 3 DIN TR, 2 GND BR, 1 DOUT BL
-D4 = b.footprint('D4', 31.4, 14.2, 90, ref_fab=True)            # west of D2: DIN (31.35,13.285) TR, VDD (30.25,13.285) TL, GND (31.35,15.115) BR
-C19 = b.footprint('C19', 34.8, 11.8, 0, ref_fab=True)           # right above D2: 1 LED_VDD west (over D2's VDD pin), 2 GND east + via
-D1 = b.footprint('D1', 35.0, 5.0, 180, ref_fab=True)            # 2 A +5V (33.35,5.0) west, 1 K LED_VDD (36.65,5.0) east
+# ---- corner LEDs --------------------------------------------------------------------------------
+# One WS2812B-2020 per corner, 4-fold rotationally symmetric: the NW layout (LED_LOCAL) is rotated by 90 deg steps
+# about the board centre (cw(): NW -> NE -> SE -> SW), so each LED sits at the same offset from its corner and the
+# node looks the same whichever way up it is tiled. NW frame: LED at (LED_A, LED_B) rot 90 (VDD TL, DIN TR,
+# DOUT BL, GND BR), cap left of VDD with VDD via onto the 5 V ring's notch, GND vias. Chain D1 NE -> D2 NW ->
+# D3 SW -> D4 SE (quadrant order); each link runs along one edge (N, W, S) on F.Cu at LANE from the edge.
+assert W == H, 'corner LED symmetry assumes a square board'
+LED_A, LED_B = 4.0, 8.8                                           # NW LED centre: in from the W edge / down from the N edge
+LANE = 3.45                                                       # chain lane inset (= the LED's DOUT pad column)
+
+
+def cw(p, k=1):
+    """Rotate a board point k quarter turns clockwise (as seen on the board, y down) about the centre."""
+    x, y = p
+    for _ in range(k % 4):
+        x, y = W - y, x
+    return (round(x, 4), round(y, 4))
+
+
+CORNERS = {'NW': 0, 'NE': 1, 'SE': 2, 'SW': 3}                   # quarter turns from the NW frame
+LEDS = {'D1': ('NE', 'C19'), 'D2': ('NW', 'C23'), 'D3': ('SW', 'C24'), 'D4': ('SE', 'C25')}   # chain order D1 .. D4
+LED_LOCAL = {'led': (LED_A, LED_B), 'cap': (2.2, LED_B - 0.435), 'vdd_via': (2.8, 7.5), 'cap_gnd_via': (2.45, LED_B + 0.95),
+             'led_gnd_via': (LED_A + 1.35, LED_B + 0.915)}
+LP = {}                                                           # per LED: board positions of the local points + pads
+for ref, (corner, cref) in LEDS.items():
+    k = CORNERS[corner]
+    pos = {n: cw(q, k) for n, q in LED_LOCAL.items()}
+    globals()[ref] = b.footprint(ref, *pos['led'], 90 - 90 * k, ref_fab=True)
+    globals()[cref] = b.footprint(cref, *pos['cap'], 270 - 90 * k, ref_fab=True)   # 1 +5V beside the LED's VDD pad, 2 GND
+    LP[ref] = dict(pos, k=k, cap=cref)
+# LED data buffer U5 (5 V AHCT) in the N strip east of J1, with C26; D1 (NE) is the first pixel
+U5 = b.footprint('U5', 35.3, 7.0, 90, ref_fab=True)               # 2 A bottom-mid, 1 /OE bottom-left, 3 GND bottom-right, 4 Y top-right, 5 VCC top-left
+C26 = b.footprint('C26', 33.0, 6.3, 270, ref_fab=True)          # 1 +5V top (level with U5's VCC), 2 GND bottom
+# protection / power path: D5 TVS on the LDO's +5V feed, D6 Schottky from the jig's USB 5 V (J6.7) onto +5V
+D5 = b.footprint('D5', 10.4, 17.3, 0, ref_fab=True)               # 1 K +5V west (on the J4.1 feed), 2 A GND east
+D6 = b.footprint('D6', 15.4, 43.0, 0, ref_fab=True)               # 1 K +5V west -> via -> ring, 2 A J6.7 east
+R19 = b.footprint('R19', 40.4, 37.6, 270, ref_fab=True)           # BOOT 1k by the flash's SS pin: 1 QSPI_SS top, 2 BOOT bottom
 # links: 100 R series + 4k7 pull-up. R7 / R8 (N) by J1, R9 / R10 (E) in the pocket east of U1 with LE going on
 # to J2.2 on B.Cu, R11 / R12 (S) above J3, R13 / R14 (W) by J4
 R7 = b.footprint('R7', 31.2, 11.1, 180, ref_fab=True)          # N: 1 LN (32.025,11.1) east, 2 J1 (30.375,11.1) -> west under R1/C2 -> J1.2
@@ -198,11 +230,11 @@ SW1 = b.footprint('SW1', 11.0, 7.5, 0, ref_fab=True, val_pos=(0, -3.6))   # NW: 
 C22 = b.footprint('C22', 15.5, 7.5, 90, ref_fab=True)           # debounce, on the INT run from SW1.2 to R6
 U3 = b.footprint('U3', 43.8, 33.8, 180, ref_fab=True)         # SE: ToF sensor. N row y 33.0: 7 INT 42.2, 8 NC, 9 SDA 43.8, 10 SCL 44.6, 11 3V3 45.4; W 6 GND, 5 XSHUT (42.2,34.6); S 4..2 GND, 1 3V3 (45.4,34.6); E 12 GND
 C20 = b.footprint('C20', 47.0, 35.8, 270, ref_fab=True)         # 1 3V3 (47.0,35.025) north, 2 GND south
-C21 = b.footprint('C21', 45.5, 36.8, 270, ref_fab=True)         # 1 3V3 (45.5,36.025) north, 2 GND south
+C21 = b.footprint('C21', 44.2, 36.3, 180, ref_fab=True)         # below U3, clear of the SE LED: 1 3V3 east, 2 GND west
 J6 = b.footprint('J6', J6_AT[0], J6_AT[1], 90, ref_pos=(0, -7.0))   # SW: pogo pads (no paste), centred between J3, J4 and H3
 
 if __name__ == '__main__' and '--pads' in sys.argv:
-    for ref in sys.argv[2:] or ('U1', 'U2', 'Y1', 'J6', 'U3', 'U4', 'D2', 'D4', 'D1'):
+    for ref in sys.argv[2:] or ('U1', 'U2', 'Y1', 'J6', 'U3', 'U4', 'U5', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'R19'):
         print(ref, globals()[ref])
     sys.exit()
 
@@ -215,7 +247,8 @@ SD3, SCLK, SD0, SD2, SD1, SS = (N('U1', p) for p in ('51', '52', '53', '54', '55
 LN, LE, LS, LW, LDIN = (N('U1', p) for p in ('2', '3', '4', '5', '6'))
 XSHUT, INT, SDA, SCL = N('U1', '7'), N('U1', '8'), N('U1', '13'), N('U1', '14')
 BA, BB = N('U1', '29'), N('U1', '30')
-LVDD, J6DM, J6DP, J3S, DOUT = N('D2', '4'), N('R15', '1'), N('R16', '1'), N('R11', '2'), N('D2', '1')
+J6DM, J6DP, J3S = N('R15', '1'), N('R16', '1'), N('R11', '2')
+LDI, BOOT, USB5 = N('U5', '4'), N('R19', '2'), N('D6', '2')     # LDIN (U1 GPIO4) is the 3.3 V LED_DATA into U5
 
 PLACE_ONLY = '--place' in sys.argv
 
@@ -276,6 +309,7 @@ def route_south():
     for net, pin, xe in ((SD2, '3', 39.6), (SD1, '2', 40.2), (SS, '1', 40.8)):
         x0 = SX({SS: 56, SD1: 55, SD2: 54}[net]) + rows[net] - (28.1 + 0.2 * {SS: 0, SD1: 1, SD2: 2}[net])
         T(net, (x0, rows[net]), (xe - 0.6, rows[net]), (xe, rows[net] + 0.6), (xe, U2[pin][1]), U2[pin])
+    T(SS, (40.8, U2['1'][1]), R19['1'])                                          # SS on to the BOOT resistor just below pin 1
     pad_via(G, *U2['4'], U2['4'][0] - 1.6, U2['4'][1])
     T(V3, U2['8'], (U2['8'][0] - 0.5, C16['1'][1]), C16['1']); pad_via(V3, *C16['1'], C16['1'][0], C16['1'][1] - 0.8); pad_via(G, *C16['2'], C16['2'][0], C16['2'][1] - 0.8)
 
@@ -336,8 +370,8 @@ def route_west():
     for net, lx, pad in ((SWDIO, LANE_SWDIO_V, '2'), (SWCLK, LANE_SWCLK_V, '4'), (RUN, LANE_RUN_V, '6')):
         y0 = {SWDIO: 19.05, SWCLK: 18.4, RUN: 19.7}[net]
         px = J6[pad][0]
-        vy = J6[pad][1] - 0.575                                                  # via in the pad's north half
-        T(net, (lx, y0), (lx, vy - 1.2 - abs(px - lx)), (px, vy - 1.2), (px, vy), layer=B); V(net, px, vy)
+        vy = J6[pad][1] - J6_VIA                                                 # via just north of the pad: pogo tips land on flat copper
+        T(net, (lx, y0), (lx, vy - 1.2 - abs(px - lx)), (px, vy - 1.2), (px, vy), layer=B); V(net, px, vy); T(net, (px, vy), J6[pad])
 
 
 def route_southwest():
@@ -352,10 +386,14 @@ def route_southwest():
     T(J3S, R11['2'], (23.0, 38.0), (J3['2'][0], 38.9), J3['2'])
     pad_via(V3, *R12['1'], R12['1'][0] + 0.8, R12['1'][1])
     V(SS, 32.0, 29.1); T(SS, (32.0, 29.1), (32.0, 29.7))
-    sv = (J6['8'][0], J6['8'][1] + 0.9)                                          # via in J6.8's south half
-    T(SS, (32.0, 29.1), (32.0, 37.3), (sv[0] + 37.3 - sv[1], 37.3), sv, layer=B); V(SS, 32.0, 37.3); V(SS, *sv)
+    T(SS, (32.0, 29.1), (32.0, 37.3), layer=B); V(SS, 32.0, 37.3)               # pull-up R3 below the flash
     T(SS, (32.0, 37.3), R3['2']); pad_via(V3, *R3['1'], R3['1'][0] + 0.8, R3['1'][1])
-    pad_via(G, *J6['5'], J6['5'][0], J6['5'][1] + 1.175, w=P)
+    # BOOT: R19 hangs off SS at the flash's pin 1 (route_south), so only the post-resistor net runs to J6.8 (B.Cu, y 38.3,
+    # north of J3's pins), up to a via just north of the pad
+    bv, jv = (R19['2'][0], R19['2'][1] + 0.9), (J6['8'][0], J6['8'][1] - J6_VIA)
+    T(BOOT, R19['2'], bv); V(BOOT, *bv); V(BOOT, *jv); T(BOOT, jv, J6['8'])
+    T(BOOT, bv, (bv[0] - (bv[1] - 38.3), 38.3), (19.0, 38.3), (17.2, 36.5), (17.2, jv[1] + 17.2 - jv[0]), jv, layer=B)
+    pad_via(G, *J6['5'], J6['5'][0], J6['5'][1] + 2.05, w=P)                     # GND via below the pad, not in it
 
 
 def route_southeast():
@@ -369,25 +407,20 @@ def route_southeast():
     T(SDA, (44.3, 29.9), R4['2'], (43.8, 31.4), U3['9'])
     T(INT, (41.4, 32.3), (41.9, 32.3), (42.2, 32.6), U3['7']); T(XSHUT, (41.6, 35.9), U3['5'])
     pad_via(V3, *R4['1'], R4['1'][0], 30.1)
-    T(V3, R5['1'], (47.1, 32.6), (45.7, 32.6), U3['11']); T(V3, U3['1'], (45.4, 35.4), C21['1'], C20['1'])
-    T(V3, U3['11'], (46.05, 33.0), (46.05, 34.6), U3['1']); T(V3, (46.05, 34.6), C20['1']); pad_via(V3, *C21['1'], 44.7, 36.2)
+    T(V3, R5['1'], (47.1, 32.6), (45.7, 32.6), U3['11']); T(V3, U3['1'], (45.4, 35.4), C21['1'])
+    T(V3, U3['11'], (46.05, 33.0), (46.05, 34.6), U3['1']); T(V3, (46.05, 34.6), C20['1']); T(V3, C21['1'], (44.2, 37.2)); V(V3, 44.2, 37.2)   # U3 / C21 plane via
     T(G, U3['6'], U3['12']); T(G, U3['2'], (U3['2'][0], 33.8)); T(G, U3['3'], (U3['3'][0], 33.8)); T(G, U3['4'], (U3['4'][0], 33.8))
-    pad_via(G, *U3['3'], 43.8, 35.6); T(G, C21['2'], C20['2']); pad_via(G, *C21['2'], 45.5, 38.4)
+    pad_via(G, *U3['3'], 43.8, 35.6); T(G, C21['2'], (43.8, 35.6)); pad_via(G, *C20['2'], 45.6, 37.3)
     T(N('R9', '2'), (R9['2'][0] + 0.75, R9['2'][1]), (37.2, 25.6), (37.2, 24.0), J2['2'], layer=B)
 
 
 def route_northeast():
-    """LED cluster and its supply (D1 from J1.1), LINK_N up the west side of the LEDs to R7 / R8 and J1.2, LED_DIN up
-    their east side, INT further east and then west under J1 to SW1."""
+    """LINK_N up x 31.9 to R7 / R8 and J1.2, LED_DATA up x 35.3 (B.Cu, then F.Cu over INT's row) into U5, INT further
+    east and then west under J1 to SW1."""
     T(LN, (31.9, 27.7), (31.9, 12.0), layer=B); V(LN, 31.9, 12.0); T(LN, (31.9, 12.0), R7['1'], (R7['1'][0], R8['2'][1]), R8['2'])
     T(N('R7', '2'), R7['2'], (R7['2'][0] - (R7['2'][1] - LINK_N_Y), LINK_N_Y), (J1['2'][0] + 0.8, LINK_N_Y), (J1['2'][0], LINK_N_Y - 0.8), J1['2'])
     pad_via(V3, *R8['1'], R8['1'][0] - 0.8, R8['1'][1])
-    T(LDIN, (32.9, 25.1), (35.3, 22.7), (35.3, 13.485), layer=B); V(LDIN, 35.3, 13.485); T(LDIN, (35.3, 13.485), D2['3'])
-    T(DOUT, D2['1'], D4['3'])
-    T(LVDD, D1['1'], (D1['1'][0], 12.6), (D4['4'][0], 12.6), D4['4']); T(LVDD, (D2['4'][0], 12.6), D2['4'])
-    T(LVDD, C19['1'], (C19['1'][0], 12.6)); pad_via(G, *C19['2'], C19['2'][0], C19['2'][1] - 0.8)     # C19 over D2's VDD pin
-    pad_via(G, *D2['2'], D2['2'][0], D2['2'][1] + 0.8); pad_via(G, *D4['2'], D4['2'][0] - 0.75, D4['2'][1] + 0.85)
-    T(V5, J1['1'], (27.9, 6.7), (27.9, 5.0), D1['2'], w=P)
+    T(LDIN, (32.9, 25.1), (35.3, 22.7), (35.3, 13.485), layer=B); V(LDIN, 35.3, 13.485); T(LDIN, (35.3, 13.485), U5['2'])   # 3.3 V data up to U5
     # INT north to SW1 (vib switch, NW corner), west under J1
     V(INT, 36.0, 22.1); T(INT, (36.0, 22.1), (36.2, 21.9), (36.2, 10.4), (SW1['2'][0], 10.4), SW1['2'], layer=B)
     T(INT, SW1['2'], (SW1['2'][0] + 0.8, R6['2'][1]), R6['2']); pad_via(V3, *R6['1'], R6['1'][0], 5.8)
@@ -402,6 +435,7 @@ def route_northwest():
     pad_via(G, *C17['2'], C17['2'][0] - 0.8, C17['2'][1]); pad_via(G, *U4['2'], U4['2'][0] + 0.9, U4['2'][1], w=S)
     T(V3, U4['5'], (C18['1'][0], U4['5'][1]), C18['1'], w=P); pad_via(V3, *C18['1'], C18['1'][0] + 0.8, C18['1'][1]); pad_via(G, *C18['2'], C18['2'][0] + 0.8, C18['2'][1])
     pad_via(V3, *C12['1'], C12['1'][0] - 0.8, C12['1'][1]); pad_via(G, *C12['2'], C12['2'][0] + 0.8, C12['2'][1])
+    T(V5, D5['1'], (8.8, D5['1'][1]), w=P); pad_via(G, *D5['2'], D5['2'][0] + 0.9, D5['2'][1], w=P)   # TVS across the LDO's 5 V feed
 
 
 def route_buzzer():
@@ -419,10 +453,28 @@ def route_buzzer():
     T(BB, fb, (R18['1'][0] - 1.0, fb[1]), (R18['1'][0], fb[1] - 1.0), R18['1'])
 
 
+def route_leds():
+    """U5 (VCC from the ring on a B.Cu stub, C26 beside VCC, /OE into C26's GND) drives D1; per corner the NW layout
+    rotated: cap +5V pad -> LED VDD with a via onto the ring, GND vias for the cap and the LED; the chain lanes are one
+    NW-frame path (D2 DOUT down the W edge, 45 deg round H3 into D3 DIN) rotated onto the N, W and S edges."""
+    vv = (U5['5'][0], U5['5'][1] - 0.75)
+    T(V5, U5['5'], C26['1']); T(V5, U5['5'], vv); V(V5, *vv); T(V5, vv, (vv[0], 1.5), w=P, layer=B)
+    pad_via(G, *C26['2'], C26['2'][0] - 0.75, C26['2'][1]); T(G, U5['1'], C26['2']); pad_via(G, *U5['3'], 37.0, 8.9)
+    T(LDI, U5['4'], (U5['4'][0] + 0.55, 6.4), (D1['3'][0] - 0.6, 6.4), (D1['3'][0], 5.8), D1['3'])
+    for ref, lp in LP.items():
+        fp, cap = globals()[ref], globals()[lp['cap']]
+        T(V5, cap['1'], fp['4']); T(V5, lp['vdd_via'], cw((LED_LOCAL['vdd_via'][0], LED_B - 0.915), lp['k'])); V(V5, *lp['vdd_via'])
+        pad_via(G, *cap['2'], *lp['cap_gnd_via']); pad_via(G, *fp['2'], *lp['led_gnd_via'])
+    t = D3['3']                                                                  # NW frame: D2 DOUT -> D3 DIN
+    path = [D2['1'], (LANE, t[1] - 0.515 - (t[0] - LANE)), (t[0], t[1] - 0.515), t]
+    for src, k in (('D1', 1), ('D2', 0), ('D3', 3)):
+        T(N(src, '1'), *[cw(p, k) for p in path])
+
+
 def route_guard():
     """F.Cu GND guard pour over the crystal cluster (Y1, C1, C2, R1, XIN / XOUT), stitched to In1 around its edge; C1 / C2
-    GND pads get their own short vias. The outline (GUARD) is notched around R7 and D4 so that it encloses no copper but
-    GND and the crystal nets (asserted, >= GUARD_CLR from the outline)."""
+    GND pads get their own short vias. The outline (GUARD) is notched around R7 and the old D4 spot so that it encloses no copper but
+    GND and the crystal nets (asserted, >= GUARD_CLR from the outline). The D4 notch dates from the old centre LEDs."""
     import math
     from xtal_check import shapes, gap, _inside, _pp, CRYSTAL
     b.zone('GND', 'crystal guard', 0, 0, 1, 1, layer='F.Cu', priority=1)
@@ -464,9 +516,10 @@ def route_guard():
 
 
 LANE_SWDIO_V, LANE_SWCLK_V, LANE_RUN_V = 10.0, 10.7, 11.4
+J6_VIA = 2.025                                     # J6 even-row / BOOT vias: pad centre -> via centre (pad half-length 1.575 + 0.45)
 BUZ_ROW = (21.8, 22.4)                             # BUZZ_A / BUZZ_B B.Cu rows under U1 (north of the exposed-pad vias)
 GUARD = [(24.12, 10.75), (29.4, 10.75), (29.4, 11.85), (30.2, 11.85), (30.2, 15.8), (31.5, 15.8), (31.5, 19.0),
-         (29.6, 19.0), (29.6, 19.45), (24.12, 19.45)]    # crystal guard pour outline (clockwise), notched around R7 and D4
+         (29.6, 19.0), (29.6, 19.45), (24.12, 19.45)]    # crystal guard pour outline (clockwise), notched around R7 and the old (pre-corner-LED) D4 spot
 GUARD_CLR, STITCH = 0.2, 2.0                      # foreign copper to the guard outline; stitching pitch
 LINK_N_Y = 9.9                                     # R7 -> J1.2 row, >= 1 mm north of C2
 if not PLACE_ONLY:
@@ -479,6 +532,7 @@ if not PLACE_ONLY:
     route_northeast()
     route_northwest()
     route_buzzer()
+    route_leds()
 
 
 def route_ring():
@@ -489,8 +543,9 @@ def route_ring():
     T(V5, *RING, w=0.8, layer=B)
     T(V5, J1['1'], (J1['1'][0], 1.5), w=P, layer=B); T(V5, J2['1'], (46.5, J2['1'][1]), w=P, layer=B)
     T(V5, J3['1'], (J3['1'][0], 46.5), w=P, layer=B); T(V5, J4['1'], (1.5, J4['1'][1]), w=P, layer=B)
-    v7 = (J6['7'][0], J6['7'][1] + 2.375)
-    T(V5, J6['7'], v7, w=P); V(V5, *v7); T(V5, v7, (J6['7'][0], 46.5), w=P, layer=B)
+    x7, x6 = J6['7'][0], D6['2'][0]                                              # J6.7 (jig USB 5 V) -> D6 -> via -> ring
+    T(USB5, J6['7'], (x7, 40.2), (x6, 40.2 + x6 - x7), D6['2'], w=P)
+    kv = (D6['1'][0] - 1.05, D6['1'][1]); T(V5, D6['1'], kv, w=P); V(V5, *kv); T(V5, kv, (kv[0], 46.5), w=P, layer=B)
 
 
 if not PLACE_ONLY:

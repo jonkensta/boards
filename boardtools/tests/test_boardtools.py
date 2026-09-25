@@ -143,7 +143,10 @@ PCBGEN_NETLIST = '''(export (version "E")
       (property (name "dnp"))
       (variants (variant (name "vib") (property (name "dnp") (value "0"))))
       (tstamps "aaaa"))
-    (comp (ref "TP1") (value "GND") (footprint "T:noattr") (property (name "exclude_from_bom")) (tstamps "bbbb")))
+    (comp (ref "TP1") (value "GND") (footprint "T:noattr") (property (name "exclude_from_bom")) (tstamps "bbbb"))
+    (comp (ref "SW1") (value "sw") (footprint "T:cap") (property (name "exclude_from_pos_files")) (property (name "dnp"))
+      (variants (variant (name "vib") (property (name "dnp") (value "0"))))
+      (tstamps "cccc")))
   (nets
     (net (code "1") (name "GND") (node (ref "C1") (pin "1")) (node (ref "TP1") (pin "1")))
     (net (code "2") (name "SIG") (node (ref "C1") (pin "2")))))
@@ -228,6 +231,16 @@ class PcbgenTests(unittest.TestCase):
         fps = self.fps(root)
         self.assertEqual(list(sexpr.children(fps["C1"], "variant")), [["variant", ["name", "vib"], ["dnp", "no"]]])
         self.assertEqual(list(sexpr.children(fps["TP1"], "variant")), [])
+
+    def test_variant_keeps_base_exclusions(self):
+        # KiCad 10 treats an exclusion missing from a variant as off: a hand-soldered part populated only in a
+        # variant must stay out of that variant's position file
+        b = pcbgen.Board(self.template, pcbgen.Netlist(self.netlist), "x.kicad_sch", 10, 10, origin=(0, 0))
+        b.footprint("SW1", 2, 3)
+        out = os.path.join(self.tmp.name, "sw.kicad_pcb")
+        b.write(out)
+        fp = self.fps(sexpr.parse(open(out).read()))["SW1"]
+        self.assertEqual(list(sexpr.children(fp, "variant")), [["variant", ["name", "vib"], ["exclude_from_pos_files", "yes"], ["dnp", "no"]]])
 
     def test_solid_pads_and_no_paste(self):
         b = pcbgen.Board(self.template, pcbgen.Netlist(self.netlist), "x.kicad_sch", 10, 10, origin=(0, 0))
