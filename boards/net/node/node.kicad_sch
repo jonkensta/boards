@@ -17405,7 +17405,7 @@
 		)
 		(uuid "2a562122-f21a-4f17-9483-b324df47d5c4")
 	)
-	(text "Piezo element, not a self-oscillating buzzer: pitch = drive frequency (PWM/PIO). Two GPIOs in antiphase give 6.6 Vpp; one GPIO and the other held low gives half."
+	(text "Piezo element, not a self-oscillating buzzer: pitch = drive frequency (PWM/PIO). Drive GPIO18/19 (PWM slice 1) in antiphase for 6.6 Vpp; always balanced, never DC across the element."
 		(exclude_from_sim no)
 		(at 350.52 104.14 0)
 		(effects

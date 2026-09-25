@@ -366,7 +366,7 @@ def route_west():
     # DVDD: C14 via -> B.Cu down x 18.8 -> C13 / C15 via -> pin 50 via
     T(DVDD, (C14['1'][0], 16.7), (18.8, 19.725), (18.8, 29.6), (21.1, 29.6), (21.1, 29.75), layer=B)
     T(DVDD, (21.1, 29.75), (23.5, 29.9), (SX(50), 29.9), layer=B)
-    # SWD lanes (B.Cu) down to vias inside the J6 even-row pads
+    # SWD lanes (B.Cu) down to vias just outside the J6 even-row pads (stubbed in on F.Cu)
     for net, lx, pad in ((SWDIO, LANE_SWDIO_V, '2'), (SWCLK, LANE_SWCLK_V, '4'), (RUN, LANE_RUN_V, '6')):
         y0 = {SWDIO: 19.05, SWCLK: 18.4, RUN: 19.7}[net]
         px = J6[pad][0]

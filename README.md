@@ -26,7 +26,7 @@ boards/<id>/out/        generated outputs (git-ignored)
 | --- | --- | --- |
 | [`chromatone/isolator`](boards/chromatone/isolator/README.md) | ISO7720 isolated SPI daughterboard, Pi (3.3 V) -> SK9822 strip (5 V), 46 x 30 mm | Rev A layout done, review-clean; pick passives in JLCPCB's BOM tool, then orderable |
 | [`chromatone/dac`](boards/chromatone/dac/README.md) | PCM5102A I2S line-out DAC (experiment), 56 x 36 mm | Rev A layout done, review-clean, fully numbered BOM; not yet built |
-| [`net/node`](boards/net/node/README.md) | RP2040 sensor-net node with neighbour links and sensor build variants | Parked: schematic done, no layout, no firmware |
+| [`net/node`](boards/net/node/README.md) | RP2040 sensor-net node with neighbour links, four corner LEDs and sensor build variants, 48 x 48 mm, 4 layers | Rev A layout done and reviewed; ready to order after the owner's GUI check and quote (see its Resume path); no firmware yet |
 
 `boards/chromatone/README.md` holds the Chromatone-wide decisions, strip wiring, order and
 bench checklists. Every board so far was generated from `generate/` scripts (see below) and

@@ -333,7 +333,7 @@ s.text('debounce', g(VX + 8), g(VY + 2), size=1.0)
 
 # ---- BZ1 piezo sounder: 9 mm SMD element driven antiphase from two GPIOs through 100 R -------------
 BX, BY = 300, 92
-s.text('Piezo element, not a self-oscillating buzzer: pitch = drive frequency (PWM/PIO). Two GPIOs in antiphase give 6.6 Vpp; one GPIO and the other held low gives half.', g(BX - 24), g(BY - 10))
+s.text('Piezo element, not a self-oscillating buzzer: pitch = drive frequency (PWM/PIO). Drive GPIO18/19 (PWM slice 1) in antiphase for 6.6 Vpp; always balanced, never DC across the element.', g(BX - 24), g(BY - 10))
 BZ = s.place('Device', 'Buzzer', 'BZ1', g(BX), g(BY), value='PKMCS0909E4000-R1', footprint='Buzzer_Beeper:Buzzer_Murata_PKMCS0909E',
              description='Piezo sounder element, 9 x 9 x 1.9 mm SMD, 4 kHz, 3 Vp-p', fields={'MPN': 'PKMCS0909E4000-R1', 'Manufacturer': 'Murata', 'LCSC': 'C910763'},
              prop_pos={'Reference': (8.0, -1.27), 'Value': (8.0, 1.27)})

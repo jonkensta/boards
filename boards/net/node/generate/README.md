@@ -7,8 +7,9 @@ supply pins are the only direct wiring. `sch-1.png` is the rendered sheet.
 
 ```sh
 python3 boards/net/node/generate/schematic.py
-kicad-cli sch erc --severity-error --severity-warning --exit-code-violations -o /tmp/erc.rpt boards/net/node/node.kicad_sch
-kicad-cli sch export pdf -o /tmp/node.pdf boards/net/node/node.kicad_sch && pdftoppm -r 100 -png -singlefile /tmp/node.pdf boards/net/node/generate/sch-1
+mkdir -p boards/net/node/out
+kicad-cli sch erc --severity-error --severity-warning --exit-code-violations -o boards/net/node/out/erc-gen.rpt boards/net/node/node.kicad_sch
+kicad-cli sch export pdf -o boards/net/node/out/node.pdf boards/net/node/node.kicad_sch && pdftoppm -r 100 -png -singlefile boards/net/node/out/node.pdf boards/net/node/generate/sch-1
 ```
 
 `pcb.py` places and routes the board (48 x 48 mm, 4 layers; see the README's PCB section) from

@@ -5,7 +5,17 @@ neighbour links. A node that detects something lights up and tells its neighbour
 repeat the excitation one level weaker, so a wave ripples outwards and dies away. Any number
 of nodes are tiled and cabled edge to edge (grid, hexagonal patch, irregular drape over a bush).
 
-## Status: four corner LEDs and the pre-order fixes in, DRC clean, not reviewed (2026-09-25)
+## Status: rev A ready to order pending the owner's GUI look and quote; reviewed (2026-09-25)
+
+**Where it stands (2026-09-25, commit b260c7f):** every layout change of 2026-09-24/25 passed a
+reproduction-based Codex review to NO SUBSTANTIVE FINDINGS (floorplan and J5 removal, crystal
+isolation, corner LEDs and the pre-order fixes). A three-model pre-order panel (Codex, Kimi K3,
+Gemini; Gemini weighted 1/4 at the owner's request) ran on 5175f76: Codex found the missing
+BOOT 1 k (confirmed against the RP2040 hardware design guide p.9), hot-plug overvoltage, USB
+backfeed and a piezo DC drive mode; Kimi's XSHUT claim was wrong (pads reset pulled down,
+datasheet table 341). All accepted findings are fixed in b260c7f. What remains is in Resume path
+items 4..7: the owner's GUI / 1:1 paper check, the quote, a small first batch, loose parts and cables.
+
 
 2026-09-25: the single LED D2 (and the DNP D4) became **four WS2812B-2020-V6, one per corner** (D1..D4,
 chained NE -> NW -> SW -> SE), run from +5V through a 5 V buffer U5 instead of the old D1 drop diode; the
@@ -152,9 +162,10 @@ numbers verified 2026-09-24 via `make parts` (see Parts and cost). Next: review,
   with 1 uF, one 100 nF per IOVDD pin, 10 uF bulk.
 - **5 V rail through the net, ME6211C33M5G 3.3 V LDO per node** (SOT-23-5, 500 mA, stable
   with ceramic input/output caps; AMS1117 was rejected because it wants a low-ESR tantalum
-  output cap). Node draw is roughly 30 to 50 mA for the RP2040, up to 60 mA for the LED, about
-  20 mA for the VL53L0X. A dozen nodes on 5 V is fine; bus voltage and bucks come later if the
-  LED gets serious (see Decisions for the first batch).
+  output cap). Node draw is roughly 30 to 50 mA for the RP2040, about 20 mA for the VL53L0X and, since
+  2026-09-25, up to about 145 mA for the four corner LEDs at full white (about 215 mA per node;
+  current budget in Decisions for the first batch). Bus voltage and bucks come later if the
+  LEDs get serious.
 - **No USB connector.** J6 is a bare 2x4 SMD pad array on 2.54 mm pitch (footprint
   `boards:PogoPads_2x04_P2.54mm`, the stock 2x4 SMD header pads without the paste layer so the
   stencil leaves them bare; nothing fitted, excluded from BOM and position files)
@@ -600,22 +611,38 @@ committed board carries the zone fills.
    J3 housings; the SE LED is 5.4 mm from U3 (check ranging with D4 lit); D5 cannot hold the LDO
    under its 6.5 V maximum on a hard ring (damp at the power tails). All fine for a proof of
    concept at full-speed USB and 12 MHz.
-3. **Review the new layout** (not yet done): a reproduction-based Codex round on the floorplan,
-   the hole-clearance enforcement (annulus plus assertion), the J5 removal and the 2026-09-25
-   changes (corner LEDs and their chain, U5 in place of D1, D5 / D6 / R19, the J6 vias, the
-   variant pos-file carry-over in `pcbgen`), as for the earlier layouts. Order the boards **unpanelised** (economic PCBA, 48 x 48 needs no rails): the
-   housings overhang 1.1 mm, so a JLCPCB panel would need > 2.2 mm between boards plus tolerance,
-   not the default 2 mm.
+3. Reviews are done (see Status). Re-run a Codex round after any further layout change, as before;
+   `generate/xtal_check.py` and the pcb.py assertions (connector centring, hole clearance, guard
+   pour) must keep passing. Panelisation is fine: J1..J4 are hand-soldered after the panel is
+   broken out, so the 1.1 mm housing overhang does not constrain the panel gap; compare a quote
+   for 30 singles against 8 panels of 2 x 2 (tab-routed; economic PCBA has no V-cut).
 4. Review the layout in the GUI once (silkscreen, the 1.1 mm connector overhang, U3's clearance
    to J2's housing, the corner LEDs' orientation marks). Silk is minimal: connector refs sit inside the
    housings, U1 / U3 and the passives have no silk reference.
-5. `make jlcpcb BOARD=net/node`, order (see Decisions for the first batch), check the four LEDs'
-   and U5's orientation in the JLCPCB preview; J1..J4 are not in the CPL (hand-soldered, leave their
-   BOM lines unselected; every housing mouth must face out). Cables:
-   JST-XH 3-pin pre-made, one length; XH has no strain relief, so a bush deployment needs a
-   printed clip or tie.
+5. Order checklist (the owner decided to hand-solder every THT part):
+   - From the repo root: `make fab BOARD=net/node && make jlcpcb BOARD=net/node`; upload
+     `boards/net/node/out/node-gerbers.zip`, `boards/net/node/out/jlcpcb/node-bom.csv` and
+     `boards/net/node/out/jlcpcb/node-cpl.csv`. Economic PCBA, 4 layers, 1.6 mm, top side.
+     J1..J4 are not in the CPL: leave their BOM lines unselected. Read JLCPCB's DFM warnings.
+   - Placement preview: the four LEDs, U5, D5, D6 (cathodes), U1..U4 pin 1, Y1.
+   - Recommended: a first batch of about 5 (bring up 2..3: USB via pogo, crystal start, LEDs,
+     links, sensor) before the other 25; quote both sizes to see the cost of the split.
+   - Loose parts from LCSC: 4 x C157928 (S3B-XH-A) per board plus spares; SW1 C2681585 and C22
+     C14663 for `vib` builds.
+   - Cables: JST-XH 3-pin pre-made, pin 1 to pin 1 ("same direction"); facing connectors have pin 1
+     at opposite ends, so each cable takes a half twist. Continuity-test every cable (1-1 beeps,
+     1-3 must not): a 1-to-3 cable shorts the net's 5 V. XH has no strain relief, so a bush
+     deployment needs a printed clip or tie.
+   - Supply: 5.0..5.1 V (LED max 5.3 V), 8 A for 25 nodes at full white or cap brightness to about
+     60 % in firmware (< 4 A); a few hundred uF across each power tail; plug cables before
+     switching on and scope the plug-in transient on the first boards (D5 is only an energy sink).
 6. Pogo jig (see Programming jig for the pad coordinates), USB bring-up, link protocol, piezo
-   driver (PWM/PIO, balanced antiphase only), 4-pixel LED driver, UART bootloader; then rev B (LED power, bus voltage, maybe a
-   sensor header on an edge).
+   driver (PWM/PIO, balanced antiphase only), 4-pixel LED driver, UART bootloader; check VL53L0X
+   ranging with D4 (SE) lit; then rev B (LED power, bus voltage, maybe a sensor header on an edge).
+7. Viewing the board: `kicad-cli pcb render --side top --zoom 0.9 --width 1200 --height 1200
+   --background opaque -o out/render/node-top.png node.kicad_pcb` for the full-board picture. 3D
+   (KiCad viewer / STEP / STL) needs the model library: install `kicad-library-3d`, or download
+   just this board's models from gitlab.com/kicad/libraries/kicad-packages3D (master branch) and
+   point `KICAD10_3DMODEL_DIR` at them. KiCad has no models for the WS2812B-2020 or the VL53L0X.
 
 `generate/` holds the scripts that produced the schematic and the board (see its README).

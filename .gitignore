@@ -11,6 +11,7 @@
 *.kicad_sch.lck
 _autosave-*
 fp-info-cache
+.history/
 \#auto_saved_files\#
 *.net
 *.dsn

@@ -76,6 +76,22 @@ cause was doing 0.4 mm pitch routing geometry in reasoning. Rules:
   for a fresh review, then `\codex --profile shared exec resume --last -c 'sandbox_mode="read-only"'`
   for re-check rounds until it answers NO SUBSTANTIVE FINDINGS. Codex can run `make test`/`make
   smoke` and scaffold boards in a temp copy itself; ask it to reproduce, not just read.
+  Several Codex sessions run in parallel worktrees, so `resume --last` can pick the wrong one:
+  resume by session id (find it with `grep -l '"cwd":"<worktree>"' -r ~/.codex/sessions`).
+- **Pre-order panel** (the `panel` skill): the same REFUTE-framed prompt to Codex, Kimi K3
+  (`opencode run -m 'moonshotai/kimi-k3#high' --agent plan --format json`; opencode v2 has no
+  `--variant`) and Gemini (`agy`, evidence embedded). **Weight Gemini at 1/4** (owner's call: its
+  reviews have been shallow; on net/node it CONFIRMED a board with a missing BOOT resistor). On a
+  split, verify the decisive evidence yourself against the datasheet/guide before ruling.
+- Board changes go through a worktree per change (`git worktree add -b <name> ../boards-<name>
+  origin/main`), an agent does the work there, Codex reviews to NO SUBSTANTIVE FINDINGS, then
+  commit, rebase onto `origin/main` if another session pushed, re-run `make check/test/smoke`,
+  fast-forward `main`, push. Other sessions push to `main` concurrently (chromatone/hat): always
+  fetch first. The owner keeps KiCad open on `main`, so agents must not write there; KiCad's own
+  edits (`node.kicad_pro` defaults, `.history/`) are the owner's to commit or discard.
+- CI: `scripts/smoke.sh` puts its temp copy under `${TMPDIR:-$HOME/.cache}` (flatpak kicad-cli
+  cannot see /tmp) and must `mkdir -p` that base: in the Actions container `HOME=/github/home` has
+  no `.cache` (8633e62; every run from the chromatone/hat merge to then failed at smoke).
 - Commits: author is the repo's git config (Jonathan Starr <github@jstarr.me>); do not
   override it. Push to `origin main` (GitHub `jonkensta/boards`, public).
 
@@ -87,7 +103,7 @@ cause was doing 0.4 mm pitch routing geometry in reasoning. Rules:
   destination**; later destinations still run their own job lists. Because both destinations in
   `fab.kicad_jobset` list ERC and DRC first, `--stop-on-error` does stop exports, but the
   destinations are still written (a folder/zip containing only the reports), and stale files
-  from an earlier run are not removed. `make fab` therefore purges `out/<board>/`, runs the
+  from an earlier run are not removed. `make fab` therefore purges `boards/<id>/out/`, runs the
   Makefile ERC/DRC, and only then runs the jobset.
 - Jobset JSON: `{"meta":{"version":1},"jobs":[{id,type,description,settings}],"outputs":[{id,type:"folder"|"archive",only:[job ids],settings:{output_path[,format:"zip"]}}]}`.
   Settings keys per job type come from `common/jobs/job_*.cpp` in the KiCad source
@@ -97,8 +113,8 @@ cause was doing 0.4 mm pitch routing geometry in reasoning. Rules:
   `pcb_export_{pdf,svg,dxf,ipc2581,odb,gencad}`, `sch_export_{svg,dxf,netlist}`.
 - ERC/DRC job `severity` is a bitmask: error=0x20, warning=0x10, exclusion=0x04.
   `fail_on_error: true` makes violations fail the job.
-- `output_path` supports `${KIPRJMOD}` and `${PROJECTNAME}`; the repo uses
-  `${KIPRJMOD}/../../out/${PROJECTNAME}/` so outputs land in `out/<board>/` at the repo root.
+- `output_path` supports `${KIPRJMOD}` and `${PROJECTNAME}`; the repo uses `${KIPRJMOD}/out/`,
+  so outputs land in `boards/<id>/out/` (JLCPCB conversions in `boards/<id>/out/jlcpcb/`).
 - **Quirk:** the gerbers job ignores `output_dir` (files land at the destination root). The
   drill job honours it. Position export appends `-all-pos` to the filename stem when
   `side: both` (hence `<name>-all-pos.csv`). Layers listed in the gerber job but absent from the
@@ -207,6 +223,33 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   (`${VARIANT}` in `-o` for several at once). The jobset exports the default variant only.
 - `kicad-cli pcb drc --schematic-parity` on a PCB with no footprints reports zero parity issues,
   so `make check` passes for a board whose layout has not started.
+- **Variant position-file quirk (KiCad 10):** a base-symbol `in_pos_files no` is read as "off"
+  only where a variant does not override it, and the netlist exports only variant `dnp`, so a
+  hand-soldered part (SW1 on net/node) reappeared in the `vib` pos file. `pcbgen` now carries base
+  exclusions into every variant (unit-tested). Hand-soldered THT parts (J1..J4, SW1) use
+  `in_pos_files no`; they stay in the BOM for `make parts` and loose ordering, and their JLCPCB
+  BOM lines are simply left unselected.
+- **Mounting-hole clearance as DRC:** a keepout *annulus* per hole (`pcbgen.keepout(r_in=...,
+  pads=, footprints=, tracks=)`, e.g. 2.6..3.7 mm around an M2 hole) enforces "no pad/via/courtyard
+  within 3.7 mm of the centre" (5 mm washer + 1.2 mm) without flagging the NPTH's own footprint,
+  which a solid pads-not-allowed keepout would. Back it with a pcb.py assertion.
+- **Crystal isolation check:** `boards/net/node/generate/xtal_check.py` measures same-layer
+  edge-to-edge gaps from the crystal nets to every other copper item (tracks, arcs with a sagitta
+  margin, vias, pads, zones; unmodelled copper raises) and pcb.py asserts on it (1.0 mm for any
+  non-GND net, 2.0 mm for LED nets and pads; the RP2040 pin field is exempt). The generic lesson:
+  keep switching GPIOs off the package side next to XIN/XOUT (GPIO12..15 on the RP2040 sit four
+  pins from XIN), and surround the crystal with a stitched F.Cu GND guard that contains no
+  foreign copper (asserted).
+- RP2040 facts that came up: GPIO pads reset with pull-DOWN (PADS_BANK0 0x56: PDE=1, PUE=0,
+  datasheet table 341); a BOOT pad/jumper must reach QSPI_SS through 1 k placed at the flash
+  (hardware design guide p.9); even/odd GPIO pairs share one PWM slice (antiphase from one slice).
+- WS2812B-2020 C965555 is discontinued; the V6 (C52917434) has VIH = 0.55 VDD and a 3.3..5.3 V
+  supply. From 3.3 V logic at a 5 V LED rail use an AHCT buffer (SN74AHCT1G125, C7484): a drop
+  diode no longer works because at the V6's idle current it barely drops.
+- 3D views/exports need the model library (`kicad-library-3d` is not installed here): fetch the
+  referenced models from gitlab.com/kicad/libraries/kicad-packages3D (`master`) and set
+  `KICAD10_3DMODEL_DIR`. For a whole-board picture use `kicad-cli pcb render --zoom 0.9`; 1.6
+  crops a 48 mm board to its centre.
 - **QFN-56 0.4 mm pitch with 0.2/0.2 rules and 0.6 mm vias (boards/net/node):** a via between
   two tracks needs their centres 1.2 mm apart (0.6 mm to each), so only a pin whose neighbours
   are unrouted can via near the chip and adjacent pins must escape
@@ -234,11 +277,11 @@ DAC every resistor and the flying cap were initially backwards. Facts that cost 
   offset (a, b) are |a - b| / sqrt 2 apart); a via needs 0.6 mm from every other track centre
   and 0.8 mm from other vias, so rows of parallel tracks must be >= 1.2 mm apart for a via to
   sit between them; a via connects to a pad only if their copper overlaps or a track joins them
-  (a 0.3 mm gap is an open, a via inside a bare pogo pad is fine); the U1 pin whose two neighbours are unrouted is the only one that can via straight out,
+  (a 0.3 mm gap is an open); the U1 pin whose two neighbours are unrouted is the only one that can via straight out,
   which is why GPIO7..9 are unused on the node. `R_0603` pads sit at +-0.825 mm, `C_0603` at
   +-0.775, both 0.95 across the short axis; rot 180 puts pad 1 on the right, rot 90 puts it at
-  +y (below), rot 270 above. `ref_pos`/`val_pos` offsets rotate with the footprint. Vias may sit
-  inside pogo/test pads. A B.Cu ring around M2 keepouts needs square notches at >= hole + 3.6
+  +y (below), rot 270 above. `ref_pos`/`val_pos` offsets rotate with the footprint. Keep vias *out* of pogo/test
+  pads (a pogo tip can land in the barrel; net/node moved them 0.15 mm outside with a short stub). A B.Cu ring around M2 keepouts needs square notches at >= hole + 3.6
   mm; leaving one corner open costs two `track_dangling` warnings and frees the corner. Pad
   dicts returned by `footprint()` beat hand-derived pad coordinates (D2's WS2812 pads and every
   resistor were initially wrong).
@@ -420,11 +463,17 @@ and the generators become history once a board is hand-edited.
 
 ## Review history
 
-Seven Codex critique loops so far (five rounds on the original scaffold, three on the jobset
+Many Codex critique loops so far (five rounds on the original scaffold, three on the jobset
 restructure, one on the net/node placement and pcbgen changes, one on the routed net/node board
 (C11 away from its pin, crystal loop length, USB series R placement, paste on pogo pads,
-variants registry not idempotent, overstated escape rules; all addressed, re-check round still
-owed), two rounds on chromatone/hat (no electrical or layout finding; holes/test points needed
+variants registry not idempotent, overstated escape rules; all addressed), then on 2026-09-23..25:
+`make parts` (4 rounds: BOM-only jobset destination bypassed the DRC gate, stale-BOM detection),
+off-grid lint (2: child sheets, stale ERC reports), `make route` (6: symlinked outputs could
+overwrite the source board, pad envelopes, slot clearance, quoted `-o`), and net/node rounds on
+part selection (crystal C9002 was really 20 pF), side-entry connectors, tiling alignment and
+centring (0402 caps), the corners floorplan, crystal isolation (checker coverage of arcs/zones)
+and the corner LEDs (TVS clamp overstated), plus one three-model pre-order panel (see net/node
+README Status), two rounds on chromatone/hat (no electrical or layout finding; holes/test points needed
 `in_pos_files=False` to stay out of the CPL, socket is the only back-side THT part so JLCPCB
 Standard assembly or hand-soldering), three on the chromatone board: JST LCSC number was the 3-pin part, decoupling
 loop length, hole keepouts, ground test pads, clock margin, Description into the BOM). Findings that shaped the current design: fab must purge, then check, then export
@@ -440,11 +489,15 @@ reproduction-based re-check, not a read-through.
 1. Checked, archived order bundle with a manifest (rev, commit, KiCad version, hashes).
 2. BOM/CPL lint: cross-check factory-assembled BOM subset against the CPL; assembly policy field.
    (Partially addressed: `make parts` checks LCSC numbers, stock, basic/extended, MPN and chip
-   size against the catalog; the CPL cross-check and a hand-assembly field are still open.)
+   size against the catalog; hand-soldered parts use `in_pos_files no`. Still open: the CPL
+   cross-check, and having `boardtools jlcpcb bom` drop BOM lines with no placement so they need
+   not be unselected by hand on the order page.)
 3. Per-fab constraint profiles (`.kicad_dru`) and an order spec.
 4. Interactive HTML BOM replacement (iBOM itself is SWIG-based) built on `boardtools.sexpr`.
 5. Assembly drawings (`pcb_export_pdf` job with F.Fab/F.SilkS/Edge.Cuts) and SVG-based revision diffs.
-6. Panelization (KiKit is SWIG-based; no `kicad-cli` equivalent yet).
+6. Panelization (KiKit is SWIG-based; no `kicad-cli` equivalent yet). For now JLCPCB's
+   "panel by JLCPCB" order option with the single-board files is the route; parts that overhang
+   the edge (net/node's side-entry housings) only matter if they are fitted before depanelling.
 7. Board revision in PCB markings and output filenames (currently schematic title block only).
 8. `schgen`: hierarchical sheets and buses (labels exist; all boards are still single-sheet).
 9. Per-variant jobset outputs (`variant_names` in the BOM/pos jobs) so `make jlcpcb` can build
